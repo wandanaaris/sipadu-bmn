@@ -22,7 +22,8 @@ export type Task = {
   link?: string
   active: boolean
   priority: 'normal' | 'tinggi'
-  requirements?: Array<{ key:string; label:string; track?:string; required?:boolean }>
+  requirements?: Array<{ key:string; label:string; track?:string; required?:boolean; accept?:string }>
+  references?: Array<{ label:string; url:string }>
   assignments: Assignment[]
 }
 
