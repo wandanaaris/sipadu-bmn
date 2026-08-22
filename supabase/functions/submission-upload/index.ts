@@ -4,8 +4,7 @@ import { createClient } from "jsr:@supabase/supabase-js@2"
 const cors={"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"authorization,x-client-info,apikey,content-type","Access-Control-Allow-Methods":"POST,OPTIONS"}
 const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{...cors,"Content-Type":"application/json"}})
 const allowed=new Set(['application/pdf','application/vnd.openxmlformats-officedocument.wordprocessingml.document','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet','image/jpeg','image/png','image/webp','application/zip'])
-const safeName=(name:string)=>name.normalize('NFKD').replace(/[^a-zA-Z0-9 ._()-]+/g,'_').replace(/_+/g,'_').trim().slice(-120)
-const maxFor=(type:string)=>type==='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'?36700160:4194304
+const safeName=(name:string)=>name.normalize('NFKD').replace(/[^a-zA-Z0-9._-]+/g,'_').replace(/_+/g,'_').slice(-120)
 
 const log=(db:any,step:string,payload:any,msg:string)=>db.from('submission_debug').insert({step,payload,msg}).then(()=>{}).catch(()=>{})
 Deno.serve(async(req:Request)=>{
@@ -22,8 +21,8 @@ Deno.serve(async(req:Request)=>{
       if(senderName.length<2||senderName.length>100)return json({error:'Nama pengirim wajib diisi.'},400)
       if(senderPhone&&(!/^[0-9+ -]{7,20}$/.test(senderPhone)))return json({error:'Nomor kontak tidak valid.'},400)
       if(!files.length||files.length>10)return json({error:'Pilih 1 sampai 10 file.'},400)
-      for(const f of files){if(!f?.name||!allowed.has(String(f.type))||Number(f.size)<=0||Number(f.size)>maxFor(String(f.type)))return json({error:`File ${String(f?.name??'')} tidak didukung atau melebihi batas ukuran (PDF maks 4 MB, XLSX maks 35 MB).`},400)}
-      const [{data:task},{data:satker}]=await Promise.all([db.from('tasks').select('id,task_key,is_active').eq('task_key',taskKey).eq('is_active',true).maybeSingle(),db.from('satkers').select('id,code,name,is_active').eq('code',satkerCode).eq('is_active',true).maybeSingle()])
+      for(const f of files){if(!f?.name||!allowed.has(String(f.type))||Number(f.size)<=0||Number(f.size)>26214400)return json({error:`File ${String(f?.name??'')} tidak didukung atau melebihi 25 MB.`},400)}
+      const [{data:task},{data:satker}]=await Promise.all([db.from('tasks').select('id,task_key,is_active').eq('task_key',taskKey).eq('is_active',true).maybeSingle(),db.from('satkers').select('id,code,is_active').eq('code',satkerCode).eq('is_active',true).maybeSingle()])
       if(!task||!satker)return json({error:'Pekerjaan tidak aktif atau satker tidak ditemukan.'},404)
       const {data:assignment}=await db.from('task_assignments').select('id').eq('task_id',task.id).eq('satker_id',satker.id).maybeSingle()
       if(!assignment)return json({error:'Satker tidak ditugaskan pada pekerjaan ini.'},403)
@@ -33,13 +32,10 @@ Deno.serve(async(req:Request)=>{
       if(submissionError)throw submissionError
       const uploads=[]
       for(const file of files){
-        const docType=String(file.documentType??'Data Dukung').replace(/\s*\([^)]*\)\s*/g,' ').replace(/\s+/g,' ').trim()
-        const ext=String(file.name).includes('.')?String(file.name).slice(String(file.name).lastIndexOf('.')):''
-        const displayName=safeName(`${docType} ${satker.name}`)+ext
-        const path=`${taskKey}/${satkerCode}/${submission.submission_number}/${crypto.randomUUID()}-${safeName(displayName)}`
+        const path=`${taskKey}/${satkerCode}/${submission.submission_number}/${crypto.randomUUID()}-${safeName(String(file.name))}`
         const {data:signed,error:signedError}=await db.storage.from('submission-inbox').createSignedUploadUrl(path)
         if(signedError)throw signedError
-        const {error:docError}=await db.from('supporting_documents').insert({assignment_id:assignment.id,submission_id:submission.id,document_type:docType.slice(0,120),requirement_key:file.requirementKey?String(file.requirementKey).slice(0,100):null,title:`${docType} ${satker.name}`.slice(0,200),original_filename:displayName.slice(0,255),stored_path:path,file_size:Number(file.size),mime_type:String(file.type),verification_status:'menunggu',archive_status:'inbox'})
+        const {error:docError}=await db.from('supporting_documents').insert({assignment_id:assignment.id,submission_id:submission.id,document_type:String(file.documentType??'Data Dukung').slice(0,120),requirement_key:file.requirementKey?String(file.requirementKey).slice(0,100):null,title:String(file.documentType??file.name).slice(0,200),original_filename:String(file.name).slice(0,255),stored_path:path,file_size:Number(file.size),mime_type:String(file.type),verification_status:'menunggu',archive_status:'inbox'})
         if(docError)throw docError
         uploads.push({name:file.name,path,token:signed.token})
       }

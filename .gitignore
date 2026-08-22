@@ -36,6 +36,3 @@ supabase-access.txt
 supabase-service.txt
 _gsheet*
 sipadu-secrets/
-
-# Supabase temp (linked state, jangan commit)
-supabase/.temp/

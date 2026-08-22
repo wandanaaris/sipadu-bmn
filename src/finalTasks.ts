@@ -69,19 +69,8 @@ export const finalTasks:Task[] = [
     ]
   },
   {
-    id:"rkbmn", title:"Pengusulan RKBMN Non Siman TA 2028", description:"Menyampaikan usulan RKBMN melalui SIMAN dan melengkapi dokumen usulan RKBMN Non-SIMAN.",
-    method:'upload', due:"31 Agustus 2026", letter:"Monitoring usulan RKBMN SIMAN dan Non-SIMAN Tahun 2027", link:"https://docs.google.com/spreadsheets/d/1Sp3hw2sRK8l_W7DUL3csaZpUjHxddeu25RGM3kEitu0/edit?gid=0#gid=0", active:true, priority:"tinggi",
-    requirements:[
-      {key:'surat_usulan',label:'Surat Usulan RKBMN Non Siman TA 2028 (ttd srikandi)',required:true,accept:'application/pdf'},
-      {key:'matrix_pengadaan_pdf',label:'Matrix Usulan Pengadaan (ttd srikandi)',required:true,accept:'application/pdf'},
-      {key:'surat_pernyataan',label:'Surat Pernyataan memakai Materai',required:true,accept:'application/pdf'},
-      {key:'profil_satker',label:'Surat Profil Satker (ttd srikandi)',required:true,accept:'application/pdf'},
-      {key:'matrix_pengadaan_xlsx',label:'Matrix Usulan Pengadaan',required:true,accept:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'},
-    ],
-    references:[
-      {label:'Peraturan Terkait',url:'https://drive.google.com/drive/folders/1pI8RdE4u2Fkg-PMSImqSrzU8Gl9eNEc6?usp=sharing'},
-      {label:'Format Data Dukung',url:'https://drive.google.com/drive/folders/1pHjfunfaZAd2M93zp4wJ6nve80jfNPD_?usp=sharing'},
-    ],
+    id:"rkbmn", title:"RKBMN SIMAN dan Non-SIMAN", description:"Menyampaikan usulan RKBMN melalui SIMAN dan melengkapi dokumen usulan RKBMN Non-SIMAN.",
+    method:'spreadsheet', due:"31 Agustus 2026", letter:"Monitoring usulan RKBMN SIMAN dan Non-SIMAN Tahun 2027", link:"https://docs.google.com/spreadsheets/d/1Sp3hw2sRK8l_W7DUL3csaZpUjHxddeu25RGM3kEitu0/edit?gid=0#gid=0", active:true, priority:"tinggi",
     assignments:[
       a("692307",0,"belum",["Surat Usulan RKBMN Non SIMAN", "Matriks Usulan Pengadaan", "Surat Pernyataan", "Profil Satker", "Usulan RKBMN SIMAN"]),
       a("692308",0,"belum",["Surat Usulan RKBMN Non SIMAN", "Matriks Usulan Pengadaan", "Surat Pernyataan", "Profil Satker", "Usulan RKBMN SIMAN"]),
