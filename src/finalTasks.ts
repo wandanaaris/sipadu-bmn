@@ -71,6 +71,11 @@ export const finalTasks:Task[] = [
   {
     id:"rkbmn", title:"RKBMN SIMAN dan Non-SIMAN", description:"Menyampaikan usulan RKBMN melalui SIMAN dan melengkapi dokumen usulan RKBMN Non-SIMAN.",
     method:'spreadsheet', due:"31 Agustus 2026", letter:"Monitoring usulan RKBMN SIMAN dan Non-SIMAN Tahun 2027", link:"https://docs.google.com/spreadsheets/d/1Sp3hw2sRK8l_W7DUL3csaZpUjHxddeu25RGM3kEitu0/edit?gid=0#gid=0", active:true, priority:"tinggi",
+    uploadLink:"https://drive.google.com/drive/folders/16WFLsXnxR2XxKnNMGOv60Wnme6TG49eH?usp=sharing",
+    references:[
+      {label:'Peraturan Terkait', url:'https://drive.google.com/drive/folders/1pI8RdE4u2Fkg-PMSImqSrzU8Gl9eNEc6?usp=drive_link'},
+      {label:'Format Data Dukung', url:'https://drive.google.com/drive/folders/1SzsWDp2SFdDhj4TyjJztuqt-Xs5f4CpY?usp=drive_link'},
+    ],
     assignments:[
       a("692307",0,"belum",["Surat Usulan RKBMN Non SIMAN", "Matriks Usulan Pengadaan", "Surat Pernyataan", "Profil Satker", "Usulan RKBMN SIMAN"]),
       a("692308",0,"belum",["Surat Usulan RKBMN Non SIMAN", "Matriks Usulan Pengadaan", "Surat Pernyataan", "Profil Satker", "Usulan RKBMN SIMAN"]),

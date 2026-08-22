@@ -28,16 +28,25 @@ export type SubmissionDocument={id:string;document_type:string;original_filename
 export type SubmissionRecord={id:string;submission_number:string;sender_name:string;sender_phone:string|null;sender_note:string|null;status:'mengunggah'|'menunggu_verifikasi'|'diterima'|'perlu_perbaikan'|'ditolak'|'dialihkan';review_note:string|null;submitted_at:string|null;created_at:string;tasks:{task_key:string;title:string}|null;satkers:{code:string;name:string}|null;supporting_documents:SubmissionDocument[]}
 
 const fallback = () => structuredClone(finalTasks)
+// Terapkan metadata pekerjaan (uploadLink/references/link) dari finalTasks ke semua environment,
+// supaya tampilan satker selalu memakai folder Drive upload + peraturan terkini.
+function applyFinalMeta(tasks:Task[]):Task[]{
+  return tasks.map(t=>{
+    const o=finalTasks.find(f=>f.id===t.id)
+    if(!o)return t
+    return {...t,title:o.title,description:o.description,link:o.link,uploadLink:o.uploadLink??t.uploadLink,references:o.references??t.references}
+  })
+}
 function satkerCode(value: DbAssignment['satkers']) {if (Array.isArray(value)) return value[0]?.code ?? '';return value?.code ?? ''}
 function mapTask(task: DbTask): Task {return {id:task.task_key,title:task.title,description:task.description??'',method:task.method,due:task.due_label??'Belum ditentukan',letter:task.source_letter??'',link:task.source_url??undefined,active:task.is_active,priority:task.priority,requirements:(task.task_requirements??[]).map(r=>({key:r.requirement_key,label:r.label,track:r.track??undefined,required:r.is_required})),assignments:(task.task_assignments??[]).map(item=>({satker:satkerCode(item.satkers),progress:Number(item.progress),status:item.status,missing:item.missing??[],revisionCount:item.revision_count??0,updated:item.updated_at?new Date(item.updated_at).toLocaleString('id-ID',{timeZone:'Asia/Jakarta'}):'Belum diperbarui'})).filter(item=>item.satker)}}
 
 export async function loadTasks(): Promise<{ tasks: Task[]; source: 'supabase' | 'fallback' }> {
-  if (!isSupabaseConfigured || !supabase) return { tasks: fallback(), source: 'fallback' }
+  if (!isSupabaseConfigured || !supabase) return { tasks: applyFinalMeta(fallback()), source: 'fallback' }
   const { data: authData } = await supabase.auth.getSession()
-  if (!authData.session) {const { data, error } = await supabase.rpc('get_active_portal');if (!error && Array.isArray(data) && data.length) return { tasks: data as Task[], source: 'supabase' };console.warn('RPC portal aktif belum dapat dibaca; memakai data cadangan.', error?.message);return { tasks: fallback(), source: 'fallback' }}
+  if (!authData.session) {const { data, error } = await supabase.rpc('get_active_portal');if (!error && Array.isArray(data) && data.length) return { tasks: applyFinalMeta(data as Task[]), source: 'supabase' };console.warn('RPC portal aktif belum dapat dibaca; memakai data cadangan.', error?.message);return { tasks: applyFinalMeta(fallback()), source: 'fallback' }}
   const { data, error } = await supabase.from('tasks').select('task_key,title,description,method,due_label,source_letter,source_url,is_active,priority,task_requirements(requirement_key,label,track,is_required),task_assignments(progress,status,missing,revision_count,updated_at,satkers(code))').order('due_date',{ascending:true,nullsFirst:false})
-  if (error || !data?.length) {console.warn('Supabase belum dapat dibaca; memakai data cadangan.',error?.message);return {tasks:fallback(),source:'fallback'}}
-  return {tasks:(data as unknown as DbTask[]).map(mapTask),source:'supabase'}
+  if (error || !data?.length) {console.warn('Supabase belum dapat dibaca; memakai data cadangan.',error?.message);return {tasks:applyFinalMeta(fallback()),source:'fallback'}}
+  return {tasks:applyFinalMeta((data as unknown as DbTask[]).map(mapTask)),source:'supabase'}
 }
 export async function loadSatkerPortal(accessToken:string):Promise<Task[]|null>{if(!isSupabaseConfigured||!supabase)return null;const{data,error}=await supabase.rpc('get_satker_portal',{p_token:accessToken});if(error||!data)return null;return(data.tasks??[])as Task[]}
 export async function persistTaskActive(taskKey:string,active:boolean){if(!supabase)return;const{error}=await supabase.from('tasks').update({is_active:active}).eq('task_key',taskKey);if(error)console.warn('Status pekerjaan belum tersimpan:',error.message)}
