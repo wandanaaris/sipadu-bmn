@@ -116,4 +116,12 @@ export const finalTasks:Task[] = [
       a("692794",100,"persetujuan",[]),
     ]
   },
+  {
+    id:"tanah-rusak-berat", title:"Tindaklanjut Tanah Rusak Berat", description:"Tindaklanjut penanganan tanah rusak berat sesuai monitoring BMN Ditjen PAS Riau.",
+    method:'spreadsheet', due:"Belum ditentukan", letter:"Monitoring Pengisian BMN Ditjen PAS Riau", link:"https://docs.google.com/spreadsheets/d/1P212po42PeS6LWOwvzf9z_Q_MyUrLV-bT_BMPiBUgZU/edit?usp=sharing", active:true, priority:"normal",
+    uploadLink:"https://drive.google.com/drive/folders/14Ef-0Bf-sdYa-B_gRy8wIjzw9mDc017O?usp=sharing",
+    assignments:[
+      a("692309",0,"belum",[]),
+    ]
+  },
 ]
