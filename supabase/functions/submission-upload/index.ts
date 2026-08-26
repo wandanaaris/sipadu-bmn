@@ -54,7 +54,7 @@ Deno.serve(async(req:Request)=>{
       if(submissionError)throw submissionError
       const {error:docError}=await db.from('supporting_documents').insert({assignment_id:assignment.id,submission_id:submission.id,document_type:'Bukti Pengisian Sheet',requirement_key:null,title:'Tautan Sheet Sumber',original_filename:sheetUrl.slice(0,255),stored_path:null,file_size:0,mime_type:'text/uri-list',verification_status:'menunggu',archive_status:'inbox'})
       if(docError)throw docError
-      await db.from('task_assignments').update({status:'verifikasi',progress:100,submitted_at:new Date().toISOString(),updated_at:new Date().toISOString()}).eq('id',assignment.id)
+      await db.from('task_assignments').update({status:'verifikasi',submitted_at:new Date().toISOString(),updated_at:new Date().toISOString()}).eq('id',assignment.id)
       return json({submissionNumber:submission.submission_number,status:'menunggu_verifikasi',submittedAt:new Date().toISOString(),documentCount:1})
     }
     if(body.action==='finalize'){
