@@ -21,3 +21,9 @@
 .submit-row .done-message{color:#166534;font-weight:600}
 /* Link folder data dukung di inbox verifikasi korwil */
 .drive-folder-link{display:inline-flex;align-items:center;gap:6px;margin-top:8px;color:#1d4ed8;font-weight:600}
+
+/* Progress pada kartu satker (landing) */
+.satker-card-body{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-width:0}
+.satker-card-progress{width:100%;margin-top:6px}
+.satker-card-progress .progress-track{height:6px}
+.satker-card-progress small{color:var(--muted-foreground,#5b6b7b);font-size:11px;margin-top:3px;display:block}

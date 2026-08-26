@@ -45,8 +45,7 @@ export const satkers: Satker[] = [
   ['692519','LPKA Kelas II Pekanbaru','lpka-pekanbaru'],
   ['692537','Lapas Perempuan Kelas IIA Pekanbaru','lpp-pekanbaru'],
   ['692639','Lapas Narkotika Kelas IIB Rumbai','lapas-narkotika-rumbai'],
-  ['692675','Rupbasan Kelas II Bengkalis','rupbasan-bengkalis'],
-  ['692781','Rutan Kelas I Pekanbaru','rutan-pekanbaru'],
+    ['692781','Rutan Kelas I Pekanbaru','rutan-pekanbaru'],
   ['692794','Lapas Terbuka Kelas III Rumbai','lapas-terbuka-rumbai'],
   ['694759','Bapas Kelas II Dumai','bapas-dumai'],
 ].map(([code,name,slug]) => ({ code,name,slug }))
