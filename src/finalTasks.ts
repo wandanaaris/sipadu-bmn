@@ -124,4 +124,49 @@ export const finalTasks:Task[] = [
       a("692309",0,"belum",["Berita Acara Perubahan Kondisi","Kronologis Lengkap","Cetakan Perubahan Kondisi Sakti"]),
     ]
   },
+  {
+    id:"xray-rb-2028", title:"Pengisian Data X-Ray Rusak Berat (Usulan Penghapusan/Pemeliharaan)", description:"Seluruh satker mengisi data unit X-Ray Rusak Berat pada spreadsheet, melengkapi foto kondisi terakhir, dan melakukan perubahan kondisi pada SIMAN V2. Satker yang memerlukan pemeliharaan merubah kondisi ke rusak ringan dan mengajukan surat usulan pemeliharaan berjenjang (satker→kanwil→ditjenpas).",
+    method:'spreadsheet', due:"27 Agustus 2026", letter:"Pendataan X-Ray Rusak Berat untuk Penghapusan", link:"https://docs.google.com/spreadsheets/d/19O4FKz_lBLiZkv_859v748t77pH3UPyS-Cp3qBD63Mo/edit?usp=sharing", active:true, priority:"tinggi",
+    assignments:[
+      a("692308",0,"belum",["Isi data X-Ray di spreadsheet","Foto kondisi X-Ray terakhir","Update SIMAN V2"]),
+      a("692309",0,"belum",["Isi data X-Ray di spreadsheet","Foto kondisi X-Ray terakhir","Update SIMAN V2"]),
+      a("692310",0,"belum",["Isi data X-Ray di spreadsheet","Foto kondisi X-Ray terakhir","Update SIMAN V2"]),
+      a("692311",0,"belum",["Isi data X-Ray di spreadsheet","Foto kondisi X-Ray terakhir","Update SIMAN V2"]),
+      a("692313",0,"belum",["Isi data X-Ray di spreadsheet","Foto kondisi X-Ray terakhir","Update SIMAN V2"]),
+      a("692316",0,"belum",["Isi data X-Ray di spreadsheet","Foto kondisi X-Ray terakhir","Update SIMAN V2"]),
+      a("692317",0,"belum",["Isi data X-Ray di spreadsheet","Foto kondisi X-Ray terakhir","Update SIMAN V2"]),
+      a("692639",0,"belum",["Isi data X-Ray di spreadsheet","Foto kondisi X-Ray terakhir","Update SIMAN V2"]),
+      a("692781",0,"belum",["Isi data X-Ray di spreadsheet","Foto kondisi X-Ray terakhir","Update SIMAN V2"]),
+    ]
+  },
+  {
+    id:"pendataan-cctv-2026", title:"Pendataan CCTV 2026", description:"Seluruh satker mendata infrastruktur CCTV (kamera, NVR/DVR, jaringan, server/storage, kondisi fisik) menggunakan Form Survey CCTV. Unggah data dukung (termasuk denah bangunan dan ruangan dalam format PDF) ke folder Drive, lalu laporkan melalui Google Form. Progress monitoring dapat dipantau pada spreadsheet.",
+    method:'spreadsheet', due:"28 Agustus 2026", letter:"Pendataan Infrastruktur CCTV Tahun 2026", link:"https://docs.google.com/spreadsheets/d/1R_OZMybUG_f2QVxHRrR5CBqFfTzyn4FHEsMoJDbBxj0/edit?usp=sharing", active:true, priority:"tinggi",
+    uploadLink:"https://drive.google.com/drive/folders/1pO1a2PT6Ah9bfqw6Y3uu1pbYNvhDB3q5?usp=sharing",
+    references:[
+      {label:'Format Form Survey CCTV', url:'https://tinyurl.com/33sa2z5y'},
+      {label:'Pelaporan Google Form', url:'https://docs.google.com/forms/d/e/1FAIpQLSdL6fBlt6gm8UH9bhF7phmvurIGUrMGPHdUa4AuJkIvRntyKQ/viewform'},
+    ],
+    assignments:[
+      a("692307",0,"belum",["Form Survey CCTV terisi","Data dukung diunggah ke folder Drive (denah PDF)","Lapor via Google Form"]),
+      a("692308",0,"belum",["Form Survey CCTV terisi","Data dukung diunggah ke folder Drive (denah PDF)","Lapor via Google Form"]),
+      a("692309",0,"belum",["Form Survey CCTV terisi","Data dukung diunggah ke folder Drive (denah PDF)","Lapor via Google Form"]),
+      a("692310",0,"belum",["Form Survey CCTV terisi","Data dukung diunggah ke folder Drive (denah PDF)","Lapor via Google Form"]),
+      a("692311",0,"belum",["Form Survey CCTV terisi","Data dukung diunggah ke folder Drive (denah PDF)","Lapor via Google Form"]),
+      a("692312",0,"belum",["Form Survey CCTV terisi","Data dukung diunggah ke folder Drive (denah PDF)","Lapor via Google Form"]),
+      a("692313",0,"belum",["Form Survey CCTV terisi","Data dukung diunggah ke folder Drive (denah PDF)","Lapor via Google Form"]),
+      a("692314",0,"belum",["Form Survey CCTV terisi","Data dukung diunggah ke folder Drive (denah PDF)","Lapor via Google Form"]),
+      a("692315",0,"belum",["Form Survey CCTV terisi","Data dukung diunggah ke folder Drive (denah PDF)","Lapor via Google Form"]),
+      a("692316",0,"belum",["Form Survey CCTV terisi","Data dukung diunggah ke folder Drive (denah PDF)","Lapor via Google Form"]),
+      a("692317",0,"belum",["Form Survey CCTV terisi","Data dukung diunggah ke folder Drive (denah PDF)","Lapor via Google Form"]),
+      a("692484",0,"belum",["Form Survey CCTV terisi","Data dukung diunggah ke folder Drive (denah PDF)","Lapor via Google Form"]),
+      a("692507",0,"belum",["Form Survey CCTV terisi","Data dukung diunggah ke folder Drive (denah PDF)","Lapor via Google Form"]),
+      a("692519",0,"belum",["Form Survey CCTV terisi","Data dukung diunggah ke folder Drive (denah PDF)","Lapor via Google Form"]),
+      a("692537",0,"belum",["Form Survey CCTV terisi","Data dukung diunggah ke folder Drive (denah PDF)","Lapor via Google Form"]),
+      a("692639",0,"belum",["Form Survey CCTV terisi","Data dukung diunggah ke folder Drive (denah PDF)","Lapor via Google Form"]),
+      a("692781",0,"belum",["Form Survey CCTV terisi","Data dukung diunggah ke folder Drive (denah PDF)","Lapor via Google Form"]),
+      a("692794",0,"belum",["Form Survey CCTV terisi","Data dukung diunggah ke folder Drive (denah PDF)","Lapor via Google Form"]),
+      a("694759",0,"belum",["Form Survey CCTV terisi","Data dukung diunggah ke folder Drive (denah PDF)","Lapor via Google Form"]),
+    ]
+  },
 ]
