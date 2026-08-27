@@ -1,9 +1,10 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import { localMitraSqlitePlugin } from './local-api/vitePlugin.js'
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(),localMitraSqlitePlugin()],
   build: {
     rollupOptions: {
       output: {

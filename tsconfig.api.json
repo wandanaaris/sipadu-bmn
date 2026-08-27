@@ -9,5 +9,6 @@
     "noEmit": true,
     "types": ["node"]
   },
-  "include": ["api/**/*.ts"]
+  "include": ["api/**/*.ts", "local-api/**/*.ts"],
+  "exclude": ["local-api/**/*.test.ts"]
 }

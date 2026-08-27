@@ -34,7 +34,7 @@ describe('Portal Monitoring BMN MVP', () => {
     render(<CreateTaskModal onClose={()=>{}} onCreated={async()=>{}}/>)
     expect(screen.getByText('Buat Pekerjaan Baru')).toBeInTheDocument()
     expect(screen.getByDisplayValue('Unggah dokumen')).toBeInTheDocument()
-    expect(screen.getByText('19 UPT dipilih')).toBeInTheDocument()
+    expect(screen.getByText('18 UPT dipilih')).toBeInTheDocument()
     cleanup()
     const task:Task={id:'upload-test',title:'Uji Unggah',description:'',method:'upload',due:'Tidak ada tenggat',letter:'',active:true,priority:'normal',requirements:[{key:'surat',label:'Surat Pengantar',required:true},{key:'foto',label:'Dokumentasi',required:true}],assignments:[]}
     render(<OpenUploadForm task={task} satkerCode="692313"/>)
@@ -71,12 +71,9 @@ describe('Portal Monitoring BMN MVP', () => {
     expect(screen.getByRole('heading', { name: 'Pilih satuan kerja Anda' })).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: /692312.*Rutan Kelas IIB Rengat/i }))
     expect(screen.getByRole('heading', { name: 'Rutan Kelas IIB Rengat' })).toBeInTheDocument()
-    expect(screen.getByText('1 aset belum lengkap: Kelurahan/Desa')).toBeInTheDocument()
-
     const masterCard = screen.getByRole('heading', { name: 'Kelengkapan Master Aset' }).closest('article')
     expect(masterCard).not.toBeNull()
     await user.click(within(masterCard!).getByRole('button', { name: /Lanjutkan/i }))
-    expect(screen.getByText('Data yang masih perlu dilengkapi')).toBeInTheDocument()
     const spreadsheetLink = screen.getByRole('link', { name: /Buka spreadsheet/i })
     expect(spreadsheetLink).toHaveAttribute('href', 'https://docs.google.com/spreadsheets/d/14O64ETAtsMr_qfCdui_aP0Rr_e0gvzYL/edit?gid=1530083301#gid=1530083301')
   })

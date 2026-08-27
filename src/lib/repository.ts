@@ -1,6 +1,10 @@
 import type { Task, TaskStatus } from '../data'
 import { finalTasks } from '../finalTasks'
 import { isSupabaseConfigured, supabase } from './supabase'
+import { withLocalAkunMitraTask } from '../akunMitra'
+import { activeMitraRepository } from './activeMitraRepository'
+
+const localOnly=async(tasks:Task[])=>{if(!import.meta.env.DEV&&import.meta.env.MODE!=='test')return tasks;try{return withLocalAkunMitraTask(tasks,await activeMitraRepository.loadAll())}catch{return withLocalAkunMitraTask(tasks,[])}}
 
 export type SubmissionDocument={id:string;document_type:string;original_filename:string;stored_path:string;file_size:number;mime_type:string;verification_status:string;archive_status:string;drive_url:string|null;review_note:string|null}
 export type SubmissionRecord={id:string;submission_number:string;sender_name:string;sender_phone:string|null;sender_note:string|null;status:'mengunggah'|'menunggu_verifikasi'|'diterima'|'perlu_perbaikan'|'ditolak'|'dialihkan';review_note:string|null;submitted_at:string|null;created_at:string;tasks:{task_key:string;title:string}|null;satkers:{code:string;name:string}|null;supporting_documents:SubmissionDocument[]}
@@ -28,16 +32,16 @@ function readTasksCache():{tasks:Task[];source:'supabase'|'fallback'}|null{
 }
 export function clearTasksCache(){try{sessionStorage.removeItem(TASKS_CACHE_KEY)}catch{/* abaikan */}}
 export async function loadTasks(force=false): Promise<{ tasks: Task[]; source: 'supabase' | 'fallback' }> {
-  if (!force) {const cached=readTasksCache();if(cached)return cached}
-  if (!isSupabaseConfigured || !supabase) return { tasks: applyFinalMeta(fallback()), source: 'fallback' }
+  if (!force) {const cached=readTasksCache();if(cached)return{...cached,tasks:await localOnly(cached.tasks)}}
+  if (!isSupabaseConfigured || !supabase) return { tasks: await localOnly(applyFinalMeta(fallback())), source: 'fallback' }
   const { data, error } = await supabase.rpc('get_active_portal')
   if (!error && Array.isArray(data) && data.length) {
-    const result={tasks:applyFinalMeta(data as unknown as Task[]),source:'supabase' as const}
+    const result={tasks:await localOnly(applyFinalMeta(data as unknown as Task[])),source:'supabase' as const}
     try{sessionStorage.setItem(TASKS_CACHE_KEY,JSON.stringify({at:Date.now(),payload:result}))}catch{/* penuh: abaikan */}
     return result
   }
   console.warn('RPC portal aktif belum dapat dibaca; memakai data cadangan.', error?.message)
-  return { tasks: applyFinalMeta(fallback()), source: 'fallback' }
+  return { tasks: await localOnly(applyFinalMeta(fallback())), source: 'fallback' }
 }
 export async function loadSatkerPortal(accessToken:string):Promise<Task[]|null>{if(!isSupabaseConfigured||!supabase)return null;const{data,error}=await supabase.rpc('get_satker_portal',{p_token:accessToken});if(error||!data)return null;return applyFinalMeta((data.tasks??[]) as Task[])}
 export async function persistTaskActive(taskKey:string,active:boolean){if(!supabase)return;const{error}=await supabase.from('tasks').update({is_active:active}).eq('task_key',taskKey);if(error)console.warn('Status pekerjaan belum tersimpan:',error.message)}
