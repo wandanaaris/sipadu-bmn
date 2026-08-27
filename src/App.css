@@ -27,3 +27,62 @@
 .satker-card-progress{width:100%;margin-top:6px}
 .satker-card-progress .progress-track{height:6px}
 .satker-card-progress small{color:var(--muted-foreground,#5b6b7b);font-size:11px;margin-top:3px;display:block}
+
+
+/* Hasil Penelaahan RKBMN */
+.telaah-group{margin-bottom:22px}
+.telaah-year{font-size:15px;color:#102b46;margin:0 0 10px}
+.telaah-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.telaah-card{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid #e3e9f0;border-radius:12px;padding:14px;text-decoration:none;color:inherit;transition:.15s}
+.telaah-card:hover{border-color:#1d4ed8;box-shadow:0 4px 14px rgba(16,43,70,.08)}
+.telaah-icon{display:flex;background:#e8f0fe;border-radius:10px;padding:9px}
+.telaah-card div{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.telaah-card strong{font-size:13.5px;line-height:1.35}
+.telaah-card span{font-size:11.5px;color:#5b6b7b}
+.telaah-card b{font-size:12px;color:#1d4ed8;display:flex;align-items:center;gap:4px}
+
+/* Link hasil penelaahan di header satker */
+.telaah-headlink{display:inline-flex;align-items:center;gap:6px;text-decoration:none}
+
+
+/* Header dan halaman penuh Hasil Penelaahan RKBMN */
+.landing-header-actions{display:flex;align-items:center;gap:9px;margin-left:auto}
+.landing-header-actions .ghost{white-space:nowrap}
+.landing-header-actions .nav-current{background:rgba(255,255,255,.1);border-color:#69839a}
+.telaah-public-page{min-height:100vh;background:#f4f7fa}
+.telaah-public-main{width:min(1120px,calc(100% - 32px));margin:0 auto;padding:30px 0 56px}
+.telaah-public-head{background:#fff;border:1px solid #e2e8ef;border-radius:14px;padding:24px;margin:18px 0 22px}
+.telaah-public-head h1{margin:5px 0 8px;color:#102b46;font-size:28px}
+.telaah-public-head p{margin:0;color:#5b6b7b;max-width:720px;line-height:1.6}
+.telaah-public-main .telaah-group{background:#fff;border:1px solid #e2e8ef;border-radius:14px;padding:20px}
+@media(max-width:700px){.landing-header-actions{gap:5px}.landing-header-actions .ghost{padding:0 9px;font-size:10px}.telaah-public-main{width:calc(100% - 24px);padding-top:18px}}
+
+/* Pusat Dokumen */
+.document-category-tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:0 0 20px}
+.document-category-tabs button{display:flex;align-items:flex-start;text-align:left;gap:11px;background:#fff;border:1px solid #dce4ec;border-radius:12px;padding:15px;color:#33475a;transition:.15s}
+.document-category-tabs button:hover{border-color:#8aa3ba;transform:translateY(-1px)}
+.document-category-tabs button.active{border-color:#1d5f99;background:#eef6fd;box-shadow:inset 0 0 0 1px #1d5f99}
+.document-category-tabs button>svg{flex:0 0 auto;width:20px;color:#1d5f99;margin-top:2px}
+.document-category-tabs button span{display:flex;flex-direction:column;gap:4px}
+.document-category-tabs button strong{font-size:13px;color:#102b46}
+.document-category-tabs button small{font-size:10.5px;line-height:1.4;color:#667788;font-weight:400}
+.document-category-content{background:#fff;border:1px solid #e2e8ef;border-radius:14px;padding:22px;min-height:260px}
+.document-section-head{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1px solid #e6ebf0;margin-bottom:18px;padding-bottom:16px}
+.document-section-head h2{font-size:20px;color:#102b46;margin:4px 0 5px}
+.document-section-head p{color:#667788;margin:0;font-size:12px}
+.document-empty{min-height:160px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#81909e;text-align:center}
+.document-empty svg{width:34px;height:34px;margin-bottom:10px;color:#9aabb9}
+.document-empty strong{color:#44576a;font-size:14px}
+.document-empty p{font-size:12px;margin:5px 0 0}
+@media(max-width:760px){.document-category-tabs{grid-template-columns:1fr}.document-category-tabs button small{display:block}.document-category-content{padding:16px}}
+
+/* Navigasi kembali Pusat Dokumen */
+.document-back{display:inline-flex;align-items:center;gap:10px;background:#fff;border:1px solid #d7e1ea;border-radius:11px;padding:7px 13px 7px 8px;color:#183a59;box-shadow:0 2px 7px rgba(16,43,70,.05);transition:transform .15s,border-color .15s,box-shadow .15s,background .15s}
+.document-back:hover{background:#f8fbfe;border-color:#7da1c1;box-shadow:0 5px 14px rgba(16,43,70,.1);transform:translateY(-1px)}
+.document-back:active{transform:translateY(0)}
+.document-back-icon{width:32px;height:32px;border-radius:8px;background:#eaf3fb;color:#1767a4;display:flex;align-items:center;justify-content:center;transition:background .15s,color .15s}
+.document-back:hover .document-back-icon{background:#1767a4;color:#fff}
+.document-back-icon svg{width:17px;height:17px}
+.document-back-label{display:flex;flex-direction:column;align-items:flex-start;line-height:1.15}
+.document-back-label small{font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:#718394;font-weight:700}
+.document-back-label strong{font-size:12px;color:#183a59;margin-top:3px}

@@ -104,3 +104,12 @@ export const statusLabel: Record<TaskStatus,string> = {
   belum:'Belum dikerjakan', proses:'Dalam proses', verifikasi:'Menunggu verifikasi', persetujuan:'Menunggu persetujuan',
   perbaikan:'Perlu perbaikan', selesai:'Selesai', ditutup:'Ditutup'
 }
+
+export type TelaahDoc = { title: string; url: string }
+export const telaahRkbmn: Record<string, TelaahDoc[]> = {
+  'TA 2027': [
+    { title: 'Hasil Penelaahan RKBMN TA 2027 SIMAN', url: 'https://drive.google.com/file/d/1Bw9MLqAkuZOJBnf1IwdkO86IfwV7psZa/view?usp=drive_link' },
+    { title: 'Hasil Penelaahan RKBMN TA 2027 Non-SIMAN', url: 'https://drive.google.com/file/d/1NbB9LW7Vo3Y_CZBlt71ysoFTnoL_6Zwb/view?usp=drive_link' },
+    { title: 'Hasil Penelaahan RKBMN TA 2027 SIMAN Tahap I', url: 'https://drive.google.com/file/d/1CkMHk4ae6dVdz6t6VEL40vlU7jZX6yRv/view?usp=drive_link' },
+  ],
+}
