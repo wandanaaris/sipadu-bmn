@@ -26,6 +26,8 @@ describe('Form Akun Mitra',()=>{
   render(<AkunMitraForm satkerCode="692310" onSaved={()=>{}} repository={repository}/>)
   expect(await screen.findByRole('heading',{name:'Pemutakhiran Data Akun Mitra'})).toBeInTheDocument()
   expect(screen.getByRole('button',{name:/Data Unit/})).toBeInTheDocument()
+  expect(screen.getByRole('heading',{name:'Data Unit (Satker)'})).toBeInTheDocument()
+  expect(screen.queryByText('Data Unit (Kanwil)')).not.toBeInTheDocument()
   expect(screen.getByRole('button',{name:/Pejabat KPB/})).toBeInTheDocument()
   expect(screen.getByRole('button',{name:/Operator/})).toBeInTheDocument()
   expect(screen.queryByText('Status pendaftaran')).not.toBeInTheDocument()

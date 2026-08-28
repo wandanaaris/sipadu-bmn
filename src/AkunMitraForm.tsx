@@ -55,7 +55,7 @@ export function AkunMitraForm({satkerCode,onSaved,repository=activeMitraReposito
 type CommonProps={errors:Partial<Record<string,string>>;touched:Record<string,boolean>;touch:(key:string)=>void}
 function UnitFields({value,errors,touched,touch,update,upload,satkerCode,satkerName}:{value:UnitData;update:(key:keyof UnitData,value:string)=>void;upload:(file:File)=>void;satkerCode:string;satkerName:string}&CommonProps){
  const code20=`137040900${satkerCode}000KD`,prefix='unit.'
- return <div className="akun-section"><div className="akun-section-head"><h3>Data Unit (Kanwil)</h3><p>Identitas kantor dan unggahan foto gedung.</p></div><div className="akun-field-grid">
+ return <div className="akun-section"><div className="akun-section-head"><h3>Data Unit (Satker)</h3><p>Identitas kantor dan unggahan foto gedung.</p></div><div className="akun-field-grid">
   <label>Nama unit<input value={satkerName} readOnly/></label><label>Kode Satker 20 digit<input value={code20} readOnly/></label>
   <ValidatedField field="npwpKantor" label="NPWP kantor" value={value.npwpKantor} error={errors.npwpKantor} showError={touched[prefix+'npwpKantor']} onBlur={()=>touch('npwpKantor')} onChange={v=>update('npwpKantor',v)}/>
   <ValidatedField field="emailKantor" label="Email kantor" type="email" value={value.emailKantor} error={errors.emailKantor} showError={touched[prefix+'emailKantor']} onBlur={()=>touch('emailKantor')} onChange={v=>update('emailKantor',v)}/>
