@@ -1,4 +1,4 @@
-export type TaskMethod = 'spreadsheet' | 'portal' | 'upload'
+export type TaskMethod = 'spreadsheet' | 'portal' | 'upload' | 'monitoring'
 export type TaskStatus = 'belum' | 'proses' | 'verifikasi' | 'persetujuan' | 'perbaikan' | 'selesai' | 'ditutup'
 
 export type Satker = { code: string; name: string; slug: string }

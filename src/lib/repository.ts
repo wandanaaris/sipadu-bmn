@@ -19,7 +19,8 @@ function applyFinalMeta(tasks:Task[]):Task[]{
     return {...t,title:o.title,description:o.description,link:o.link,uploadLink:o.uploadLink??t.uploadLink,references:o.references??t.references}
   })
 }
-const TASKS_CACHE_KEY='sipadu_tasks_cache_v1'
+const TASKS_CACHE_KEY='sipadu_tasks_cache_v5'
+const LOCAL_PREVIEW_TASK_IDS=new Set(['perubahan-nama-logo-kementerian-2026'])
 const TASKS_CACHE_MS=60000
 function readTasksCache():{tasks:Task[];source:'supabase'|'fallback'}|null{
   try{
@@ -36,7 +37,8 @@ export async function loadTasks(force=false): Promise<{ tasks: Task[]; source: '
   if (!isSupabaseConfigured || !supabase) return { tasks: await localOnly(applyFinalMeta(fallback())), source: 'fallback' }
   const { data, error } = await supabase.rpc('get_active_portal')
   if (!error && Array.isArray(data) && data.length) {
-    const result={tasks:await localOnly(applyFinalMeta(data as unknown as Task[])),source:'supabase' as const}
+    const localPreviewTasks=import.meta.env.DEV?finalTasks.filter(local=>LOCAL_PREVIEW_TASK_IDS.has(local.id)&&!data.some((item:any)=>item.id===local.id)):[]
+    const result={tasks:await localOnly(applyFinalMeta([...(data as unknown as Task[]),...localPreviewTasks])),source:'supabase' as const}
     try{sessionStorage.setItem(TASKS_CACHE_KEY,JSON.stringify({at:Date.now(),payload:result}))}catch{/* penuh: abaikan */}
     return result
   }
@@ -74,7 +76,8 @@ export async function createOpenSubmission(input:{task:Task;satkerCode:string;se
   return final as {submissionNumber:string;status:string;submittedAt:string;documentCount:number}
 }
 export async function getSubmissionReceipt(number:string){if(!supabase)return null;const{data,error}=await supabase.rpc('get_submission_receipt',{p_number:number});if(error)return null;return data as {submissionNumber:string;status:string;task:string;satker:string;submittedAt:string|null;reviewNote:string|null;documentCount:number}|null}
-export async function loadSubmissions():Promise<SubmissionRecord[]>{if(!supabase)return[];const{data,error}=await supabase.from('submissions').select('id,submission_number,sender_name,sender_phone,sender_note,status,review_note,submitted_at,created_at,tasks(task_key,title),satkers(code,name),supporting_documents(id,document_type,original_filename,stored_path,file_size,mime_type,verification_status,archive_status,drive_url,review_note)').order('created_at',{ascending:false});if(error)throw new Error(error.message);return(data??[])as unknown as SubmissionRecord[]}
+export function countPendingVerifications(items:SubmissionRecord[]):number{return items.filter(item=>item.status==='menunggu_verifikasi').length}
+export async function loadSubmissions(client:typeof supabase=supabase):Promise<SubmissionRecord[]>{if(!client)return[];const{data,error}=await client.rpc('get_verification_inbox');if(error)throw new Error(error.message);return(data??[])as unknown as SubmissionRecord[]}
 export async function documentPreviewUrl(path:string){if(!supabase)return null;const{data,error}=await supabase.storage.from('submission-inbox').createSignedUrl(path,300);return error?null:data.signedUrl}
 export async function reviewSubmission(id:string,status:'diterima'|'perlu_perbaikan'|'ditolak',note:string){clearTasksCache();if(!supabase)throw new Error('Database belum tersedia.');const{data:submission,error:readError}=await supabase.from('submissions').select('assignment_id').eq('id',id).single();if(readError)throw readError;const now=new Date().toISOString();const{error}=await supabase.from('submissions').update({status,review_note:note||null,reviewed_at:now}).eq('id',id);if(error)throw error;const docStatus=status==='diterima'?'diterima':status==='perlu_perbaikan'?'perlu_perbaikan':'ditolak';await supabase.from('supporting_documents').update({verification_status:docStatus,review_note:note||null,archive_status:status==='diterima'?'pending_drive':'inbox'}).eq('submission_id',id);const assignmentStatus:TaskStatus=status==='diterima'?'selesai':status==='perlu_perbaikan'?'perbaikan':'belum';const assignmentUpdate=status==='diterima'?{status:assignmentStatus,progress:100,completed_at:now,updated_at:now}:{status:assignmentStatus,completed_at:null,updated_at:now};await supabase.from('task_assignments').update(assignmentUpdate).eq('id',submission.assignment_id)}
 

@@ -1,8 +1,23 @@
-import type { Task } from './data'
+import { satkers, type Task } from './data'
 
 const a = (satker:string, progress:number, status:Task['assignments'][number]['status'], missing:string[]):Task['assignments'][number] => ({ satker, progress, status, missing, updated:'Sinkronisasi 20 Agustus 2026', revisionCount:0 })
 
 export const finalTasks:Task[] = [
+  {
+    id:'perubahan-nama-logo-kementerian-2026',
+    title:'Perubahan Nama dan Logo Kementerian pada Aset BMN',
+    description:'Memeriksa dan menyesuaikan seluruh identitas/logo pada aset BMN dari Kementerian Hukum dan HAM/Pengayoman menjadi identitas Kementerian Imigrasi dan Pemasyarakatan. Meliputi Rumah Negara, Tanah, Kendaraan Dinas Transpas dan Ambulance, serta aset BMN inventaris lainnya.',
+    method:'spreadsheet', due:'8 September 2026',
+    letter:'Surat Kanwil Nomor WP.4-PB.03.04-3 tanggal 7 September 2026',
+    link:'https://drive.google.com/drive/folders/18T1CV7H-ojJHtFifYGHX7nSwbUOt0-5i?usp=sharing',
+    uploadLink:'https://drive.google.com/drive/folders/18T1CV7H-ojJHtFifYGHX7nSwbUOt0-5i?usp=sharing',
+    active:true, priority:'tinggi',
+    references:[
+      {label:'Folder Upload Laporan',url:'https://drive.google.com/drive/folders/18T1CV7H-ojJHtFifYGHX7nSwbUOt0-5i?usp=sharing'},
+      {label:'Format Laporan Pelaksanaan',url:'https://docs.google.com/document/d/1MnuaxlsbUQPx4jalg0z9RYpAHRfKovo5/edit?usp=sharing&ouid=114001219248527397686&rtpof=true&sd=true'}
+    ],
+    assignments:satkers.map(s=>({satker:s.code,progress:0,status:'belum' as const,missing:['Pemeriksaan seluruh aset berlogo Pengayoman/Kementerian Hukum dan HAM','Penyesuaian nama dan logo pada aset yang masih lama','Laporan kegiatan dan dokumentasi diunggah ke folder Drive'],updated:'Belum diperbarui',revisionCount:0}))
+  },
   {
     id:"plang-rumah", title:"Pergantian Plang Tanah dan Papan Rumah Negara", description:"Penyampaian laporan pengamanan aset dan bukti pengisian pergantian plang tanah serta papan rumah negara.",
     method:'spreadsheet', due:"20 Agustus 2026", letter:"Monitoring pergantian plang tanah dan papan rumah negara", link:"https://docs.google.com/spreadsheets/d/1_UoTVM5_CAA1-T-1sxIz67mZwTeFbxueAhNS0XFAPXU/edit?gid=0#gid=0", active:true, priority:"tinggi",
