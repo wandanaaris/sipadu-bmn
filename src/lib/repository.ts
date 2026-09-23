@@ -16,7 +16,7 @@ function applyFinalMeta(tasks:Task[]):Task[]{
   return tasks.map(t=>{
     const o=finalTasks.find(f=>f.id===t.id)
     if(!o)return t
-    return {...t,title:o.title,description:o.description,link:o.link,uploadLink:o.uploadLink??t.uploadLink,formUrl:o.formUrl??t.formUrl,references:o.references??t.references}
+    return {...t,title:o.title,description:o.description,link:t.link??o.link,uploadLink:t.uploadLink??o.uploadLink,formUrl:t.formUrl??o.formUrl,references:t.references?.length?t.references:o.references}
   })
 }
 const TASKS_CACHE_KEY='sipadu_tasks_cache_v6'

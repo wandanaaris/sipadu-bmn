@@ -2,6 +2,7 @@ import { satkers, type Task } from './data'
 
 const a = (satker:string, progress:number, status:Task['assignments'][number]['status'], missing:string[]):Task['assignments'][number] => ({ satker, progress, status, missing, updated:'Sinkronisasi 20 Agustus 2026', revisionCount:0 })
 const persediaanUploadLink='https://drive.google.com/drive/folders/10_p-0pr9jPKI_S6fj9rlu59qRj_ixFKd?usp=drive_link'
+const persediaanNonAmunisiUploadLink='https://drive.google.com/drive/folders/1Cyool9Cj3cxPTuyq_anKMz94k1psGaPB?usp=sharing'
 const persediaanApprovalFolderLink='https://drive.google.com/drive/folders/1TnomZzo60tAIcjTVzpRiYDemVsYLwJ7u?usp=sharing'
 const persediaanSkTemplateLink='https://docs.google.com/document/d/1-HXy31zJtSRSaneFvDV08Ch1BRgjez0X/edit?usp=sharing&ouid=100461811917094219720&rtpof=true&sd=true'
 const persediaanBaTemplateLink='https://docs.google.com/document/d/1K159pKFhYiZjwJnesqnLpg7ijsjQgIxo/edit?usp=sharing&ouid=100461811917094219720&rtpof=true&sd=true'
@@ -151,7 +152,7 @@ export const finalTasks:Task[] = [
   },
   {
     id:'persediaan-usang-non-amunisi-2026', title:'Tindak Lanjut Pemusnahan Persediaan Usang Non-Amunisi', description:'Monitoring tindak lanjut pemusnahan persediaan usang selain amunisi setelah persetujuan Pengguna Barang. Jalur ini mencakup pemusnahan internal, Berita Acara Pemusnahan, SK Penghapusan karena Pemusnahan, dan pelaporan sesuai persetujuan.',
-    method:'spreadsheet', due:'Sesuai batas waktu dalam persetujuan', letter:'Persetujuan Pemusnahan Barang Persediaan Usang jalur NON POLRI', link:persediaanUploadLink, uploadLink:persediaanUploadLink, active:true, priority:'tinggi', workflow:'staged-destruction', stages:persediaanNonAmunisiStages,
+    method:'spreadsheet', due:'Sesuai batas waktu dalam persetujuan', letter:'Persetujuan Pemusnahan Barang Persediaan Usang jalur NON POLRI', link:persediaanNonAmunisiUploadLink, uploadLink:persediaanNonAmunisiUploadLink, active:true, priority:'tinggi', workflow:'staged-destruction', stages:persediaanNonAmunisiStages,
     references:persediaanReferenceLinks,
     assignments:persediaanNonAmunisiSatkers.map(s=>persediaanAssignment(s,persediaanNonAmunisiRequirements))
   },
