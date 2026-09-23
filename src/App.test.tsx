@@ -14,7 +14,8 @@ describe('Portal Monitoring BMN MVP', () => {
     expect(screen.getByRole('heading', { name: 'Dashboard Korwil BMN' })).toBeInTheDocument()
     expect(screen.getByText('Fondasi nilai kinerja UPT sudah disiapkan')).toBeInTheDocument()
     expect(screen.getAllByText('RKBMN SIMAN dan Non-SIMAN').length).toBeGreaterThan(0)
-    expect(screen.getAllByText('Tindak Lanjut Pemusnahan Persediaan Usang').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Tindak Lanjut Pemusnahan Persediaan Usang Amunisi').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Tindak Lanjut Pemusnahan Persediaan Usang Non-Amunisi').length).toBeGreaterThan(0)
   })
 
   it('menampilkan login Korwil tanpa pendaftaran publik', async () => {

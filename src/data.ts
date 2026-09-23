@@ -1,5 +1,6 @@
 export type TaskMethod = 'spreadsheet' | 'portal' | 'upload' | 'monitoring'
 export type TaskStatus = 'belum' | 'proses' | 'verifikasi' | 'persetujuan' | 'perbaikan' | 'selesai' | 'ditutup'
+export type StageState = 'terkunci' | 'terbuka' | 'menunggu_verifikasi' | 'selesai' | 'perbaikan'
 
 export type Satker = { code: string; name: string; slug: string }
 export type Assignment = {
@@ -11,7 +12,10 @@ export type Assignment = {
   submittedAt?: string
   completedAt?: string
   revisionCount: number
+  currentStage?: number
+  stageStates?: StageState[]
 }
+export type WorkflowStage = { id:string; label:string; description:string; requirements:string[] }
 export type Task = {
   id: string
   title: string
@@ -22,9 +26,12 @@ export type Task = {
   link?: string
   active: boolean
   priority: 'normal' | 'tinggi'
+  workflow?: 'staged-destruction'
+  stages?: WorkflowStage[]
   requirements?: Array<{ key:string; label:string; track?:string; required?:boolean; accept?:string }>
   references?: Array<{ label:string; url:string }>
   uploadLink?: string
+  formUrl?: string
   assignments: Assignment[]
 }
 

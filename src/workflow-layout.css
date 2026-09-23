@@ -1,0 +1,71 @@
+/* Layout khusus workflow pemusnahan bertahap */
+.workflow-note{width:100%;margin:0 0 18px;line-height:1.45}
+.stage-list{width:100%;gap:14px}
+.stage-card{box-shadow:0 2px 8px rgba(16,31,47,.04)}
+.stage-card-head{min-height:72px;padding:15px 17px}
+.stage-card-head .status{flex:none;white-space:nowrap}
+.stage-body{padding:17px 18px 18px;background:#fbfdff}
+.stage-body h3{font-size:13px;margin-bottom:13px}
+.stage-file{min-height:55px;margin:9px 0;padding:11px 13px;background:#fff}
+.stage-file b{background:#edf5fb;border-radius:999px;padding:4px 8px;font-size:10px}
+.stage-body>.primary{display:inline-flex;align-items:center;justify-content:center;gap:7px;margin-top:8px;margin-right:8px;min-height:38px;text-decoration:none}
+.stage-body>button.primary{border:0;padding:0 16px}
+.stage-review{margin-top:14px}
+.stage-review>div{margin-top:3px}
+.staged-references{display:block;margin:15px 0;padding:15px}
+.staged-references>svg{float:left;margin-right:10px}
+.staged-references .reference-buttons{display:grid;gap:8px;margin-top:11px}
+.staged-references .reference-buttons a{justify-content:space-between;width:100%;min-height:36px;padding:0 10px}
+.detail-side{align-self:start;position:sticky;top:20px}
+.detail-side>h3{margin-bottom:15px}
+.detail-side dl{margin-bottom:0}
+@media(max-width:780px){
+ .stage-card-head{align-items:flex-start;flex-wrap:wrap}
+ .stage-card-head>div{min-width:calc(100% - 48px)}
+ .stage-card-head .status{margin-left:39px}
+ .stage-body>.primary{width:100%;margin:7px 0 0}
+ .stage-body>button.primary{width:100%;white-space:normal;min-height:44px;line-height:1.35}
+ .stage-review>div{display:grid}
+ .stage-review button{width:100%}
+ .detail-side{position:static}
+}
+@media(max-width:480px){
+ .stage-body{padding:14px}
+ .stage-file{display:block}
+ .stage-file b{display:inline-block;margin-top:8px}
+ .stage-card-head strong{font-size:13px}
+}
+
+/* Panel Ingatkan Satker */
+.remind-panel{margin-bottom:18px}
+.remind-list{display:grid;gap:10px;width:100%}
+.remind-row{border:1px solid var(--border,#dde5ee);border-radius:12px;overflow:hidden;background:#fff}
+.remind-row-head{display:flex;align-items:center;justify-content:space-between;width:100%;gap:12px;padding:13px 16px;background:none;border:0;cursor:pointer;text-align:left}
+.remind-row-head strong{font-size:14px;color:inherit}
+.remind-row-head span{font-size:12px;opacity:.75;flex:1}
+.remind-row-head b{font-size:11px;opacity:.6}
+.remind-row-body{padding:4px 16px 16px;border-top:1px dashed var(--border,#dde5ee)}
+.remind-row-body ul{list-style:none;margin:12px 0;display:grid;gap:9px}
+.remind-row-body li{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.remind-row-body li>span{flex:1;min-width:180px;font-size:13px}
+.remind-row-body li>small{font-size:12px;opacity:.7}
+.remind-copied{display:block;margin-top:8px;color:#0d8a4f;font-size:12px}
+
+/* Form kontak & aksi WhatsApp */
+.remind-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.remind-actions .primary,.remind-actions .ghost{min-height:36px;padding:0 14px;font-size:13px}
+.remind-contact-form{display:grid;gap:10px;margin-top:8px;padding:13px;background:#f6f9fc;border-radius:10px}
+.remind-contact-form label{display:grid;gap:5px;font-size:12px;font-weight:600}
+.remind-contact-form input{min-height:36px;padding:0 11px;border:1px solid var(--border,#dde5ee);border-radius:8px;background:#fff;font-size:13px}
+.remind-contact-actions{display:flex;gap:8px}
+.remind-contact-actions .primary,.remind-contact-actions .ghost{min-height:36px;padding:0 14px;font-size:13px}
+
+/* Nilai Kinerja UPT */
+.performance-table table{width:100%}
+.performance-table td,.performance-table th{padding:11px 13px}
+.rank-medal{font-size:15px;font-weight:700}
+.score-badge{display:inline-flex;align-items:center;justify-content:center;min-width:44px;padding:5px 10px;border-radius:999px;font-size:14px;font-weight:700}
+.score-excellent{background:#e6f7ef;color:#0d8a4f}
+.score-good{background:#e8f1fb;color:#1d5fbf}
+.score-fair{background:#fdf3e0;color:#a06a00}
+.score-poor{background:#fbe9e7;color:#b3372b}

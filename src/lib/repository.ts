@@ -16,11 +16,12 @@ function applyFinalMeta(tasks:Task[]):Task[]{
   return tasks.map(t=>{
     const o=finalTasks.find(f=>f.id===t.id)
     if(!o)return t
-    return {...t,title:o.title,description:o.description,link:o.link,uploadLink:o.uploadLink??t.uploadLink,references:o.references??t.references}
+    return {...t,title:o.title,description:o.description,link:o.link,uploadLink:o.uploadLink??t.uploadLink,formUrl:o.formUrl??t.formUrl,references:o.references??t.references}
   })
 }
-const TASKS_CACHE_KEY='sipadu_tasks_cache_v5'
-const LOCAL_PREVIEW_TASK_IDS=new Set(['perubahan-nama-logo-kementerian-2026'])
+const TASKS_CACHE_KEY='sipadu_tasks_cache_v6'
+const LOCAL_PREVIEW_TASK_IDS=new Set(['persediaan-usang-amunisi-2026','persediaan-usang-non-amunisi-2026'])
+const LOCAL_REPLACED_TASK_IDS=new Set(['persediaan-usang'])
 const TASKS_CACHE_MS=60000
 function readTasksCache():{tasks:Task[];source:'supabase'|'fallback'}|null{
   try{
@@ -37,8 +38,9 @@ export async function loadTasks(force=false): Promise<{ tasks: Task[]; source: '
   if (!isSupabaseConfigured || !supabase) return { tasks: await localOnly(applyFinalMeta(fallback())), source: 'fallback' }
   const { data, error } = await supabase.rpc('get_active_portal')
   if (!error && Array.isArray(data) && data.length) {
-    const localPreviewTasks=import.meta.env.DEV?finalTasks.filter(local=>LOCAL_PREVIEW_TASK_IDS.has(local.id)&&!data.some((item:any)=>item.id===local.id)):[]
-    const result={tasks:await localOnly(applyFinalMeta([...(data as unknown as Task[]),...localPreviewTasks])),source:'supabase' as const}
+    const localData=import.meta.env.DEV?data.filter((item:any)=>!LOCAL_REPLACED_TASK_IDS.has(item.id)):data
+    const localPreviewTasks=import.meta.env.DEV?finalTasks.filter(local=>LOCAL_PREVIEW_TASK_IDS.has(local.id)&&!localData.some((item:any)=>item.id===local.id)):[]
+    const result={tasks:await localOnly(applyFinalMeta([...(localData as unknown as Task[]),...localPreviewTasks])),source:'supabase' as const}
     try{sessionStorage.setItem(TASKS_CACHE_KEY,JSON.stringify({at:Date.now(),payload:result}))}catch{/* penuh: abaikan */}
     return result
   }
@@ -83,3 +85,26 @@ export async function reviewSubmission(id:string,status:'diterima'|'perlu_perbai
 
 
 export async function transferSubmission(id:string,targetCode:string,note:string){clearTasksCache();if(!supabase)throw new Error('Database belum tersedia.');const[{data:submission},{data:satker}]=await Promise.all([supabase.from('submissions').select('task_id').eq('id',id).single(),supabase.from('satkers').select('id').eq('code',targetCode).single()]);if(!submission||!satker)throw new Error('Satker tujuan tidak ditemukan.');const{data:assignment}=await supabase.from('task_assignments').select('id').eq('task_id',submission.task_id).eq('satker_id',satker.id).maybeSingle();if(!assignment)throw new Error('Satker tujuan tidak ditugaskan pada pekerjaan ini.');await supabase.from('submissions').update({satker_id:satker.id,assignment_id:assignment.id,status:'dialihkan',review_note:note||'Dialihkan oleh Korwil',reviewed_at:new Date().toISOString()}).eq('id',id);await supabase.from('supporting_documents').update({assignment_id:assignment.id}).eq('submission_id',id)}
+
+export async function submitStagedStage(p_token:string,p_task_key:string,p_stage_index:number){clearTasksCache();if(!supabase)throw new Error('Koneksi belum tersedia.');const{data,error}=await supabase.rpc('submit_staged_stage',{p_token:p_token,p_task_key:p_task_key,p_stage_index:p_stage_index});if(error)throw new Error(error.message);return data as {ok:boolean;error?:string}}
+
+export async function reviewStagedStage(p_task_key:string,p_satker_code:string,p_stage_index:number,p_action:'verify'|'return'){clearTasksCache();if(!supabase)throw new Error('Koneksi belum tersedia.');const{data,error}=await supabase.rpc('review_staged_stage',{p_task_key:p_task_key,p_satker_code:p_satker_code,p_stage_index:p_stage_index,p_action:p_action});if(error)throw new Error(error.message);return data as {ok:boolean;error?:string}}
+
+export type SatkerContact={satker_id:string;operator_name:string|null;whatsapp:string}
+export async function loadSatkerContacts():Promise<{contacts:Record<string,SatkerContact>;idsByCode:Record<string,string>}>{
+  if(!supabase)return{contacts:{},idsByCode:{}}
+  const [contactsRes,idsRes]=await Promise.all([
+    supabase.from('satker_contacts').select('satker_id,operator_name,whatsapp'),
+    supabase.rpc('get_satker_ids')
+  ])
+  if(contactsRes.error)throw new Error(contactsRes.error.message)
+  const contacts:Record<string,SatkerContact>={}
+  for(const row of (contactsRes.data??[]) as SatkerContact[])contacts[row.satker_id]=row
+  return{contacts,idsByCode:(idsRes.data as Record<string,string>)??{}}
+}
+export async function saveSatkerContact(satkerId:string,whatsapp:string,operatorName?:string){
+  if(!supabase)throw new Error('Koneksi belum tersedia.')
+  const payload={satker_id:satkerId,whatsapp,operator_name:operatorName?.trim()||null,updated_at:new Date().toISOString()}
+  const{error}=await supabase.from('satker_contacts').upsert(payload,{onConflict:'satker_id'})
+  if(error)throw new Error(error.message)
+}

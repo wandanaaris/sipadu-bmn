@@ -1,6 +1,29 @@
 import { satkers, type Task } from './data'
 
 const a = (satker:string, progress:number, status:Task['assignments'][number]['status'], missing:string[]):Task['assignments'][number] => ({ satker, progress, status, missing, updated:'Sinkronisasi 20 Agustus 2026', revisionCount:0 })
+const persediaanUploadLink='https://drive.google.com/drive/folders/10_p-0pr9jPKI_S6fj9rlu59qRj_ixFKd?usp=drive_link'
+const persediaanApprovalFolderLink='https://drive.google.com/drive/folders/1TnomZzo60tAIcjTVzpRiYDemVsYLwJ7u?usp=sharing'
+const persediaanSkTemplateLink='https://docs.google.com/document/d/1-HXy31zJtSRSaneFvDV08Ch1BRgjez0X/edit?usp=sharing&ouid=100461811917094219720&rtpof=true&sd=true'
+const persediaanBaTemplateLink='https://docs.google.com/document/d/1K159pKFhYiZjwJnesqnLpg7ijsjQgIxo/edit?usp=sharing&ouid=100461811917094219720&rtpof=true&sd=true'
+const persediaanReferenceLinks=[
+  {label:'Surat Persetujuan',url:persediaanApprovalFolderLink},
+  {label:'Template SK Penghapusan',url:persediaanSkTemplateLink},
+  {label:'Template Berita Pemusnahan',url:persediaanBaTemplateLink}
+]
+const persediaanAmunisiSatkers=['692308','692309','692311','692312','692314','692315','692316','692317','692484','692537','692781','692794','692519']
+const persediaanNonAmunisiSatkers=['692308','692309','692311','692316','692317','692484','692794','692519']
+const persediaanAmunisiRequirements=['Persetujuan Pengguna Barang','Rekomendasi pemusnahan dari Polda Riau','Izin pemusnahan dari Kapolri c.q. Baintelkam Polri','Berita Acara Pemusnahan ditandatangani tim yang ditunjuk Kapolda Riau','Laporan kepada KPKNL dan Kepala Biro BMN dengan tembusan sesuai persetujuan']
+const persediaanNonAmunisiRequirements=['Persetujuan Pengguna Barang','Berita Acara Pemusnahan internal','SK Penghapusan karena Pemusnahan','Laporan kepada KPKNL dan Kepala Biro BMN dengan tembusan sesuai persetujuan']
+const persediaanAmunisiStages=[
+  {id:'izin-polri',label:'Tahap I · Pengajuan Izin Pemusnahan ke Polri',description:'Unggah surat pengajuan izin pemusnahan dari Kepolisian RI yang ditujukan kepada Kepala Kepolisian Daerah Riau.',requirements:['Surat Pengajuan Izin Pemusnahan dari Kepolisian RI (ditujukan kepada Kepala Kepolisian Daerah Riau)']},
+  {id:'pelaksanaan',label:'Tahap II · Pelaksanaan Pemusnahan',description:'Unggah dokumen pelaksanaan pemusnahan oleh tim yang ditunjuk Kapolda Riau.',requirements:['Berita Acara Pemusnahan','SK/dokumen penghapusan jika dipersyaratkan','Dokumentasi pelaksanaan pemusnahan']},
+  {id:'pelaporan',label:'Tahap III · Pelaporan',description:'Unggah bukti laporan kepada Pengguna Barang dan Pengelola Barang.',requirements:['Laporan kepada KPKNL masing-masing','Laporan kepada Kepala Biro BMN','Capture SRIKANDI untuk laporan kepada Kepala Biro BMN dan bukti pengiriman resmi untuk laporan kepada KPKNL masing-masing']}
+]
+const persediaanNonAmunisiStages=[
+  {id:'pelaksanaan-internal',label:'Tahap I · Pemusnahan Internal',description:'Unggah dokumen pelaksanaan pemusnahan persediaan usang secara internal.',requirements:['Berita Acara Pemusnahan','SK Penghapusan BMN karena Pemusnahan','Dokumentasi pelaksanaan pemusnahan']},
+  {id:'pelaporan',label:'Tahap II · Pelaporan',description:'Unggah bukti laporan kepada Pengguna Barang dan Pengelola Barang.',requirements:['Laporan kepada KPKNL masing-masing','Laporan kepada Kepala Biro BMN','Capture SRIKANDI untuk laporan kepada Kepala Biro BMN dan bukti pengiriman resmi untuk laporan kepada KPKNL masing-masing']}
+]
+const persediaanAssignment=(satker:string,requirements:string[])=>a(satker,0,'belum',requirements)
 
 export const finalTasks:Task[] = [
   {
@@ -121,15 +144,16 @@ export const finalTasks:Task[] = [
     ]
   },
   {
-    id:"persediaan-usang", title:"Tindak Lanjut Pemusnahan Persediaan Usang", description:"Seluruh satker yang memiliki persediaan usang telah mengajukan usulan dan saat ini menunggu persetujuan dari Pengguna Barang.",
-    method:'spreadsheet', due:"Tidak ada tenggat", letter:"Monitoring tindak lanjut pemusnahan persediaan usang", link:"https://docs.google.com/spreadsheets/d/1OeAZacp7wmOiKPsBiz2jFt1peHto-VHbIJ3podn9yXQ/edit?gid=0#gid=0", active:true, priority:"normal",
-    assignments:[
-      a("692308",100,"persetujuan",[]), a("692309",100,"persetujuan",[]), a("692311",100,"persetujuan",[]),
-      a("692312",100,"persetujuan",[]), a("692314",100,"persetujuan",[]), a("692315",100,"persetujuan",[]),
-      a("692316",100,"persetujuan",[]), a("692317",100,"persetujuan",[]), a("692484",100,"persetujuan",[]),
-      a("692519",100,"persetujuan",[]), a("692537",100,"persetujuan",[]), a("692781",100,"persetujuan",[]),
-      a("692794",100,"persetujuan",[]),
-    ]
+    id:'persediaan-usang-amunisi-2026', title:'Tindak Lanjut Pemusnahan Persediaan Usang Amunisi', description:'Monitoring tindak lanjut pemusnahan persediaan usang amunisi setelah persetujuan Pengguna Barang. Jalur ini mencakup rekomendasi Polda Riau, izin Kapolri c.q. Baintelkam Polri, pelaksanaan oleh tim yang ditunjuk Kapolda Riau, Berita Acara Pemusnahan, dan pelaporan sesuai persetujuan.',
+    method:'spreadsheet', due:'Sesuai batas waktu dalam persetujuan', letter:'Persetujuan Pemusnahan Barang Persediaan Usang jalur POLRI', link:persediaanUploadLink, uploadLink:persediaanUploadLink, active:true, priority:'tinggi', workflow:'staged-destruction', stages:persediaanAmunisiStages,
+    references:persediaanReferenceLinks,
+    assignments:persediaanAmunisiSatkers.map(s=>persediaanAssignment(s,persediaanAmunisiRequirements))
+  },
+  {
+    id:'persediaan-usang-non-amunisi-2026', title:'Tindak Lanjut Pemusnahan Persediaan Usang Non-Amunisi', description:'Monitoring tindak lanjut pemusnahan persediaan usang selain amunisi setelah persetujuan Pengguna Barang. Jalur ini mencakup pemusnahan internal, Berita Acara Pemusnahan, SK Penghapusan karena Pemusnahan, dan pelaporan sesuai persetujuan.',
+    method:'spreadsheet', due:'Sesuai batas waktu dalam persetujuan', letter:'Persetujuan Pemusnahan Barang Persediaan Usang jalur NON POLRI', link:persediaanUploadLink, uploadLink:persediaanUploadLink, active:true, priority:'tinggi', workflow:'staged-destruction', stages:persediaanNonAmunisiStages,
+    references:persediaanReferenceLinks,
+    assignments:persediaanNonAmunisiSatkers.map(s=>persediaanAssignment(s,persediaanNonAmunisiRequirements))
   },
   {
     id:"tanah-rusak-berat", title:"Tindaklanjut Tanah Rusak Berat", description:"Tindaklanjut penanganan tanah rusak berat sesuai monitoring BMN Ditjen PAS Riau.",
