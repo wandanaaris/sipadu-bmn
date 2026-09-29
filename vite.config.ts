@@ -5,6 +5,16 @@ import { localMitraSqlitePlugin } from './local-api/vitePlugin.js'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(),localMitraSqlitePlugin()],
+  server: {
+    host: true,
+    port: 5173,
+    strictPort: true,
+    // Vite mentransformasi modul satu per satu pada awal muat;
+    // warmup membuat modul inti siap sebelum halaman dibuka.
+    warmup: {
+      clientFiles: ['./src/main.tsx', './src/App.tsx', './src/finalTasks.ts', './src/dukmanTasks.ts'],
+    },
+  },
   build: {
     rollupOptions: {
       output: {

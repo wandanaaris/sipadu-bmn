@@ -4,6 +4,10 @@
 
 *Satu Portal, Data Terpadu, Tindak Lanjut Terpantau.*
 
+## Pedoman Acuan
+
+- [Pedoman Pelaksanaan Tugas dan Fungsi Operator BMN (berdasarkan DUKMAN TA 2026)](docs/PEDOMAN-OPERATOR-BMN-DUKMAN-TA-2026.md) — 11 isu strategis, 12 tugas operator, kalender kerja, dan standar kelulusan verifikasi.
+
 ## Fitur MVP
 
 - Dashboard Korwil BMN: ringkasan, progress pekerjaan, monitoring satker, verifikasi, tutup/buka pekerjaan.

@@ -15,7 +15,14 @@ export type Assignment = {
   currentStage?: number
   stageStates?: StageState[]
 }
-export type WorkflowStage = { id:string; label:string; description:string; requirements:string[] }
+export type StageChoice = { value:string; label:string }
+export type StageField = {
+  key:string
+  label:string
+  type:'text'|'number'|'date'|'item-luas-table'|'item-nilai-table'|'pilihan'
+  choices?: StageChoice[]
+}
+export type WorkflowStage = { id:string; label:string; description:string; requirements:string[]; link?:string; confirmOnly?:boolean; confirmLabel?:string; fields?:StageField[] }
 export type Task = {
   id: string
   title: string

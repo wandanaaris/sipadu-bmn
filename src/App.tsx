@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
-import { Activity, Archive, ArrowLeft, BarChart3, Building2, CalendarDays, Check, CircleAlert, ClipboardCheck, Clock3, Database, ExternalLink, Eye, EyeOff, FileInput, FileSpreadsheet, FileText, Filter, KeyRound, LayoutDashboard, LockKeyhole, LogOut, Mail, Menu, Search, Settings, ShieldCheck, TrendingUp, Upload, Users, X } from 'lucide-react'
-import { telaahRkbmn, satkers, statusLabel, type Task, type TaskMethod, type TaskStatus } from './data'
+import { Activity, Archive, ArrowLeft, BarChart3, Bell, Building2, CalendarDays, Check, CircleAlert, ClipboardCheck, Clock3, Database, ExternalLink, Eye, EyeOff, FileInput, FileSpreadsheet, FileText, Filter, KeyRound, LayoutDashboard, LockKeyhole, LogOut, Mail, Menu, Search, Settings, ShieldCheck, TrendingUp, Upload, Users, X } from 'lucide-react'
+import { telaahRkbmn, satkers, statusLabel, type Task, type TaskMethod, type TaskStatus, type WorkflowStage } from './data'
 import { finalTasks } from './finalTasks'
 import { countPendingVerifications, createOpenSubmission, createTask, documentPreviewUrl, loadSatkerContacts, loadSubmissions, loadTasks, persistAssignmentStatus, persistTaskActive, reviewStagedStage, reviewSubmission, saveSatkerContact, submitLinkSubmission, submitStagedStage, transferSubmission, type SatkerContact, type SubmissionRecord } from './lib/repository'
 import { currentAdmin, signInAdmin, signOutAdmin, type AdminProfile } from './lib/auth'
 import { AkunMitraForm } from './AkunMitraForm'
 import { AkunMitraAdmin } from './AkunMitraAdmin'
 import { sortSatkerWorkItems } from './taskSorting'
+import { StageFieldsForm, PspInfoPanel, AsetRusakPanel, readIsian, type IsianTahap } from './PemanfaatanFields'
+import { DetailPekerjaanPanel, MonitoringSatkerPage, TaskListPage } from './AdminPanels'
 
 
 const fmtUpdated=(v:string)=>{if(!v||v==='Belum diperbarui')return v;const d=new Date(v);if(isNaN(d.getTime()))return v;return `${d.toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})} · ${d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',timeZone:'Asia/Jakarta'})} WIB`}
@@ -17,7 +19,7 @@ import './workflow-layout.css'
 
 type View = 'admin' | 'satker'
 type FilterState = 'semua' | TaskStatus
-type AdminPage = 'summary' | 'executive' | 'tasks' | 'monitoring' | 'data' | 'akun-mitra' | 'verification' | 'archive' | 'performance' | 'settings'
+type AdminPage = 'summary' | 'executive' | 'monev' | 'reminder' | 'tasks' | 'data' | 'akun-mitra' | 'verification' | 'archive' | 'performance' | 'settings'
 
 const methodMeta: Record<TaskMethod,{label:string; Icon: typeof FileSpreadsheet}> = {
   spreadsheet:{label:'Spreadsheet eksternal',Icon:FileSpreadsheet},
@@ -120,10 +122,11 @@ function Brand(){return <div className="brand"><div className="brand-logo-wrap">
 
 function AdminView({tasks,dataSource,adminProfile,onLogout,onRefresh,filter,setFilter,query,setQuery,setView,selectedSatker:_selectedSatker,setSelectedSatker:_setSelectedSatker,detail,setDetail,toggleTask,updateAssignment,onOpenExec}:SharedProps&{dataSource:'supabase'|'fallback';adminProfile:AdminProfile;onLogout:()=>Promise<void>;onRefresh:()=>Promise<void>;filter:FilterState;setFilter:(v:FilterState)=>void;query:string;setQuery:(v:string)=>void;toggleTask:(id:string)=>void;updateAssignment:(taskId:string,satker:string,status:TaskStatus)=>void;onOpenExec:()=>void}){
   const [adminPage,setAdminPage]=useState<AdminPage>('summary')
+  const [monevSatker,setMonevSatker]=useState<string|null>(null)
   const [showCreate,setShowCreate]=useState(false)
   const [verify,setVerify]=useState(0)
   useEffect(()=>{let mounted=true;void loadSubmissions().then(items=>{if(mounted)setVerify(countPendingVerifications(items))}).catch(()=>{if(mounted)setVerify(0)});return()=>{mounted=false}},[tasks])
-  const pageTitle:Record<AdminPage,string>={summary:'Dashboard Korwil BMN',executive:'Ringkasan Pimpinan',tasks:'Daftar Pekerjaan',monitoring:'Monitoring Satker',data:'Data Center BMN','akun-mitra':'Data Akun Mitra',verification:'Verifikasi Pekerjaan',archive:'Arsip Pekerjaan',performance:'Kinerja UPT',settings:'Pengaturan Portal'}
+  const pageTitle:Record<AdminPage,string>={summary:'Dashboard Korwil BMN',executive:'Ringkasan Pimpinan',monev:'Monitoring Satker',reminder:'Reminder Satker',tasks:'Daftar Pekerjaan',data:'Data Center BMN','akun-mitra':'Data Akun Mitra',verification:'Verifikasi Pekerjaan',archive:'Arsip Pekerjaan',performance:'Kinerja UPT',settings:'Pengaturan Portal'}
   const active=tasks.filter(t=>t.active)
   const allAssignments=active.flatMap(t=>t.assignments.map(a=>({...a,task:t})))
   const stagedPendingCount=tasks.filter(t=>t.workflow==='staged-destruction'&&t.active).flatMap(t=>t.assignments.filter(a=>(a.stageStates??[]).includes('menunggu_verifikasi'))).length
@@ -139,7 +142,8 @@ function AdminView({tasks,dataSource,adminProfile,onLogout,onRefresh,filter,setF
         <button className={adminPage==='summary'?'nav-active':''} onClick={()=>setAdminPage('summary')}><LayoutDashboard/>Ringkasan</button>
         <button onClick={onOpenExec}><TrendingUp/>Ringkasan Pimpinan</button>
         <button className={adminPage==='tasks'?'nav-active':''} onClick={()=>setAdminPage('tasks')}><ClipboardCheck/>Pekerjaan <span>{active.length}</span></button>
-        <button className={adminPage==='monitoring'?'nav-active':''} onClick={()=>setAdminPage('monitoring')}><Users/>Monitoring Satker</button>
+        <button className={adminPage==='monev'?'nav-active':''} onClick={()=>{setMonevSatker(null);setAdminPage('monev')}}><Users/>Monitoring Satker</button>
+        <button className={adminPage==='reminder'?'nav-active':''} onClick={()=>setAdminPage('reminder')}><Bell/>Reminder Satker</button>
         <button className={adminPage==='data'?'nav-active':''} onClick={()=>setAdminPage('data')}><Database/>Data Center BMN</button>
         <button className={adminPage==='akun-mitra'?'nav-active':''} onClick={()=>setAdminPage('akun-mitra')}><KeyRound/>Data Akun Mitra</button>
         <button className={adminPage==='verification'?'nav-active':''} onClick={()=>setAdminPage('verification')}><ShieldCheck/>Verifikasi <span>{verify+stagedPendingCount}</span></button>
@@ -187,7 +191,7 @@ function AdminView({tasks,dataSource,adminProfile,onLogout,onRefresh,filter,setF
         <div className="table-wrap"><table><thead><tr><th>Satker</th><th>Pekerjaan</th><th>Progress</th><th>Status</th><th>Pembaruan</th><th></th></tr></thead><tbody>{filtered.slice(0,12).map(x=><tr key={`${x.task.id}-${x.satker}`}><td><strong>{satkers.find(s=>s.code===x.satker)?.name}</strong><span>{x.satker}</span></td><td>{x.task.title}<small>{methodMeta[x.task.method].label}</small></td><td><Progress value={x.progress}/></td><td><StatusPill status={x.status}/></td><td>{fmtUpdated(x.updated)}</td><td><button className="link-button" onClick={()=>setDetail(x.task.id)}>Periksa</button></td></tr>)}</tbody></table></div>
       </section>
       <section className="performance-note"><LockKeyhole/><div><strong>Fondasi nilai kinerja UPT sudah disiapkan</strong><p>Sistem mencatat ketepatan waktu, kelengkapan pertama, jumlah perbaikan, dan penyelesaian pekerjaan. Bobot penilaian akan ditetapkan kemudian agar transparan dan adil.</p></div><button onClick={()=>setAdminPage('performance')}>Pelajari rancangan</button></section>
-      </>:adminPage!=='executive'?<AdminSection page={adminPage} tasks={tasks} onRefresh={onRefresh} setDetail={setDetail} toggleTask={toggleTask}/>:null}
+      </>:<AdminRouter page={adminPage} tasks={tasks} detail={detail} setDetail={setDetail} toggleTask={toggleTask} setMonev={kode=>{setMonevSatker(kode);setAdminPage('monev')}} onRefresh={onRefresh} monevSatker={monevSatker}/>}
     </main>
     {selectedTask&&<TaskDrawer task={selectedTask} onClose={()=>setDetail(null)} onToggle={()=>toggleTask(selectedTask.id)} updateAssignment={updateAssignment} onRefresh={onRefresh}/>}
     {showCreate&&<CreateTaskModal onClose={()=>setShowCreate(false)} onCreated={async()=>{setShowCreate(false);await onRefresh();setAdminPage('tasks')}}/>}
@@ -552,36 +556,54 @@ function RemindSatkerPanel({tasks}:{tasks:Task[]}){
   return <section className="panel admin-page remind-panel"><div className="panel-head"><div><h2>Ingatkan Satker</h2><p>{satkerEntries.length} satker memiliki pekerjaan belum selesai ({pending.length} penugasan). Tombol WhatsApp membuka chat dengan pesan sudah terisi — tinggal tekan kirim.</p></div><button className="ghost" onClick={()=>void copyAll()}>Salin Semua Pesan</button></div><div className="remind-list">{satkerEntries.map(([code,items])=>{const name=satkers.find(s=>s.code===code)?.name??code;const open=selected===code;const satkerId=idsByCode[code]??'';const contact=contacts[satkerId] as SatkerContact|undefined;return <div className="remind-row" key={code}><button className="remind-row-head" onClick={()=>setSelected(open?null:code)}><strong>{name}</strong><span>{items.length} pekerjaan belum selesai{contact?.operator_name?` · ${contact.operator_name}`:''}</span><b>{open?'▲':'▼'}</b></button>{open&&<div className="remind-row-body"><ul>{items.map(item=><li key={item.title}><span>{item.title}</span><StatusPill status={item.status}/><small>{item.progress}%</small></li>)}</ul>{editing===code?<div className="remind-contact-form"><label>Nama operator<input value={nameInput} onChange={e=>setNameInput(e.target.value)} placeholder="Nama operator (opsional)"/></label><label>Nomor WhatsApp<input value={waInput} onChange={e=>setWaInput(e.target.value)} placeholder="08xxxxxxxxxx"/></label><div className="remind-contact-actions"><button className="primary" disabled={saving} onClick={()=>void saveContact(code)}>{saving?'Menyimpan…':'Simpan Kontak'}</button><button className="ghost" onClick={()=>setEditing(null)}>Batal</button></div></div>:<div className="remind-actions">{contact?<button className="primary" onClick={()=>openWhatsApp(code)}>Kirim WhatsApp ke {contact.whatsapp}</button>:<button className="ghost" onClick={()=>{setEditing(code);setWaInput('');setNameInput('')}}>+ Tambah Nomor WA</button>}<button className="ghost" onClick={()=>void copyMessage(code)}>Salin Pesan</button>{contact&&<button className="link-button" onClick={()=>{setEditing(code);setWaInput(contact.whatsapp);setNameInput(contact.operator_name??'')}}>Edit kontak</button>}</div>}{copied&&<small className="remind-copied">Pesan tersalin ke clipboard.</small>}</div>}</div>})}</div></section>
 }
 
-function AdminSection({page,tasks,onRefresh,setDetail,toggleTask}:{page:Exclude<AdminPage,'summary'>;tasks:Task[];onRefresh:()=>Promise<void>;setDetail:(v:string|null)=>void;toggleTask:(id:string)=>void}){
- const active=tasks.filter(t=>t.active)
- const assignments=active.flatMap(t=>t.assignments.map(a=>({...a,task:t})))
- if(page==='tasks') return <section className="panel admin-page"><div className="panel-head"><div><h2>Seluruh pekerjaan</h2><p>Buka detail untuk mengatur satker, verifikasi, atau menutup pekerjaan.</p></div></div><div className="task-list">{tasks.map(task=>{const progress=Math.round(task.assignments.reduce((s,a)=>s+a.progress,0)/(task.assignments.length||1));return <button className={`task-row ${!task.active?'archived':''}`} key={task.id} onClick={()=>setDetail(task.id)}><MethodIcon method={task.method}/><div className="task-copy"><strong>{task.title}</strong><span>{methodMeta[task.method].label} · {task.assignments.length} satker</span></div><div className="task-date"><CalendarDays/>{task.due}</div><div className="task-progress"><Progress value={progress}/></div><span className={`visibility ${task.active?'open':'closed'}`}>{task.active?'Aktif':'Ditutup'}</span></button>})}</div></section>
- if(page==='monitoring') return <><RemindSatkerPanel tasks={tasks}/><section className="panel admin-page"><div className="panel-head"><div><h2>Status seluruh satker</h2><p>{assignments.length} penugasan aktif dari {active.length} pekerjaan.</p></div></div><div className="table-wrap"><table><thead><tr><th>Satker</th><th>Pekerjaan</th><th>Progress</th><th>Status</th><th>Pembaruan</th><th></th></tr></thead><tbody>{assignments.slice(0,40).map(a=><tr key={`${a.task.id}-${a.satker}`}><td><strong>{satkers.find(s=>s.code===a.satker)?.name}</strong><span>{a.satker}</span></td><td>{a.task.title}<small>{methodMeta[a.task.method].label}</small></td><td><Progress value={a.progress}/></td><td><StatusPill status={a.status}/></td><td>{fmtUpdated(a.updated)}</td><td><button className="link-button" onClick={()=>setDetail(a.task.id)}>Periksa</button></td></tr>)}</tbody></table></div></section></>
- if(page==='verification') return <><StagedVerificationSection tasks={tasks} onRefresh={onRefresh}/><SubmissionInbox onTasksChanged={onRefresh} tasks={tasks}/></>
- if(page==='archive') {const archived=tasks.filter(t=>!t.active);return <section className="panel admin-page"><div className="panel-head"><div><h2>Arsip pekerjaan</h2><p>Pekerjaan ditutup tetap tersimpan dan dapat dibuka kembali.</p></div></div>{archived.length===0?<EmptyState icon={Archive} title="Arsip masih kosong" text="Pekerjaan yang ditutup akan tersimpan di sini."/>:<div className="archive-grid">{archived.map(t=><article className="archive-card" key={t.id}><MethodIcon method={t.method}/><div><span>{t.due}</span><h3>{t.title}</h3><p>{t.letter}</p></div><button className="ghost" onClick={()=>toggleTask(t.id)}>Buka kembali</button></article>)}</div>}</section>}
- if(page==='data'){const archiveCount=tasks.filter(t=>!t.active).length;return <section className="admin-page"><div className="data-intro"><Database/><div><h2>Data Center BMN</h2><p>Pusat indeks pekerjaan, dokumen, dan riwayat. Pada MVP, berkas masih berupa data contoh dan tautan sumber.</p></div></div><div className="data-grid">{dataCards(archiveCount).map(([title,text])=><article className="data-card" key={title}><Archive/><h3>{title}</h3><p>{text}</p><button>Lihat indeks →</button></article>)}</div></section>}
+// Routing halaman Dashboard Korwil selain ringkasan.
+function AdminRouter({page,tasks,detail,setDetail,toggleTask,setMonev,onRefresh,monevSatker}:{page:AdminPage;tasks:Task[];detail:string|null;setDetail:(v:string|null)=>void;toggleTask:(id:string)=>void;setMonev:(k:string)=>void;onRefresh:()=>Promise<void>;monevSatker:string|null}){
+ if(page==='monev') return <MonitoringSatkerPage tasks={tasks} kodeAwal={monevSatker??undefined}/>
+ if(page==='reminder') return <RemindSatkerPanel tasks={tasks}/>
+ if(page==='tasks'){const t=detail?tasks.find(x=>x.id===detail):null;return t?<DetailPekerjaanPanel task={t} onTutup={()=>setDetail(null)} onBukaPekerjaan={setMonev}/>:<TaskListPage tasks={tasks} setDetail={setDetail}/>}
  if(page==='akun-mitra') return <AkunMitraAdmin/>
+ if(page==='verification') return <><StagedVerificationSection tasks={tasks} onRefresh={onRefresh}/><SubmissionInbox onTasksChanged={onRefresh} tasks={tasks}/></>
  if(page==='performance') return <PerformanceView/>
- return <section className="panel admin-page settings-page"><div className="panel-head"><div><h2>Pengaturan portal</h2><p>Konfigurasi umum prototipe. Penyimpanan permanen memerlukan database.</p></div></div><div className="settings-form"><label>Nama portal<input defaultValue="SIPADU BMN DITJENPAS RIAU"/></label><label>Zona waktu<select defaultValue="WIB"><option>WIB</option></select></label><label className="full">Pesan untuk satker<textarea defaultValue="Selesaikan pekerjaan sesuai batas waktu dan ajukan untuk diverifikasi Korwil BMN."/></label><div className="setting-toggle"><div><strong>Sembunyikan pekerjaan yang ditutup</strong><span>Pekerjaan tertutup tidak muncul pada halaman satker.</span></div><input type="checkbox" defaultChecked/></div><button className="primary">Simpan pengaturan</button></div></section>
+if(page==='data'){const archiveCount=tasks.filter(t=>!t.active).length;return <section className="admin-page"><div className="data-intro"><Database/><div><h2>Data Center BMN</h2><p>Pusat indeks pekerjaan, dokumen, dan riwayat. Pada MVP, berkas masih berupa data contoh dan tautan sumber.</p></div></div><div className="data-grid">{dataCards(archiveCount).map(([title,text])=><article className="data-card" key={title}><Archive/><h3>{title}</h3><p>{text}</p><button>Lihat indeks →</button></article>)}</div></section>}
+if(page==='archive') {const archived=tasks.filter(t=>!t.active);return <section className="panel admin-page"><div className="panel-head"><div><h2>Arsip pekerjaan</h2><p>Pekerjaan ditutup tetap tersimpan dan dapat dibuka kembali.</p></div></div>{archived.length===0?<EmptyState icon={Archive} title="Arsip masih kosong" text="Pekerjaan yang ditutup akan tersimpan di sini."/>:<div className="archive-grid">{archived.map(t=><article className="archive-card" key={t.id}><MethodIcon method={t.method}/><div><span>{t.due}</span><h3>{t.title}</h3><p>{t.letter}</p></div><button className="ghost" onClick={()=>toggleTask(t.id)}>Buka kembali</button></article>)}</div>}</section>}
+ return null
 }
+
 
 function StagedVerificationRow({row,busy,act}:{row:any;busy:string|null;act:(action:'verify'|'return',row:any)=>void}){const key=`${row.task.id}-${row.assignment.satker}-${row.index}`;const satkerName=satkers.find(s=>s.code===row.assignment.satker)?.name;return <div className="staged-verification-row" key={key}><div className="staged-verification-info"><strong>{satkerName}</strong><span>{row.task.title}</span><b>{row.stage.label}</b></div><div className="admin-stage-actions"><button className="primary" disabled={busy===key} onClick={()=>void act('verify',row)}>Setujui Tahap {row.index+1}</button><button className="ghost" disabled={busy===key} onClick={()=>void act('return',row)}>Minta Perbaikan</button></div></div>}
 
 function StagedVerificationSection({tasks,onRefresh}:{tasks:Task[];onRefresh:()=>Promise<void>}){
  const [busy,setBusy]=useState<string|null>(null)
- const rows=tasks.filter(t=>t.workflow==='staged-destruction'&&t.active).flatMap(t=>{const stages=t.stages??[];return t.assignments.flatMap(a=>{const states=stageStatesFor(a,stages);return stages.map((stage,index)=>({task:t,assignment:a,stage,index,state:states[index]}))})}).filter(r=>r.state==='menunggu_verifikasi')
+ const [tick,setTick]=useState(0)
+ useEffect(()=>{const h=()=>setTick(v=>v+1);window.addEventListener('sipadu-stage-changed',h);return()=>window.removeEventListener('sipadu-stage-changed',h)},[])
+ const rows=useMemo(()=>tasks.filter(t=>t.active&&(t.stages??[]).length>0).flatMap(t=>{const stages=t.stages!;return t.assignments.flatMap(a=>{const db=a.stageStates&&a.stageStates.length===stages.length?a.stageStates:null;const states=db??readStageStates(t.id,a.satker,stages.length);return stages.map((stage,index)=>({task:t,assignment:a,stage,index,state:states[index]}))})}).filter(r=>r.state==='menunggu_verifikasi'),[tasks,tick])
  const act=async(action:'verify'|'return',row:typeof rows[number])=>{
    const key=`${row.task.id}-${row.assignment.satker}-${row.index}`
    if(busy)return
    setBusy(key)
    try{
+     const dariDb=!!(row.assignment.stageStates&&row.assignment.stageStates.length===(row.task.stages??[]).length)
+     if(!dariDb){
+       const stages=row.task.stages??[]
+       const key=`sipadu_staged_workflow_${row.task.id}_${row.assignment.satker}`
+       const cur=readStageStates(row.task.id,row.assignment.satker,stages.length)
+       const next=cur.map((v,i)=>{
+         if(i===row.index)return action==='verify'?'selesai':'perbaikan'
+         if(i===row.index+1&&action==='verify'&&v==='terkunci')return 'terbuka'
+         return v
+       })
+       localStorage.setItem(key,JSON.stringify(next))
+       window.dispatchEvent(new Event('sipadu-stage-changed'))
+       await onRefresh()
+       return
+     }
      const result=await reviewStagedStage(row.task.id,row.assignment.satker,row.index,action)
      if(!(result as {ok:boolean}).ok)throw new Error((result as {error?:string}).error??'Operasi gagal.')
      await onRefresh()
    }catch(err){alert(err instanceof Error?err.message:'Operasi gagal.')}finally{setBusy(null)}
  }
  if(!rows.length)return null
- return <section className="panel admin-page staged-verification"><div className="panel-head"><div><h2>Pengajuan Verifikasi Tahapan Pemusnahan</h2><p>{rows.length} tahapan menunggu keputusan Korwil. Dokumen diperiksa pada folder Google Drive pekerjaan.</p></div></div><div className="staged-verification-list">{rows.map(row=><StagedVerificationRow key={`${row.task.id}-${row.assignment.satker}-${row.index}`} row={row} busy={busy} act={act}/>)}</div></section>
+ return <section className="panel admin-page staged-verification"><div className="panel-head"><div><h2>Antrean Verifikasi</h2><p>{rows.length} tahapan menunggu keputusan Anda. Periksa dokumen pada folder data dukung masing-masing pekerjaan.</p></div></div><div className="verif-grup">{[...new Set(rows.map(r=>r.task.id))].map(tid=>{const isi=rows.filter(r=>r.task.id===tid);return <div className="verif-grup-blok" key={tid}><h3>{isi[0].task.title}<span>{isi.length} pengajuan</span></h3>{isi.map(row=><StagedVerificationRow key={`${row.task.id}-${row.assignment.satker}-${row.index}`} row={row} busy={busy} act={act}/>)}</div>})}</div></section>
  }
 
 function SubmissionInbox({onTasksChanged,tasks}:{onTasksChanged:()=>Promise<void>;tasks:Task[]}){
@@ -610,6 +632,23 @@ function TelaahPublicPage({onBack,setView}:{onBack:()=>void;setView:(v:View)=>vo
    </section>
   </main>
  </div>
+}
+
+
+// ── Helper untuk pekerjaan bertingkat ───────────────────────────────────────
+const stagedStorageKey = (taskId: string, satker: string) => `sipadu_staged_workflow_${taskId}_${satker}`
+
+function readStageStates(taskId: string, satker: string, count: number): StageState[] {
+  let saved: StageState[] | null = null
+  try {
+    const raw = JSON.parse(localStorage.getItem(stagedStorageKey(taskId, satker)) ?? 'null')
+    if (Array.isArray(raw) && raw.length === count) saved = raw as StageState[]
+  } catch { /* abaikan */ }
+  const states = saved ?? (Array.from({ length: count }, (_, i) => (i === 0 ? 'terbuka' : 'terkunci')) as StageState[])
+  for (let i = 0; i < count - 1; i++) {
+    if (states[i] === 'selesai' && states[i + 1] === 'terkunci') states[i + 1] = 'terbuka'
+  }
+  return states
 }
 
 function EmptyState({icon:Icon,title,text}:{icon:typeof Activity;title:string;text:string}){return <div className="empty-state"><Icon/><h3>{title}</h3><p>{text}</p></div>}
@@ -666,11 +705,6 @@ function SatkerTaskDetail({item,onBack,flash,onRefresh}:{item:{task:Task;assignm
  return <div className="task-detail-page"><button className="back" onClick={onBack}><ArrowLeft/>Kembali ke daftar pekerjaan</button><div className="detail-heading"><div className={`method-icon method-${task.method}`}><meta.Icon/></div><div><span>{meta.label}</span><h1>{task.title}</h1><p>{task.description}</p></div><StatusPill status={assignment.status}/></div><div className="detail-layout"><section className="panel detail-content"><div className="detail-progress"><div><span>{task.method==='monitoring'?'Progress pengusulan tiket SIMAN':'Progress pengisian'}</span><strong>{assignment.progress}%</strong></div><div className="progress-track"><i style={{width:`${assignment.progress}%`}}/></div></div>{assignment.missing.length>0&&assignment.progress<100&&<div className="missing-box"><CircleAlert/><div><strong>Data yang masih perlu dilengkapi</strong><ul>{assignment.missing.map(m=><li key={m}>{m}</li>)}</ul></div></div>}{task.method==='monitoring'?<MonitoringProgressView assignment={assignment}/>:task.method==='spreadsheet'?<div><div className="external-work"><FileSpreadsheet/><div><h3>Unggah data dukung ke folder Drive</h3><p>Klik tombol di bawah untuk membuka folder Google Drive pekerjaan ini, lalu unggah dokumen sesuai format yang ditentukan. Setelah selesai, kembali ke portal dan ajukan verifikasi.</p>{task.uploadLink&&<a href={task.uploadLink} target="_blank" rel="noopener noreferrer" className="primary">Upload Data Dukung <ExternalLink/></a>}{task.formUrl&&<a href={task.formUrl} target="_blank" rel="noopener noreferrer" className="ghost">Buka Formulir <ExternalLink/></a>}{!task.uploadLink&&task.link&&<a href={task.link} target="_blank" className="primary">Buka spreadsheet <ExternalLink/></a>}</div></div>{task.references&&task.references.length>0&&<div className="reference-links"><FileSpreadsheet/><div><strong>{task.references?.some(r=>r.label==='Isi Form Pendataan')?'Link Pendataan Google Form':'Peraturan &amp; Format Data Dukung'}</strong><span>{task.references?.some(r=>r.label==='Isi Form Pendataan')?'Buka tautan pendataan sebelum mengunggah bukti:':'Unduh berkas panduan sebelum mengunggah:'}</span><div className="reference-buttons">{task.references.map(r=><a key={r.url} href={r.url} target="_blank" rel="noopener noreferrer" className="ghost">{r.label} <ExternalLink/></a>)}</div></div></div>}</div>:task.method==='upload'?<OpenUploadForm task={task} satkerCode={assignment.satker}/>:['akun-mitra-local','akun-mitra'].includes(task.id)?<AkunMitraForm satkerCode={assignment.satker} onSaved={()=>flash('Draf Akun Mitra diperbarui.')}/>:<PortalForm method={task.method}/>}{task.method!=='upload'&&task.method!=='monitoring'&&!['akun-mitra-local','akun-mitra'].includes(task.id)&&(assignment.progress>=100?<div className="submit-row done-row"><span className="done-message">Selamat, pekerjaan ini telah diselesaikan dan diverifikasi.</span></div>:<div className="submit-row"><button className="primary" onClick={handleSubmitLink}>Ajukan untuk diverifikasi</button><span>Data tidak langsung dinyatakan selesai sebelum diperiksa Korwil.</span></div>)}</section><aside className="panel detail-side"><h3>Informasi pekerjaan</h3><dl><div><dt>Dasar</dt><dd>{task.letter}</dd></div><div><dt>Batas waktu</dt><dd>{task.due}</dd></div><div><dt>Terakhir diperbarui</dt><dd>{fmtUpdated(assignment.updated)}</dd></div><div><dt>Metode</dt><dd>{meta.label}</dd></div></dl><div className="privacy"><ShieldCheck/><p>Data hanya digunakan untuk monitoring pekerjaan BMN Kanwil Ditjenpas Riau.</p></div></aside></div></div>
 }
 
-const stagedStorageKey=(taskId:string,satker:string)=>`sipadu_staged_workflow_${taskId}_${satker}`
-function readStageStates(taskId:string,satker:string,count:number):StageState[]{
- try{const saved=JSON.parse(localStorage.getItem(stagedStorageKey(taskId,satker))??'null');if(Array.isArray(saved)&&saved.length===count)return saved as StageState[]}catch{/* abaikan */}
- return Array.from({length:count},(_,i)=>i===0?'terbuka':'terkunci')
-}
 
 function StagedDestructionView({task,assignment,flash,onBack,onRefresh}:{task:Task;assignment:Task['assignments'][number];flash:(s:string)=>void;onBack:()=>void;onRefresh:()=>Promise<void>}){
  const stages=task.stages??[]
@@ -678,6 +712,10 @@ function StagedDestructionView({task,assignment,flash,onBack,onRefresh}:{task:Ta
  const [previewStates,setPreviewStates]=useState<StageState[]>(()=>readStageStates(task.id,assignment.satker,stages.length))
  const states:StageState[]=usingSupabase?assignment.stageStates!:previewStates
  const [openStage,setOpenStage]=useState(0)
+ const [isianTahap,setIsianTahap]=useState<IsianTahap>(()=>readIsian(task.id,assignment.satker))
+ const isianStageLengkap=(stage:WorkflowStage)=>{for(const f of stage.fields??[]){if(f.type==='item-luas-table'){if(isianTahap.items.length===0)return false;if(isianTahap.items.some(x=>!x.nama.trim()||!x.luas.trim()))return false}
+else if(f.type==='item-nilai-table'){if(isianTahap.items.length===0)return false;if(isianTahap.items.some(x=>!x.nilai.trim()))return false}
+else if(!String(isianTahap[f.key]??'').trim())return false}return true}
  const [submitting,setSubmitting]=useState(false)
  const accessTokenPromise: Promise<string|null> = (async()=>{
    try{
@@ -692,7 +730,13 @@ function StagedDestructionView({task,assignment,flash,onBack,onRefresh}:{task:Ta
    setSubmitting(true)
    try{
      if(!usingSupabase){
-       setPreviewStates(cur=>cur.map((s,i)=>i===stage?'menunggu_verifikasi':s))
+       const key=`sipadu_staged_workflow_${task.id}_${assignment.satker}`
+       const cur=readStageStates(task.id,assignment.satker,stages.length)
+       if(stage<0||stage>=stages.length||cur[stage]==='terkunci'||cur[stage]==='menunggu_verifikasi'){flash('Tahap ini belum dapat diajukan.');return}
+       const next=cur.map((v,i)=>i===stage?'menunggu_verifikasi':v)
+       localStorage.setItem(key,JSON.stringify(next))
+       setPreviewStates(next)
+       window.dispatchEvent(new Event('sipadu-stage-changed'))
        flash(`[Preview] Tahap ${stage+1} diajukan untuk verifikasi Korwil.`)
        return
      }
@@ -708,7 +752,7 @@ function StagedDestructionView({task,assignment,flash,onBack,onRefresh}:{task:Ta
  }
  const completed=states.filter(s=>s==='selesai').length
  const progress=Math.round(completed/(stages.length||1)*100)
- return <div className="task-detail-page"><button className="back" onClick={onBack}><ArrowLeft/>Kembali ke daftar pekerjaan</button><div className="detail-heading"><div className="method-icon method-spreadsheet"><FileSpreadsheet/></div><div><span>Workflow bertahap</span><h1>{task.title}</h1><p>{task.description}</p></div><span className={`status status-${completed===stages.length?'selesai':'proses'}`}><i />{completed===stages.length?'Selesai':'Tahap '+(Math.min(states.findIndex(s=>s!=='selesai'&&s!=='terkunci'),stages.length-1)+1)+' berjalan'}</span></div><div className="detail-layout"><section className="panel detail-content"><div className="detail-progress"><div><span>Progress tahapan</span><strong>{progress}%</strong></div><div className="progress-track"><i style={{width:`${progress}%`}}/></div></div><div className="stage-list">{stages.map((stage,index)=>{const state=states[index];const unlocked=state!=='terkunci';return <article className={`stage-card stage-${state}`} key={stage.id}><button className="stage-card-head" onClick={()=>unlocked&&setOpenStage(index)}><span className="stage-number">{state==='selesai'?<Check size={16}/>:index+1}</span><div><strong>{stage.label}</strong><span>{stage.description}</span></div><StatusPill status={state==='menunggu_verifikasi'?'verifikasi':state==='selesai'?'selesai':state==='perbaikan'?'perbaikan':state==='terkunci'?'belum':'proses'}/></button>{openStage===index&&unlocked&&<div className="stage-body"><h3>Dokumen yang harus diunggah ke Google Drive</h3>{stage.requirements.map(requirement=><div className="stage-file" key={requirement}><div><strong>{requirement}</strong><span>Unggah ke folder Google Drive pekerjaan ini</span></div><b>Wajib</b></div>)}<a className="primary" href={task.uploadLink} target="_blank" rel="noopener noreferrer">Buka Folder Google Drive <ExternalLink/></a>{(state==='terbuka'||state==='perbaikan')&&<button className="primary" disabled={submitting} onClick={()=>void submitStage(index)}>{submitting?'Mengajukan…':'Saya sudah mengunggah — Ajukan Tahap '+(index+1)+' untuk Verifikasi'}</button>}{state==='menunggu_verifikasi'&&<div className="stage-review production"><strong>Menunggu Verifikasi Korwil</strong><span>Tahap ini telah diajukan. Korwil akan memeriksa dokumen di folder Google Drive pekerjaan.</span></div>}{state==='selesai'&&<div className="stage-complete"><Check size={17}/>Tahap telah diverifikasi.</div>}</div>}</article>})}</div></section><aside className="panel detail-side"><h3>Ringkasan tahapan</h3><dl><div><dt>Satker</dt><dd>{satkers.find(s=>s.code===assignment.satker)?.name}</dd></div><div><dt>Tahap selesai</dt><dd>{completed} dari {stages.length}</dd></div><div><dt>Progress assignment</dt><dd>{progress}%</dd></div><div><dt>Folder upload</dt><dd><a href={task.uploadLink} target="_blank" rel="noopener noreferrer">Buka folder Drive <ExternalLink/></a></dd></div></dl><div className="reference-links staged-references"><FileText/><div><strong>Berkas Data Dukung</strong><span>Persetujuan dan template yang diperlukan:</span><div className="reference-buttons">{(task.references??[]).map(reference=><a key={reference.url} href={reference.url} target="_blank" rel="noopener noreferrer" className="ghost">{reference.label} <ExternalLink/></a>)}</div></div></div></aside></div></div>
+ return <div className="task-detail-page"><button className="back" onClick={onBack}><ArrowLeft/>Kembali ke daftar pekerjaan</button><div className="detail-heading"><div className="method-icon method-spreadsheet"><FileSpreadsheet/></div><div><span>Workflow bertahap</span><h1>{task.title}</h1><p>{task.description}</p></div><span className={`status status-${completed===stages.length?'selesai':'proses'}`}><i />{completed===stages.length?'Selesai':'Tahap '+(Math.min(states.findIndex(s=>s!=='selesai'&&s!=='terkunci'),stages.length-1)+1)+' berjalan'}</span></div><div className="detail-layout"><section className="panel detail-content"><div className="detail-progress"><div><span>Progress tahapan</span><strong>{progress}%</strong></div><div className="progress-track"><i style={{width:`${progress}%`}}/></div></div><div className="stage-list">{stages.map((stage,index)=>{const state=states[index];const unlocked=state!=='terkunci';return <article className={`stage-card stage-${state}`} key={stage.id}><button className="stage-card-head" onClick={()=>unlocked&&setOpenStage(index)}><span className="stage-number">{state==='selesai'?<Check size={16}/>:index+1}</span><div><strong>{stage.label}</strong><span>{stage.description}</span></div><StatusPill status={state==='menunggu_verifikasi'?'verifikasi':state==='selesai'?'selesai':state==='perbaikan'?'perbaikan':state==='terkunci'?'belum':'proses'}/></button>{openStage===index&&unlocked&&<div className="stage-body">{task.id==='penetapan-status-penggunaan-2026'&&index===0&&<PspInfoPanel kodeSatker={assignment.satker}/>}{index===0&&/^penghapusan-bmn-rusak-berat-[abc]-2026$/.test(task.id)&&<AsetRusakPanel kodeSatker={assignment.satker} kategori={task.id.includes('-c-')?'C':task.id.includes('-b-')?'B':'A'}/>}{stage.fields&&<StageFieldsForm stage={stage} taskId={task.id} satker={assignment.satker} isian={isianTahap} onChange={setIsianTahap}/>}{!stage.confirmOnly&&<><h3>{stage.link?'Data yang harus diisi':'Dokumen yang harus diunggah ke Google Drive'}</h3>{(stage.requirements??[]).map(requirement=><div className="stage-file" key={requirement}><div><strong>{requirement}</strong><span>Unggah ke folder Google Drive pekerjaan ini</span></div><b>Wajib</b></div>)}{task.uploadLink?<a className="primary" href={task.uploadLink} target="_blank" rel="noopener noreferrer">Buka Folder Google Drive <ExternalLink/></a>:null}</>}{(state==='terbuka'||state==='perbaikan')&&<button className="primary" disabled={submitting||!isianStageLengkap(stage)} onClick={()=>void submitStage(index)}>{submitting?'Mengajukan…':(stage.confirmLabel??'Saya sudah mengunggah — Ajukan Tahap '+(index+1)+' untuk Verifikasi')}</button>}{state==='menunggu_verifikasi'&&<div className="stage-review production"><strong>Menunggu Verifikasi Korwil</strong><span>Tahap ini telah diajukan. Korwil akan memeriksa dokumen di folder Google Drive pekerjaan.</span></div>}{state==='selesai'&&<div className="stage-complete"><Check size={17}/>Tahap telah diverifikasi.</div>}</div>}</article>})}</div></section><aside className="panel detail-side"><h3>Ringkasan tahapan</h3><dl><div><dt>Satker</dt><dd>{satkers.find(s=>s.code===assignment.satker)?.name}</dd></div><div><dt>Tahap selesai</dt><dd>{completed} dari {stages.length}</dd></div><div><dt>Progress assignment</dt><dd>{progress}%</dd></div><div><dt>Folder upload</dt><dd><a href={task.uploadLink} target="_blank" rel="noopener noreferrer">Buka folder Drive <ExternalLink/></a></dd></div></dl><div className="reference-links staged-references"><FileText/><div><strong>Berkas Data Dukung</strong><span>Persetujuan dan template yang diperlukan:</span><div className="reference-buttons">{(task.references??[]).map(reference=><a key={reference.url} href={reference.url} target="_blank" rel="noopener noreferrer" className="ghost">{reference.label} <ExternalLink/></a>)}</div></div></div></aside></div></div>
 
 }
 

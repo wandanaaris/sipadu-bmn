@@ -1,5 +1,6 @@
 import type { Task, TaskStatus } from '../data'
 import { finalTasks } from '../finalTasks'
+import { dukmanLocalPreviewTasks, localPreviewTaskIds, localReplacedTaskIds, mergePreviewAssignments } from '../dukmanTasks'
 import { isSupabaseConfigured, supabase } from './supabase'
 import { withLocalAkunMitraTask } from '../akunMitra'
 import { activeMitraRepository } from './activeMitraRepository'
@@ -9,19 +10,35 @@ const localOnly=async(tasks:Task[])=>{if(!import.meta.env.DEV&&import.meta.env.M
 export type SubmissionDocument={id:string;document_type:string;original_filename:string;stored_path:string;file_size:number;mime_type:string;verification_status:string;archive_status:string;drive_url:string|null;review_note:string|null}
 export type SubmissionRecord={id:string;submission_number:string;sender_name:string;sender_phone:string|null;sender_note:string|null;status:'mengunggah'|'menunggu_verifikasi'|'diterima'|'perlu_perbaikan'|'ditolak'|'dialihkan';review_note:string|null;submitted_at:string|null;created_at:string;tasks:{task_key:string;title:string}|null;satkers:{code:string;name:string}|null;supporting_documents:SubmissionDocument[]}
 
-const fallback = () => structuredClone(finalTasks)
+const fallback = () => structuredClone(import.meta.env.DEV||import.meta.env.MODE==='test'?[...finalTasks,...dukmanLocalPreviewTasks]:finalTasks)
 // Terapkan metadata pekerjaan (uploadLink/references/link) dari finalTasks ke semua environment,
 // supaya tampilan satker selalu memakai folder Drive upload + peraturan terkini.
+// get_active_portal mengembalikan stage_states sebagai string JSON, bukan array.
+// Tanpa parsing ini, assignment.stageStates.length tidak pernah sama dengan
+// jumlah tahap sehingga semua tahap dianggap belum berjalan.
+function normalizeStageStates(assignment: Task['assignments'][number]): Task['assignments'][number] {
+  const raw = assignment.stageStates as unknown
+  if (typeof raw !== 'string') return assignment
+  try {
+    const parsed = JSON.parse(raw)
+    if (!Array.isArray(parsed)) return assignment
+    return { ...assignment, stageStates: parsed as Task['assignments'][number]['stageStates'] }
+  } catch {
+    return assignment
+  }
+}
+
 function applyFinalMeta(tasks:Task[]):Task[]{
-  return tasks.map(t=>{
+  return tasks.map(t0=>{
+    const t={...t0,assignments:t0.assignments.map(normalizeStageStates)}
     const o=finalTasks.find(f=>f.id===t.id)
     if(!o)return t
     return {...t,title:o.title,description:o.description,link:t.link??o.link,uploadLink:t.uploadLink??o.uploadLink,formUrl:t.formUrl??o.formUrl,references:t.references?.length?t.references:o.references}
   })
 }
-const TASKS_CACHE_KEY='sipadu_tasks_cache_v6'
-const LOCAL_PREVIEW_TASK_IDS=new Set(['persediaan-usang-amunisi-2026','persediaan-usang-non-amunisi-2026'])
-const LOCAL_REPLACED_TASK_IDS=new Set(['persediaan-usang'])
+const TASKS_CACHE_KEY='sipadu_tasks_cache_v7'
+const LOCAL_PREVIEW_TASK_IDS=new Set(['persediaan-usang-amunisi-2026','persediaan-usang-non-amunisi-2026',...localPreviewTaskIds])
+const LOCAL_REPLACED_TASK_IDS=new Set(['persediaan-usang',...localReplacedTaskIds])
 const TASKS_CACHE_MS=60000
 function readTasksCache():{tasks:Task[];source:'supabase'|'fallback'}|null{
   try{
@@ -38,9 +55,22 @@ export async function loadTasks(force=false): Promise<{ tasks: Task[]; source: '
   if (!isSupabaseConfigured || !supabase) return { tasks: await localOnly(applyFinalMeta(fallback())), source: 'fallback' }
   const { data, error } = await supabase.rpc('get_active_portal')
   if (!error && Array.isArray(data) && data.length) {
-    const localData=import.meta.env.DEV?data.filter((item:any)=>!LOCAL_REPLACED_TASK_IDS.has(item.id)):data
-    const localPreviewTasks=import.meta.env.DEV?finalTasks.filter(local=>LOCAL_PREVIEW_TASK_IDS.has(local.id)&&!localData.some((item:any)=>item.id===local.id)):[]
-    const result={tasks:await localOnly(applyFinalMeta([...(localData as unknown as Task[]),...localPreviewTasks])),source:'supabase' as const}
+    const dbTasks = data as unknown as Task[]
+    // Pekerjaan pratinjau yang juga ada di prod: Satker lama memakai data prod,
+    // Satker tambahan memakai nilai awal lokal.
+    const mergedPreview = import.meta.env.DEV
+      ? dukmanLocalPreviewTasks.map(local => {
+          const fromDb = dbTasks.find(item => item.id === local.id)
+          return fromDb ? mergePreviewAssignments(local, fromDb) : local
+        })
+      : []
+    const mergedIds = new Set(mergedPreview.map(t => t.id))
+    const localData = import.meta.env.DEV
+      ? dbTasks.filter((item:any)=>!LOCAL_REPLACED_TASK_IDS.has(item.id)&&!mergedIds.has(item.id))
+      : dbTasks
+    const previewCandidates=[...finalTasks,...dukmanLocalPreviewTasks]
+    const localPreviewTasks=import.meta.env.DEV?previewCandidates.filter(local=>LOCAL_PREVIEW_TASK_IDS.has(local.id)&&!localData.some((item:any)=>item.id===local.id)&&!mergedIds.has(local.id)):[]
+    const result={tasks:await localOnly(applyFinalMeta([...localData,...localPreviewTasks,...mergedPreview])),source:'supabase' as const}
     try{sessionStorage.setItem(TASKS_CACHE_KEY,JSON.stringify({at:Date.now(),payload:result}))}catch{/* penuh: abaikan */}
     return result
   }
