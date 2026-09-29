@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
-import { Activity, Archive, ArrowLeft, BarChart3, Building2, CalendarDays, Check, CircleAlert, ClipboardCheck, Clock3, Database, ExternalLink, Eye, EyeOff, FileInput, FileSpreadsheet, FileText, Filter, KeyRound, LayoutDashboard, LockKeyhole, LogOut, Mail, Menu, Search, Settings, ShieldCheck, Upload, Users, X } from 'lucide-react'
+import { Activity, Archive, ArrowLeft, BarChart3, Building2, CalendarDays, Check, CircleAlert, ClipboardCheck, Clock3, Database, ExternalLink, Eye, EyeOff, FileInput, FileSpreadsheet, FileText, Filter, KeyRound, LayoutDashboard, LockKeyhole, LogOut, Mail, Menu, Search, Settings, ShieldCheck, TrendingUp, Upload, Users, X } from 'lucide-react'
 import { telaahRkbmn, satkers, statusLabel, type Task, type TaskMethod, type TaskStatus } from './data'
 import { finalTasks } from './finalTasks'
 import { countPendingVerifications, createOpenSubmission, createTask, documentPreviewUrl, loadSatkerContacts, loadSubmissions, loadTasks, persistAssignmentStatus, persistTaskActive, reviewStagedStage, reviewSubmission, saveSatkerContact, submitLinkSubmission, submitStagedStage, transferSubmission, type SatkerContact, type SubmissionRecord } from './lib/repository'
@@ -17,7 +17,7 @@ import './workflow-layout.css'
 
 type View = 'admin' | 'satker'
 type FilterState = 'semua' | TaskStatus
-type AdminPage = 'summary' | 'tasks' | 'monitoring' | 'data' | 'akun-mitra' | 'verification' | 'archive' | 'performance' | 'settings'
+type AdminPage = 'summary' | 'executive' | 'tasks' | 'monitoring' | 'data' | 'akun-mitra' | 'verification' | 'archive' | 'performance' | 'settings'
 
 const methodMeta: Record<TaskMethod,{label:string; Icon: typeof FileSpreadsheet}> = {
   spreadsheet:{label:'Spreadsheet eksternal',Icon:FileSpreadsheet},
@@ -43,6 +43,7 @@ function App() {
   const testMode=import.meta.env.MODE==='test'
   const [view,setView] = useState<View>(testMode?'admin':'satker')
   const [telaahOpen,setTelaahOpen]=useState(false)
+  const [execOpen,setExecOpen]=useState(false)
   const [adminProfile,setAdminProfile] = useState<AdminProfile|null>(testMode?{email:'test@sipadu.local',displayName:'Korwil BMN'}:null)
   const [authReady,setAuthReady] = useState(testMode)
   const [selectedSatker,setSelectedSatker] = useState('692313')
@@ -91,8 +92,10 @@ function App() {
   }
 
   return <div className="app-shell">
-    {view==='admin'
-      ? !authReady?<AuthLoading/>:adminProfile?<AdminView tasks={tasks} adminProfile={adminProfile} onLogout={handleLogout} onRefresh={refreshTasks} dataSource={dataSource} filter={adminFilter} setFilter={setAdminFilter} query={query} setQuery={setQuery} setView={setView} selectedSatker={selectedSatker} setSelectedSatker={setSelectedSatker} detail={detail} setDetail={setDetail} toggleTask={toggleTask} updateAssignment={updateAssignment}/>:<AdminLogin onBack={()=>setView('satker')} onSuccess={handleAdminLogin}/>
+    {execOpen
+      ? <ExecutivePublicPage tasks={tasks} onRefresh={refreshTasks} onBack={()=>setExecOpen(false)} setView={setView}/>
+      : view==='admin'
+      ? !authReady?<AuthLoading/>:adminProfile?<AdminView tasks={tasks} adminProfile={adminProfile} onLogout={handleLogout} onRefresh={refreshTasks} dataSource={dataSource} filter={adminFilter} setFilter={setAdminFilter} query={query} setQuery={setQuery} setView={setView} selectedSatker={selectedSatker} setSelectedSatker={setSelectedSatker} detail={detail} setDetail={setDetail} toggleTask={toggleTask} updateAssignment={updateAssignment} onOpenExec={()=>setExecOpen(true)}/>:<AdminLogin onBack={()=>setView('satker')} onSuccess={handleAdminLogin}/>
       : telaahOpen?<TelaahPublicPage onBack={()=>setTelaahOpen(false)} setView={setView}/>:<SatkerView tasks={tasks} selectedSatker={selectedSatker} setSelectedSatker={setSelectedSatker} setView={setView} detail={detail} setDetail={setDetail} flash={flash} onOpenTelaah={()=>setTelaahOpen(true)} onRefresh={refreshTasks}/>
     }
     {toast&&<div className="toast"><Check size={18}/>{toast}</div>}
@@ -115,12 +118,12 @@ type SharedProps={tasks:Task[];selectedSatker:string;setSelectedSatker:(v:string
 
 function Brand(){return <div className="brand"><div className="brand-logo-wrap"><img className="brand-logo" src={sipaduLogo} alt="Logo SIPADU BMN Ditjenpas Riau"/></div><div><strong>SIPADU BMN</strong><span>Ditjenpas Riau</span></div></div>}
 
-function AdminView({tasks,dataSource,adminProfile,onLogout,onRefresh,filter,setFilter,query,setQuery,setView,selectedSatker:_selectedSatker,setSelectedSatker:_setSelectedSatker,detail,setDetail,toggleTask,updateAssignment}:SharedProps&{dataSource:'supabase'|'fallback';adminProfile:AdminProfile;onLogout:()=>Promise<void>;onRefresh:()=>Promise<void>;filter:FilterState;setFilter:(v:FilterState)=>void;query:string;setQuery:(v:string)=>void;toggleTask:(id:string)=>void;updateAssignment:(taskId:string,satker:string,status:TaskStatus)=>void}){
+function AdminView({tasks,dataSource,adminProfile,onLogout,onRefresh,filter,setFilter,query,setQuery,setView,selectedSatker:_selectedSatker,setSelectedSatker:_setSelectedSatker,detail,setDetail,toggleTask,updateAssignment,onOpenExec}:SharedProps&{dataSource:'supabase'|'fallback';adminProfile:AdminProfile;onLogout:()=>Promise<void>;onRefresh:()=>Promise<void>;filter:FilterState;setFilter:(v:FilterState)=>void;query:string;setQuery:(v:string)=>void;toggleTask:(id:string)=>void;updateAssignment:(taskId:string,satker:string,status:TaskStatus)=>void;onOpenExec:()=>void}){
   const [adminPage,setAdminPage]=useState<AdminPage>('summary')
   const [showCreate,setShowCreate]=useState(false)
   const [verify,setVerify]=useState(0)
   useEffect(()=>{let mounted=true;void loadSubmissions().then(items=>{if(mounted)setVerify(countPendingVerifications(items))}).catch(()=>{if(mounted)setVerify(0)});return()=>{mounted=false}},[tasks])
-  const pageTitle:Record<AdminPage,string>={summary:'Dashboard Korwil BMN',tasks:'Daftar Pekerjaan',monitoring:'Monitoring Satker',data:'Data Center BMN','akun-mitra':'Data Akun Mitra',verification:'Verifikasi Pekerjaan',archive:'Arsip Pekerjaan',performance:'Kinerja UPT',settings:'Pengaturan Portal'}
+  const pageTitle:Record<AdminPage,string>={summary:'Dashboard Korwil BMN',executive:'Ringkasan Pimpinan',tasks:'Daftar Pekerjaan',monitoring:'Monitoring Satker',data:'Data Center BMN','akun-mitra':'Data Akun Mitra',verification:'Verifikasi Pekerjaan',archive:'Arsip Pekerjaan',performance:'Kinerja UPT',settings:'Pengaturan Portal'}
   const active=tasks.filter(t=>t.active)
   const allAssignments=active.flatMap(t=>t.assignments.map(a=>({...a,task:t})))
   const stagedPendingCount=tasks.filter(t=>t.workflow==='staged-destruction'&&t.active).flatMap(t=>t.assignments.filter(a=>(a.stageStates??[]).includes('menunggu_verifikasi'))).length
@@ -134,6 +137,7 @@ function AdminView({tasks,dataSource,adminProfile,onLogout,onRefresh,filter,setF
       <Brand/>
       <nav>
         <button className={adminPage==='summary'?'nav-active':''} onClick={()=>setAdminPage('summary')}><LayoutDashboard/>Ringkasan</button>
+        <button onClick={onOpenExec}><TrendingUp/>Ringkasan Pimpinan</button>
         <button className={adminPage==='tasks'?'nav-active':''} onClick={()=>setAdminPage('tasks')}><ClipboardCheck/>Pekerjaan <span>{active.length}</span></button>
         <button className={adminPage==='monitoring'?'nav-active':''} onClick={()=>setAdminPage('monitoring')}><Users/>Monitoring Satker</button>
         <button className={adminPage==='data'?'nav-active':''} onClick={()=>setAdminPage('data')}><Database/>Data Center BMN</button>
@@ -148,6 +152,7 @@ function AdminView({tasks,dataSource,adminProfile,onLogout,onRefresh,filter,setF
     </aside>
     <main className="main">
       <header className="topbar"><button className="mobile-menu"><Menu/></button><div><h1>{pageTitle[adminPage]}</h1><p>20 Agustus 2026 · Sumber: {dataSource==='supabase'?'Database Supabase':'Data cadangan hasil sinkronisasi'}</p></div><div className="top-actions"><button className="ghost" onClick={()=>setView('satker')}><Building2/>Pratinjau Satker</button><button className="primary" onClick={()=>setShowCreate(true)}>+ Buat Pekerjaan</button></div></header>
+      {adminPage==='executive'&&<ExecutiveView tasks={tasks} onRefresh={onRefresh}/>}
       {adminPage==='summary'?<>
       <section className="metric-grid">
         <Metric label="Pekerjaan aktif" value={active.length} hint={`${tasks.filter(t=>!t.active).length} pekerjaan diarsipkan`} tone="blue" icon={ClipboardCheck}/>
@@ -182,7 +187,7 @@ function AdminView({tasks,dataSource,adminProfile,onLogout,onRefresh,filter,setF
         <div className="table-wrap"><table><thead><tr><th>Satker</th><th>Pekerjaan</th><th>Progress</th><th>Status</th><th>Pembaruan</th><th></th></tr></thead><tbody>{filtered.slice(0,12).map(x=><tr key={`${x.task.id}-${x.satker}`}><td><strong>{satkers.find(s=>s.code===x.satker)?.name}</strong><span>{x.satker}</span></td><td>{x.task.title}<small>{methodMeta[x.task.method].label}</small></td><td><Progress value={x.progress}/></td><td><StatusPill status={x.status}/></td><td>{fmtUpdated(x.updated)}</td><td><button className="link-button" onClick={()=>setDetail(x.task.id)}>Periksa</button></td></tr>)}</tbody></table></div>
       </section>
       <section className="performance-note"><LockKeyhole/><div><strong>Fondasi nilai kinerja UPT sudah disiapkan</strong><p>Sistem mencatat ketepatan waktu, kelengkapan pertama, jumlah perbaikan, dan penyelesaian pekerjaan. Bobot penilaian akan ditetapkan kemudian agar transparan dan adil.</p></div><button onClick={()=>setAdminPage('performance')}>Pelajari rancangan</button></section>
-      </>:<AdminSection page={adminPage} tasks={tasks} onRefresh={onRefresh} setDetail={setDetail} toggleTask={toggleTask}/>}
+      </>:adminPage!=='executive'?<AdminSection page={adminPage} tasks={tasks} onRefresh={onRefresh} setDetail={setDetail} toggleTask={toggleTask}/>:null}
     </main>
     {selectedTask&&<TaskDrawer task={selectedTask} onClose={()=>setDetail(null)} onToggle={()=>toggleTask(selectedTask.id)} updateAssignment={updateAssignment} onRefresh={onRefresh}/>}
     {showCreate&&<CreateTaskModal onClose={()=>setShowCreate(false)} onCreated={async()=>{setShowCreate(false);await onRefresh();setAdminPage('tasks')}}/>}
@@ -202,6 +207,271 @@ function dataCards(archiveCount:number):[string,string][]{
 }
 
 type UptScore={satker:string;satkerName:string;totalAssignments:number;completed:number;inRevision:number;pendingVerification:number;totalRevisions:number;completionRate:number;revisionScore:number;score:number}
+function ExecutiveView({tasks,onRefresh}:{tasks:Task[];onRefresh:()=>Promise<void>}){
+  const active=tasks.filter(t=>t.active)
+  const allAssignments=active.flatMap(t=>t.assignments.map(a=>({...a,task:t})))
+  const total=allAssignments.length
+  const done=allAssignments.filter(a=>['selesai','ditutup'].includes(a.status)).length
+  const notStarted=allAssignments.filter(a=>a.status==='belum').length
+  const inRevision=allAssignments.filter(a=>a.status==='perbaikan').length
+  const pendingVerify=allAssignments.filter(a=>a.status==='verifikasi'||a.status==='persetujuan').length
+  const avg=Math.round(allAssignments.reduce((s,a)=>s+a.progress,0)/(total||1))
+  const today=new Date()
+  const parseDue=(t:Task):Date|null=>{
+    if(t.dueDate)return new Date(`${t.dueDate}T23:59:59+07:00`)
+    return null
+  }
+  const withDue=active.filter(t=>parseDue(t)!==null).map(t=>({task:t,due:parseDue(t)!}))
+  const noDue=active.filter(t=>parseDue(t)===null)
+  const daysLeft=(d:Date)=>Math.ceil((d.getTime()-today.getTime())/86400000)
+  const taskStats=(t:Task)=>{
+    const doneCount=t.assignments.filter(a=>['selesai','ditutup'].includes(a.status)).length
+    const avgTask=Math.round(t.assignments.reduce((s,a)=>s+a.progress,0)/(t.assignments.length||1))
+    return{doneCount,avgTask}
+  }
+  const riskTasks=[...withDue].sort((a,b)=>a.due.getTime()-b.due.getTime()).filter(({task,due})=>{
+    const{avgTask}=taskStats(task)
+    return daysLeft(due)<14&&avgTask<100
+  })
+  const refresh=()=>{void onRefresh()}
+  return <section className="exec-onepage">
+    <header className="exec-hero">
+      <div className="exec-hero-inner">
+        <span className="exec-kicker">SIPADU BMN · KANWIL DITJENPAS RIAU</span>
+        <h1>Progress Pekerjaan BMN <em>2026</em></h1>
+        <p className="exec-hero-sub">Ringkasan capaian pengelolaan Barang Milik Negara seluruh Unit Pelaksana Teknis Pemasyarakatan di Riau — data langsung dari portal, diperbarui otomatis.</p>
+        <div className="exec-hero-stats">
+          <div><strong>{active.length}</strong><span>Pekerjaan Aktif</span></div>
+          <div><strong>{avg}%</strong><span>Progress Keseluruhan</span></div>
+          <div><strong>{done}</strong><span>Penugasan Selesai</span></div>
+          <div><strong>{total}</strong><span>Total Penugasan</span></div>
+        </div>
+        <div className="exec-hero-actions">
+          <a className="exec-btn primary" href="#ringkasan">Lihat Ringkasan</a>
+          <a className="exec-btn" href="#pekerjaan">Daftar Pekerjaan</a>
+          <button className="exec-btn" onClick={refresh}>Muat Ulang Data</button>
+        </div>
+      </div>
+    </header>
+    <nav className="exec-nav">
+      <div className="exec-nav-inner">
+        <a href="#ringkasan">Ringkasan</a>
+        <a href="#posisi-bmn">Posisi BMN</a>
+        <a href="#penghapusan">Penghapusan</a>
+        <a href="#rupbasan">Eks-Rupbasan</a>
+        <a href="#pengamanan">Pengamanan</a>
+        <a href="#prioritas">Prioritas</a>
+        <a href="#pekerjaan">Pekerjaan</a>
+        <a href="#satker">Satker</a>
+      </div>
+    </nav>
+    <main className="exec-body">
+      <section id="ringkasan" className="exec-section">
+        <div className="exec-section-head"><span className="exec-kicker">RINGKASAN</span><h2>Capaian Saat Ini</h2></div>
+        <div className="exec-metrics">
+          <div className="exec-metric"><span>Pekerjaan Aktif</span><strong>{active.length}</strong><small>di {total} penugasan satker</small></div>
+          <div className="exec-metric good"><span>Selesai</span><strong>{done}</strong><small>dari {total} penugasan</small></div>
+          <div className="exec-metric warn"><span>Belum Dikerjakan</span><strong>{notStarted}</strong><small>perlu ditindaklanjuti satker</small></div>
+          <div className="exec-metric bad"><span>Perlu Perbaikan</span><strong>{inRevision}</strong><small>dikembalikan oleh Korwil</small></div>
+          <div className="exec-metric"><span>Menunggu Verifikasi</span><strong>{pendingVerify}</strong><small>antrean pemeriksaan Korwil</small></div>
+          <div className="exec-metric"><span>Progress Keseluruhan</span><strong>{avg}%</strong><small>rata-rata seluruh penugasan</small></div>
+        </div>
+      </section>
+
+      <section id="posisi-bmn" className="exec-section">
+        <div className="exec-section-head"><span className="exec-kicker">POSISI KESELURUHAN BMN</span><h2>Semester I TA 2026</h2><p className="exec-sub">Posisi per 30 Juni 2026 — Sumber: Paparan Rakernis Kanwil Ditjenpas Riau</p></div>
+        <div className="exec-table-wrap">
+          <table className="exec-data-table">
+            <thead><tr><th>No</th><th>Jenis Aset</th><th className="num">Nilai (Rp)</th></tr></thead>
+            <tbody>
+              <tr><td>1</td><td>Barang Konsumsi</td><td className="num">12.388.163.276</td></tr>
+              <tr><td>2</td><td>Amunisi</td><td className="num">494.273.580</td></tr>
+              <tr><td>3</td><td>Bahan Pemeliharaan</td><td className="num">619.538.534</td></tr>
+              <tr><td>4</td><td>Tanah</td><td className="num">275.789.883.380</td></tr>
+              <tr><td>5</td><td>Peralatan dan Mesin</td><td className="num">145.766.351.435</td></tr>
+              <tr><td>6</td><td>Gedung dan Bangunan</td><td className="num">419.260.003.412</td></tr>
+              <tr><td>7</td><td>Jalan dan Jembatan</td><td className="num">89.640.000</td></tr>
+              <tr><td>8</td><td>Aset Tetap Lainnya</td><td className="num">155.383.543</td></tr>
+              <tr><td>9</td><td>Konstruksi Dalam Pengerjaan</td><td className="num">141.423.127.251</td></tr>
+            </tbody>
+            <tfoot><tr><th colSpan={2}>TOTAL</th><th className="num">841.913.400.031</th></tr></tfoot>
+          </table>
+        </div>
+        <div className="exec-highlight-cards">
+          <div className="exec-highlight"><span>Total BMN</span><strong>11.856 unit</strong></div>
+          <div className="exec-highlight warn"><span>Belum PSP</span><strong>362 unit</strong><small>3,05% dari total BMN · Rp 1.410.021.567 (0,17%)</small></div>
+        </div>
+        <p className="exec-note">Seluruh aset sudah dilakukan permohonan PSP, namun belum terbit SK PSP dari Pengguna Barang.</p>
+      </section>
+
+      <section id="penghapusan" className="exec-section">
+        <div className="exec-section-head"><span className="exec-kicker">TINDAK LANJUT PENGHAPUSAN</span><h2>BMN Rusak Berat</h2><p className="exec-sub">Periode 1 Januari – 31 Agustus 2026</p></div>
+        <div className="exec-metrics">
+          <div className="exec-metric"><span>Total Rusak Berat</span><strong>1.501</strong><small>unit</small></div>
+          <div className="exec-metric good"><span>Sudah Selesai</span><strong>147</strong><small>unit · Rp 46.418.500</small></div>
+          <div className="exec-metric warn"><span>Proses Lelang</span><strong>678</strong><small>unit</small></div>
+          <div className="exec-metric bad"><span>Belum Pengajuan</span><strong>823</strong><small>unit</small></div>
+        </div>
+        <div className="exec-progress-overview">
+          <div className="exec-prog-row"><span>Selesai</span><div className="exec-prog-track"><i style={{width:'9.8%'}}/></div><b>9,8%</b></div>
+          <div className="exec-prog-row"><span>Proses Lelang</span><div className="exec-prog-track lelang"><i style={{width:'45.2%'}}/></div><b>45,2%</b></div>
+          <div className="exec-prog-row"><span>Belum Pengajuan</span><div className="exec-prog-track belum"><i style={{width:'54.8%'}}/></div><b>54,8%</b></div>
+        </div>
+        <div className="exec-table-wrap">
+          <table className="exec-data-table compact">
+            <thead><tr><th>Satker</th><th>Detail</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td>Lapas Selat Panjang</td><td>2 unit kendaraan (Rp 13.026.000)</td><td><span className="badge-done">Selesai</span></td></tr>
+              <tr><td>Lapas Teluk Kuantan</td><td>1 unit kendaraan (Rp 29.719.000)</td><td><span className="badge-done">Selesai</span></td></tr>
+              <tr><td>Kanwil Ditjenpas Riau</td><td>144 unit inventaris (Rp 3.673.500)</td><td><span className="badge-done">Selesai</span></td></tr>
+              <tr><td>Kanwil Ditjenpas Riau</td><td>3 unit kendaraan</td><td><span className="badge-proses">Proses Lelang</span></td></tr>
+              <tr><td>Lapas Pasir Pangarayan</td><td>162 unit inventaris</td><td><span className="badge-proses">Proses Lelang (menunggu risalah)</span></td></tr>
+              <tr><td>Rutan Pekanbaru</td><td>290 unit inventaris</td><td><span className="badge-proses">Proses Lelang</span></td></tr>
+              <tr><td>Rutan Dumai</td><td>223 unit inventaris</td><td><span className="badge-proses">Proses Lelang</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <h3 style={{marginTop:24}}>Rincian Satker Belum Mengajukan Penghapusan (823 unit)</h3>
+        <div className="exec-table-wrap">
+          <table className="exec-data-table compact">
+            <thead><tr><th>No</th><th>Satker</th><th className="num">Jumlah Belum Diajukan</th><th>Catatan</th></tr></thead>
+            <tbody>
+              <tr><td>1</td><td>Bapas Kelas I Pekanbaru</td><td className="num"><strong>207 unit</strong></td><td>Terbesar — didominasi kursi besi, PC, printer, kamera digital</td></tr>
+              <tr><td>2</td><td>Lapas Kelas IIA Bagansiapiapi</td><td className="num"><strong>186 unit</strong></td><td>Inventaris kantor, alat dapur, kursi fiber, senjata api (3 pistol, 10 borgol)</td></tr>
+              <tr><td>3</td><td>Lapas Kelas IIB Teluk Kuantan</td><td className="num"><strong>174 unit</strong></td><td>Tiket SIMAN sudah dibuat (PPL26021311214173634) namun belum dinaikkan</td></tr>
+              <tr><td>4</td><td>Lapas Kelas IIA Bangkinang</td><td className="num"><strong>173 unit</strong></td><td>Belum ada tiket SIMAN</td></tr>
+              <tr><td>5</td><td>Kanwil Ditjenpas Riau</td><td className="num"><strong>67 unit</strong></td><td>PC, laptop, printer, UPS, scanner</td></tr>
+              <tr><td>6</td><td>Lapas Kelas IIA Bengkalis</td><td className="num"><strong>8 unit</strong></td><td>Termasuk 1 bangunan gedung darurat (Kat. 2, Rp 1,97 M)</td></tr>
+              <tr><td>7</td><td>LPKA Kelas II Pekanbaru</td><td className="num"><strong>5 unit</strong></td><td>Belum ada tiket SIMAN</td></tr>
+              <tr><td>8</td><td>Rutan Kelas IIB Dumai</td><td className="num"><strong>1 unit</strong></td><td>Hampir selesai</td></tr>
+              <tr><td>9</td><td>Lapas Perempuan Kelas IIA Pekanbaru</td><td className="num"><strong>1 unit</strong></td><td>Hampir selesai</td></tr>
+              <tr><td>10</td><td>Rutan Kelas I Pekanbaru</td><td className="num"><strong>1 unit</strong></td><td>Hampir selesai</td></tr>
+            </tbody>
+            <tfoot><tr><th></th><th>Total 10 Satker</th><th className="num"><strong>823 unit</strong></th><th>Data: MONITORING_PENGUSULAN_BMN_RUSAK_BERAT_SIMAN.xlsx</th></tr></tfoot>
+          </table>
+        </div>
+      </section>
+
+      <section id="rupbasan" className="exec-section">
+        <div className="exec-section-head"><span className="exec-kicker">ALIH STATUS RUPBASAN</span><h2>Aset Eks-Rupbasan Tidak Di-ASP ke Kejaksaan</h2><p className="exec-sub">Aset yang tidak di-ASP digunakan oleh Kanwil Ditjenpas Riau</p></div>
+        <div className="exec-table-wrap">
+          <table className="exec-data-table">
+            <thead><tr><th>Rupbasan</th><th className="num">Total Aset</th><th className="num">Di-ASP ke Kejaksaan</th><th className="num highlight-col">Tidak Di-ASP</th></tr></thead>
+            <tbody>
+              <tr><td>Rupbasan Bangkinang</td><td className="num">162 unit</td><td className="num">97 unit → Kejari Kampar</td><td className="num highlight-col"><strong>65 unit</strong></td></tr>
+              <tr><td>Rupbasan Rengat</td><td className="num">172 unit</td><td className="num">61 unit → Kejari Inhu</td><td className="num highlight-col"><strong>111 unit</strong></td></tr>
+              <tr><td>Rupbasan Bengkalis</td><td className="num">109 unit</td><td className="num">28 unit → Kejari Bengkalis</td><td className="num highlight-col"><strong>81 unit</strong></td></tr>
+            </tbody>
+            <tfoot><tr><th>Total</th><th className="num">443 unit</th><th className="num">186 unit</th><th className="num highlight-col"><strong>257 unit</strong></th></tr></tfoot>
+          </table>
+        </div>
+      </section>
+
+      <section id="pengamanan" className="exec-section">
+        <div className="exec-section-head"><span className="exec-kicker">PENGAMANAN ASET & PERSEDIAAN</span><h2>Situasi Terkini</h2></div>
+        <div className="exec-two-col">
+          <div className="exec-col">
+            <h3>Persediaan Usang & Rusak</h3>
+            <div className="exec-info-card">
+              <div className="exec-info-row"><span>Persediaan Usang</span><strong>Rp 1.153.624.047</strong><small>Seluruh satker sudah mengajukan permohonan persetujuan pemusnahan</small></div>
+              <div className="exec-info-row"><span>Persediaan Rusak</span><strong>Rp 27.275.680</strong><small>Proses pengajuan permohonan persetujuan penjualan</small></div>
+            </div>
+            <h3>Penggunaan Sementara</h3>
+            <div className="exec-info-card">
+              <div className="exec-info-row"><span>Bangunan Gudang Tertutup Permanen</span><small>Jl. Sialang Bungkuk, Sail, Tenayan Raya, Pekanbaru · 600 m² · Pengguna: Kejaksaan RI · Jangka 5 tahun · S-137/MK/KNL.0303/2026</small></div>
+            </div>
+            <h3>Penggunaan Bersama</h3>
+            <div className="exec-info-card">
+              <div className="exec-info-row"><span>Tanah Bangunan Kantor Pemerintahan</span><small>1.315 m² · S-149/MK/KNL.0303/2026</small></div>
+              <div className="exec-info-row"><span>Gedung Kantor Permanen</span><small>Jl. Sialang Bungkuk No. 2 · 340 m² · Eminen: Kemenimipas · Kolaborator: Kejaksaan RI · S-149/MK/KNL.0303/2026</small></div>
+            </div>
+          </div>
+          <div className="exec-col">
+            <h3>Perubahan Logo & Pengamanan</h3>
+            <div className="exec-checklist">
+              <div className="exec-check-item done"><span>✓</span><strong>Plang Pengamanan Aset (Tanah)</strong><small>Seluruh satker selesai</small></div>
+              <div className="exec-check-item done"><span>✓</span><strong>Papan Nama Rumah Negara</strong><small>Seluruh satker selesai</small></div>
+              <div className="exec-check-item done"><span>✓</span><strong>Logo Kendaraan Dinas Transpas</strong><small>Seluruh satker selesai</small></div>
+              <div className="exec-check-item done"><span>✓</span><strong>Logo Ambulance</strong><small>Seluruh satker selesai</small></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="prioritas" className="exec-section">
+        <div className="exec-section-head"><span className="exec-kicker">PRIORITAS</span><h2>Tenggat Dekat &amp; Terlambat</h2></div>
+        {riskTasks.length===0&&<p className="exec-empty">Tidak ada pekerjaan dengan tenggat kurang dari 2 minggu yang belum selesai. 👍</p>}
+        {riskTasks.length>0&&<div className="exec-risk-list">{riskTasks.map(({task,due})=>{
+          const{doneCount,avgTask}=taskStats(task)
+          const dl=daysLeft(due)
+          const label=dl<0?`Lewat ${Math.abs(dl)} hari`:dl===0?'Hari ini':`${dl} hari lagi`
+          return <div className={`exec-risk-item ${dl<0?'overdue':dl<=7?'urgent':'soon'}`} key={task.id}>
+            <div className="exec-risk-title"><strong>{task.title}</strong><span>{task.assignments.length} satker · {doneCount} selesai</span></div>
+            <div className="exec-risk-due"><b>{label}</b><small>{task.due}</small></div>
+            <div className="exec-risk-bar"><i style={{width:`${avgTask}%`}}/></div>
+          </div>})}
+        </div>}
+      </section>
+      <section id="pekerjaan" className="exec-section">
+        <div className="exec-section-head"><span className="exec-kicker">PEKERJAAN</span><h2>Wajib Selesai Sebelum Akhir 2026</h2></div>
+        <div className="exec-cards">
+          {withDue.sort((a,b)=>a.due.getTime()-b.due.getTime()).map(({task})=>{
+            const{doneCount,avgTask}=taskStats(task)
+            const dl=daysLeft(parseDue(task)!)
+            return <article className={`exec-card ${dl<0&&avgTask<100?'overdue':''}`} key={task.id}>
+              <div className="exec-card-top"><strong>{task.title}</strong><span className="exec-card-due">{task.due}</span></div>
+              <div className="exec-progress"><i style={{width:`${avgTask}%`}}/><span>{avgTask}%</span></div>
+              <div className="exec-card-meta"><span>{doneCount}/{task.assignments.length} satker selesai</span>{dl>=0?<small className="exec-days">{dl} hari lagi</small>:<small className="exec-days overdue-text">lewat {Math.abs(dl)} hari</small>}</div>
+              <p className="exec-card-desc">{task.description}</p>
+            </article>})}
+          {noDue.map(task=>{
+            const{doneCount,avgTask}=taskStats(task)
+            return <article className="exec-card nodue" key={task.id}>
+              <div className="exec-card-top"><strong>{task.title}</strong><span className="exec-card-due">{task.due}</span></div>
+              <div className="exec-progress"><i style={{width:`${avgTask}%`}}/><span>{avgTask}%</span></div>
+              <div className="exec-card-meta"><span>{doneCount}/{task.assignments.length} satker selesai</span><small className="exec-days">tanpa tenggat pasti</small></div>
+              <p className="exec-card-desc">{task.description}</p>
+            </article>})}
+        </div>
+      </section>
+      <section id="satker" className="exec-section">
+        <div className="exec-section-head"><span className="exec-kicker">SATKER</span><h2>Peringkat Penyelesaian</h2></div>
+        <div className="exec-rank-list">
+          {satkerRankList(tasks).map((r,i)=><div className="exec-rank-item" key={r.code}>
+            <span className={`exec-rank-num ${i<3?'top':''}`}>{i+1}</span>
+            <div className="exec-rank-copy"><strong>{r.name}</strong><span>{r.done}/{r.total} pekerjaan selesai</span></div>
+            <div className="exec-progress"><i style={{width:`${r.pct}%`}}/><span>{r.pct}%</span></div>
+          </div>)}
+        </div>
+      </section>
+    </main>
+    <footer className="exec-footer">
+      <p>Sumber data: Portal SIPADU BMN Kanwil Ditjenpas Riau + Paparan Rakernis (posisi s.d. 30 Juni 2026) — diperbarui otomatis setiap satker mengirim atau Korwil memverifikasi.</p>
+    </footer>
+  </section>
+}
+
+function ExecutivePublicPage({tasks,onRefresh,onBack,setView}:{tasks:Task[];onRefresh:()=>Promise<void>;onBack:()=>void;setView:(v:View)=>void}){
+  return <div className="exec-public">
+    <header className="landing-header"><Brand/><div className="landing-header-actions"><button className="ghost" onClick={onBack}><ArrowLeft/>Kembali</button><button className="ghost" onClick={()=>setView('admin')}><LockKeyhole/>Dashboard Korwil</button></div></header>
+    <ExecutiveView tasks={tasks} onRefresh={onRefresh}/>
+  </div>
+}
+
+function satkerRankList(tasks:Task[]):Array<{code:string;name:string;done:number;total:number;pct:number}>{
+  const active=tasks.filter(t=>t.active)
+  const map=new Map<string,{done:number;total:number}>()
+  for(const t of active){
+    for(const a of t.assignments){
+      const cur=map.get(a.satker)??{done:0,total:0}
+      cur.total+=1
+      if(['selesai','ditutup'].includes(a.status))cur.done+=1
+      map.set(a.satker,cur)
+    }
+  }
+  return [...map.entries()].map(([code,v])=>({code,name:satkers.find(s=>s.code===code)?.name??code,done:v.done,total:v.total,pct:Math.round(v.done/(v.total||1)*100)})).sort((a,b)=>b.pct-a.pct||a.name.localeCompare(b.name))
+}
+
 function PerformanceView(){
   const [scores,setScores]=useState<UptScore[]>([])
   const [loading,setLoading]=useState(true)

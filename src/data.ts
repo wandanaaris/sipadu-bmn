@@ -22,6 +22,7 @@ export type Task = {
   description: string
   method: TaskMethod
   due: string
+  dueDate?: string | null
   letter: string
   link?: string
   active: boolean
