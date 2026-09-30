@@ -944,54 +944,70 @@ function ProfilAsetDetail({ kodeSatker, onKembali }: { kodeSatker: string; onKem
   }
 
   return (
-    <div className="info-halaman">
-      <section className="panel admin-page profil-satu">
-        <button className="link-button" onClick={onKembali}><ArrowLeft size={13} /> Kembali ke daftar Satker</button>
-        <div className="profil-header">
-          <div className="profil-hero-ikon"><Building2 size={22} /></div>
-          <div className="profil-hero-teks">
+    <div className="pa-halaman">
+      {/* Hero gradien */}
+      <section className="pa-hero">
+        <button className="pa-hero-back" onClick={onKembali}><ArrowLeft size={13} /> Kembali ke daftar Satker</button>
+        <div className="pa-hero-baris">
+          <div className="pa-hero-ikon"><Building2 size={26} /></div>
+          <div className="pa-hero-teks">
             <h2>{nama}</h2>
-            <p>Kode {kodeSatker} · {semuaAsetTerkait.length} aset terkait · Total {formatRupiah(totalNilaiSemua)}</p>
+            <p>Kode {kodeSatker} · Data SIMAN snapshot 30 September 2026</p>
           </div>
           {kategoriAktif && (
-            <button className="profil-cetak" onClick={() => void exportPdf()}>
+            <button className="pa-hero-export" onClick={() => void exportPdf()}>
               <Printer size={14} /> Export PDF
             </button>
           )}
         </div>
-
-        {loading
-          ? <p style={{ opacity: .6, margin: '14px 0 0' }}>Memuat data aset…</p>
-          : <div className="profil-kategori-grid">
-              {rekap.map(k => {
-                const IkonKat = k.Ikon
-                return (
-                  <button
-                    key={k.key}
-                    className={`profil-kategori ${aktif === k.key ? 'profil-kategori-aktif' : ''}`}
-                    style={aktif === k.key ? { borderColor: k.warna, boxShadow: `0 3px 14px ${k.warna}20` } : undefined}
-                    onClick={() => setAktif(aktif === k.key ? null : k.key)}
-                  >
-                    <div className="profil-kategori-ikon" style={{ background: `${k.warna}18`, color: k.warna }}><IkonKat size={20} /></div>
-                    <div className="profil-kategori-info">
-                      <strong>{k.label}</strong>
-                      <span>{k.jumlah} aset · {formatLuas(k.totalLuas)}</span>
-                      <span className="profil-kategori-nilai">{formatRupiah(k.totalNilai)}</span>
-                    </div>
-                    {k.tanpaPsp > 0 && <span className="badge-merah">{k.tanpaPsp} tanpa PSP</span>}
-                  </button>
-                )
-              })}
-            </div>}
+        {!loading && (
+          <div className="pa-hero-stats">
+            <div className="pa-stat"><b>{semuaAsetTerkait.length}</b><span>Aset terkait</span></div>
+            <div className="pa-stat"><b>{formatRupiah(totalNilaiSemua)}</b><span>Total nilai perolehan</span></div>
+            <div className="pa-stat"><b>{rekap.reduce((n, k) => n + k.tanpaPsp, 0)}</b><span>Belum PSP</span></div>
+          </div>
+        )}
       </section>
 
+      {/* Kartu kategori */}
+      {loading
+        ? <p className="pa-loading">Memuat data aset…</p>
+        : <div className="pa-kategori-grid">
+            {rekap.map((k, idx) => {
+              const IkonKat = k.Ikon
+              const isAktif = aktif === k.key
+              return (
+                <button
+                  key={k.key}
+                  className={`pa-kategori ${isAktif ? 'pa-kategori-aktif' : ''}`}
+                  style={{ animationDelay: `${idx * 70}ms`, ['--pa-warna' as never]: k.warna }}
+                  onClick={() => setAktif(isAktif ? null : k.key)}
+                >
+                  <i className="pa-kategori-bar" />
+                  <div className="pa-kategori-atas">
+                    <div className="pa-kategori-ikon"><IkonKat size={20} /></div>
+                    {k.tanpaPsp > 0 && <span className="pa-badge-merah">{k.tanpaPsp} tanpa PSP</span>}
+                  </div>
+                  <strong className="pa-kategori-label">{k.label}</strong>
+                  <b className="pa-kategori-jumlah">{k.jumlah}<span> aset</span></b>
+                  <div className="pa-kategori-rinci">
+                    <span>{formatLuas(k.totalLuas)}</span>
+                    <span className="pa-kategori-nilai">{formatRupiah(k.totalNilai)}</span>
+                  </div>
+                </button>
+              )
+            })}
+          </div>}
+
+      {/* Tabel detail */}
       {!loading && kategoriAktif && (
-        <section className="panel admin-page profil-tabel-panel">
-          <div className="profil-tabel-head">
-            <h3>{kategoriAktif.label} — {tabelRows.length} aset</h3>
+        <section className="pa-tabel-panel">
+          <div className="pa-tabel-head">
+            <h3>{kategoriAktif.label} <span className="pa-hitung">{tabelRows.length} aset</span></h3>
+            <button className="pa-tabel-export" onClick={() => void exportPdf()}><Printer size={13} /> Export PDF</button>
           </div>
-          <div className="profil-tabel-wrap">
-            <table className="profil-tabel">
+          <div className="pa-tabel-wrap">
+            <table className="pa-tabel">
               <thead>
                 <tr>
                   <th>No</th>
@@ -1010,17 +1026,17 @@ function ProfilAsetDetail({ kodeSatker, onKembali }: { kodeSatker: string; onKem
               <tbody>
                 {tabelRows.map(r => (
                   <tr key={`${r.no}-${r.nup}`}>
-                    <td className="profil-td-no">{r.no}</td>
-                    <td className="profil-td-kode">{r.kode_barang ?? '—'}</td>
+                    <td className="pa-td-no">{r.no}</td>
+                    <td className="pa-td-kode">{r.kode_barang ?? '—'}</td>
                     <td>{r.nup ?? '—'}</td>
-                    <td className="profil-td-nama">{r.nama_barang}</td>
+                    <td className="pa-td-nama">{r.nama_barang}</td>
                     <td>{r.kondisi ?? '—'}</td>
                     <td>{tahunDari(r.tanggal_perolehan)}</td>
-                    <td className="profil-td-nilai">{r.nilai_perolehan?.toLocaleString('id-ID') ?? '—'}</td>
+                    <td className="pa-td-nilai">{r.nilai_perolehan?.toLocaleString('id-ID') ?? '—'}</td>
                     <td>{formatLuas(r.luas_tanah_seluruhnya)}</td>
                     <td>{formatLuas(r.luas_bangunan)}</td>
                     <td>{r.penghuni ?? '—'}</td>
-                    <td className="profil-td-alamat">{alamatLengkap(r)}</td>
+                    <td className="pa-td-alamat">{alamatLengkap(r)}</td>
                   </tr>
                 ))}
               </tbody>
