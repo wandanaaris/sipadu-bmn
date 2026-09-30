@@ -797,7 +797,6 @@ export function ProfilAsetPage() {
 function ProfilAsetGrid({ onPilih }: { onPilih: (kode: string) => void }) {
   const [cari, setCari] = useState('')
   const [rekap, setRekap] = useState<RekapSatker[]>([])
-  const [loading, setLoading] = useState(true)
   const cariAktif = cari.trim().toLowerCase()
   const daftar = satkers.filter(s => s.code !== '692507' && `${s.name} ${s.code}`.toLowerCase().includes(cariAktif))
 
@@ -813,63 +812,41 @@ function ProfilAsetGrid({ onPilih }: { onPilih: (kode: string) => void }) {
   }, [])
 
   return (
-    <div className="pa-halaman">
-      {/* Hero header */}
-      <section className="pa-hero">
-        <div className="pa-hero-baris">
-          <div className="pa-hero-ikon"><Building2 size={26} /></div>
-          <div className="pa-hero-teks">
-            <h2>Profil Aset Satker</h2>
-            <p>Data BMN per Satker untuk keperluan sidak dan monitoring aset</p>
-          </div>
-          <label className="pa-hero-cari">
-            <Search size={14} />
-            <input value={cari} onChange={e => setCari(e.target.value)} placeholder="Cari nama atau kode…" />
-          </label>
+    <section className="panel admin-page">
+      <div className="panel-head">
+        <div>
+          <h2>Profil Aset Satker</h2>
+          <p>Data BMN per Satker untuk keperluan sidak dan monitoring aset.</p>
         </div>
-        <div className="pa-hero-stats">
-          <div className="pa-hero-stat">
-            <b>{daftar.length}</b>
-            <span>Satker</span>
-          </div>
-          <div className="pa-hero-stat">
-            <b>{rekap.reduce((n, r) => n + (r.tanah + r.rumah_negara + r.gedung), 0)}</b>
-            <span>Aset terkait</span>
-          </div>
-          <div className="pa-hero-stat">
-            <b>{formatRupiah(rekap.reduce((n, r) => n + r.total_nilai, 0))}</b>
-            <span>Total nilai</span>
-          </div>
-        </div>
-      </section>
-
-      {/* Grid kartu */}
+        <label className="filter-cari">
+          <Search size={15} />
+          <input value={cari} onChange={e => setCari(e.target.value)} placeholder="Cari nama atau kode Satker" />
+        </label>
+      </div>
       {loading
-        ? <p className="pa-loading">Memuat data…</p>
-        : <div className="pa-grid">
-            {daftar.map((s, idx) => {
+        ? <p style={{ opacity: .6, padding: '20px 0' }}>Memuat data…</p>
+        : <div className="pa2-grid">
+            {daftar.map(s => {
               const rk = rekap.find(r => r.satker_code === s.code)
               const asetTerkait = (rk?.tanah ?? 0) + (rk?.rumah_negara ?? 0) + (rk?.gedung ?? 0)
               return (
-                <button className="pa-kartu" key={s.code} onClick={() => onPilih(s.code)} style={{ animationDelay: `${idx * 35}ms` }}>
-                  <div className="pa-kartu-atas">
-                    <div className="pa-kartu-ikon"><Building2 size={18} /></div>
-                    <span className="pa-kartu-kode">{s.code}</span>
+                <button className="pa2-kartu" key={s.code} onClick={() => onPilih(s.code)}>
+                  <div className="pa2-ikon"><Building2 size={18} /></div>
+                  <div className="pa2-teks">
+                    <span className="pa2-kode">{s.code}</span>
+                    <strong className="pa2-nama">{s.name}</strong>
+                    <span className="pa2-sub">{asetTerkait} aset terkait · {formatRupiah(rk?.total_nilai ?? 0)}</span>
                   </div>
-                  <strong className="pa-kartu-nama">{s.name}</strong>
-                  <div className="pa-kartu-bawah">
-                    <div className="pa-kartu-info">
-                      <b>{asetTerkait}</b>
-                      <span>aset · {formatRupiah(rk?.total_nilai ?? 0)}</span>
-                    </div>
-                    <div className="pa-kartu-panah">→</div>
+                  <div className="pa2-angka">
+                    <b>{asetTerkait}</b>
+                    <span>ASET</span>
                   </div>
                 </button>
               )
             })}
           </div>}
       {!loading && daftar.length === 0 && <p className="kosong">Satker tidak ditemukan.</p>}
-    </div>
+    </section>
   )
 }
 
