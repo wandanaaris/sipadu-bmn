@@ -716,3 +716,218 @@ export function DetailPekerjaanPanel({ task, onTutup, onBukaPekerjaan }: {
     </section>
   )
 }
+
+
+// ── Profil Aset Satker (data sidak BMN) ─────────────────────────────────────
+type AsetRow = {
+  no: number
+  jenis_bmn: string
+  satker_code: string
+  nama_satker: string
+  nama_barang: string
+  kondisi: string | null
+  status_bmn: string | null
+  nilai_perolehan: number | null
+  nilai_buku: number | null
+  luas_tanah_seluruhnya: number | null
+  luas_bangunan: number | null
+  luas_tapak_bangunan: number | null
+  luas_pemanfaatan: number | null
+  jumlah_lantai: number | null
+  no_psp: string | null
+  tanggal_psp: string | null
+  status_sertifikasi: string | null
+  no_sertifikat: string | null
+  alamat: string | null
+  rt_rw: string | null
+  kelurahan_desa: string | null
+  kecamatan: string | null
+  kab_kota: string | null
+  provinsi: string | null
+  penghuni: string | null
+  pengguna: string | null
+}
+
+const jenisAset = [
+  { key: 'TANAH', label: 'Tanah', ikon: '🏗️', warna: '#16a34a' },
+  { key: 'RUMAH NEGARA', label: 'Rumah Negara', ikon: '🏠', warna: '#6366f1' },
+  { key: 'BANGUNAN DAN GEDUNG', label: 'Gedung & Bangunan', ikon: '🏢', warna: '#0ea5e9' },
+] as const
+
+function formatRupiah(n: number | null): string {
+  if (n == null || n === 0) return '—'
+  if (n >= 1_000_000_000) return `Rp ${(n / 1_000_000_000).toLocaleString('id-ID', { maximumFractionDigits: 1 })} M`
+  if (n >= 1_000_000) return `Rp ${(n / 1_000_000).toLocaleString('id-ID', { maximumFractionDigits: 1 })} jt`
+  return `Rp ${n.toLocaleString('id-ID')}`
+}
+
+function formatLuas(n: number | null): string {
+  if (n == null || n === 0) return '—'
+  return `${n.toLocaleString('id-ID')} m²`
+}
+
+export function ProfilAsetPage({ tasks }: { tasks: Task[] }) {
+  const [kode, setKode] = useState<string | null>(null)
+  if (kode) return <ProfilAsetDetail kodeSatker={kode} onKembali={() => setKode(null)} />
+  return <ProfilAsetGrid onPilih={setKode} />
+}
+
+function ProfilAsetGrid({ onPilih }: { onPilih: (kode: string) => void }) {
+  const [cari, setCari] = useState('')
+  const cariAktif = cari.trim().toLowerCase()
+  const hasil = satkers.filter(s => s.code !== '692507' && `${s.name} ${s.code}`.toLowerCase().includes(cariAktif))
+
+  return (
+    <section className="panel admin-page">
+      <div className="panel-head">
+        <div>
+          <h2>Profil Aset Satker</h2>
+          <p>Data BMN per Satker untuk keperluan sidak dan monitoring aset.</p>
+        </div>
+        <label className="filter-cari">
+          <Search size={15} />
+          <input value={cari} onChange={e => setCari(e.target.value)} placeholder="Cari nama atau kode Satker" />
+        </label>
+      </div>
+      <div className="ms-grid">
+        {hasil.map(s => (
+          <button className="ms-kartu" key={s.code} onClick={() => onPilih(s.code)}>
+            <div className="ms-ikon"><Building2 size={18} /></div>
+            <div className="ms-teks">
+              <span className="ms-kode">{s.code}</span>
+              <strong className="ms-nama">{s.name}</strong>
+            </div>
+            <div className="ms-skor hijau">
+              <b>→</b>
+              <span>aset</span>
+            </div>
+          </button>
+        ))}
+      </div>
+      {hasil.length === 0 && <p className="kosong">Satker tidak ditemukan.</p>}
+    </section>
+  )
+}
+
+function ProfilAsetDetail({ kodeSatker, onKembali }: { kodeSatker: string; onKembali: () => void }) {
+  const [data, setData] = useState<AsetRow[]>([])
+  const [loading, setLoading] = useState(true)
+  const [aktif, setAktif] = useState<string | null>(null)
+  const satker = satkers.find(s => s.code === kodeSatker)
+  const nama = satker?.name ?? kodeSatker
+
+  useEffect(() => {
+    let mounted = true
+    setLoading(true)
+    import('./lib/supabase').then(async ({ supabase }) => {
+      if (!supabase) { setLoading(false); return }
+      const { data: rows } = await supabase.rpc('get_bmn_aset_satker', { p_satker: kodeSatker })
+      if (mounted && Array.isArray(rows)) setData(rows as AsetRow[])
+      if (mounted) setLoading(false)
+    }).catch(() => { if (mounted) setLoading(false) })
+    return () => { mounted = false }
+  }, [kodeSatker])
+
+  const rekap = useMemo(() => jenisAset.map(j => {
+    const rows = data.filter(r => r.jenis_bmn === j.key)
+    return {
+      ...j,
+      jumlah: rows.length,
+      totalLuas: rows.reduce((n, r) => n + (j.key === 'TANAH' ? (r.luas_tanah_seluruhnya ?? 0) : (r.luas_bangunan ?? 0)), 0),
+      totalNilai: rows.reduce((n, r) => n + (r.nilai_perolehan ?? 0), 0),
+      tanpaPsp: rows.filter(r => !r.no_psp).length,
+    }
+  }), [data])
+
+  const kategoriAktif = rekap.find(r => r.key === aktif)
+  const tabelRows = aktif ? data.filter(r => r.jenis_bmn === aktif) : []
+
+  return (
+    <div className="info-halaman">
+      <section className="panel admin-page info-hero">
+        <button className="link-button" onClick={onKembali}><ArrowLeft size={13} /> Kembali ke daftar Satker</button>
+        <div className="info-hero-baris">
+          <div className="info-hero-ikon"><Building2 size={22} /></div>
+          <div className="info-hero-teks">
+            <h2>{nama}</h2>
+            <p>Kode {kodeSatker} · {data.length} aset BMN</p>
+          </div>
+        </div>
+      </section>
+
+      {loading
+        ? <section className="panel admin-page info-panel"><p style={{ opacity: .6 }}>Memuat data aset…</p></section>
+        : <>
+          <div className="profil-kategori-grid">
+            {rekap.map(k => (
+              <button
+                key={k.key}
+                className={`profil-kategori ${aktif === k.key ? 'profil-kategori-aktif' : ''}`}
+                style={aktif === k.key ? { borderColor: k.warna } : undefined}
+                
+                onClick={() => setAktif(aktif === k.key ? null : k.key)}
+              >
+                <div className="profil-kategori-ikon" style={{ color: k.warna }}>{k.ikon}</div>
+                <div className="profil-kategori-info">
+                  <strong>{k.label}</strong>
+                  <span>{k.jumlah} aset · {formatLuas(k.totalLuas)}</span>
+                  <span className="profil-kategori-nilai">{formatRupiah(k.totalNilai)}</span>
+                </div>
+                <div className="profil-kategori-badge">
+                  {k.tanpaPsp > 0 && <span className="badge-merah">{k.tanpaPsp} tanpa PSP</span>}
+                </div>
+              </button>
+            ))}
+          </div>
+
+          {kategoriAktif && (
+            <section className="panel admin-page info-panel profil-tabel-panel">
+              <h3>{kategoriAktif.ikon} {kategoriAktif.label} — {tabelRows.length} aset</h3>
+              <div className="profil-tabel-wrap">
+                <table className="profil-tabel">
+                  <thead>
+                    <tr>
+                      <th>No</th>
+                      <th>Nama Barang</th>
+                      {aktif === 'TANAH' && <><th>Luas (m²)</th><th>No Sertifikat</th><th>Status Sertifikasi</th></>}
+                      {aktif === 'RUMAH NEGARA' && <><th>Luas (m²)</th><th>Penghuni</th></>}
+                      {aktif === 'BANGUNAN DAN GEDUNG' && <><th>Luas (m²)</th><th>Lantai</th></>}
+                      <th>Nilai Perolehan</th>
+                      <th>Alamat</th>
+                      <th>No PSP</th>
+                      <th>Kondisi</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {tabelRows.map(r => (
+                      <tr key={r.no}>
+                        <td className="profil-td-no">{r.no}</td>
+                        <td className="profil-td-nama">{r.nama_barang}</td>
+                        {aktif === 'TANAH' && <>
+                          <td>{formatLuas(r.luas_tanah_seluruhnya)}</td>
+                          <td>{r.no_sertifikat || '—'}</td>
+                          <td>{r.status_sertifikasi || '—'}</td>
+                        </>}
+                        {aktif === 'RUMAH NEGARA' && <>
+                          <td>{formatLuas(r.luas_bangunan)}</td>
+                          <td>{r.penghuni || '—'}</td>
+                        </>}
+                        {aktif === 'BANGUNAN DAN GEDUNG' && <>
+                          <td>{formatLuas(r.luas_bangunan)}</td>
+                          <td>{r.jumlah_lantai ?? '—'}</td>
+                        </>}
+                        <td className="profil-td-nilai">{formatRupiah(r.nilai_perolehan)}</td>
+                        <td className="profil-td-alamat">{[r.alamat, r.kelurahan_desa, r.kecamatan].filter(Boolean).join(', ') || '—'}</td>
+                        <td>{r.no_psp ? <span className="badge-hijau">{r.no_psp}</span> : <span className="badge-merah">Belum</span>}</td>
+                        <td>{r.kondisi || '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          )}
+        </>}
+    </div>
+  )
+}

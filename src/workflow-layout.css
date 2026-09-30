@@ -458,3 +458,31 @@ button.danger:disabled{opacity:.45;cursor:not-allowed}
 .tdb-meter span{font-size:.74rem;color:var(--muted-foreground);min-width:32px;text-align:right}
 .tdu-total{font-size:.75rem;color:var(--muted-foreground);white-space:nowrap}
 @media (max-width:860px){.task-daftar-baris{grid-template-columns:1fr 1fr}}
+
+/* -- Profil Aset Satker ------------------------------------ */
+.profil-kategori-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media (max-width:760px){.profil-kategori-grid{grid-template-columns:1fr}}
+.profil-kategori{display:flex;align-items:center;gap:13px;padding:16px 18px;border:1px solid var(--border);border-radius:14px;background:var(--card);text-align:left;cursor:pointer;transition:border-color .18s,transform .18s,box-shadow .18s}
+.profil-kategori:hover{border-color:var(--kat-warna,var(--accent));transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.06)}
+.profil-kategori-aktif{border-color:var(--kat-warna,var(--accent));box-shadow:0 4px 16px color-mix(in srgb,var(--kat-warna,var(--accent)) 20%,transparent);background:color-mix(in srgb,var(--kat-warna,var(--accent)) 5%,var(--card))}
+.profil-kategori-ikon{font-size:1.6rem;flex:none}
+.profil-kategori-info{display:flex;flex-direction:column;gap:2px;min-width:0}
+.profil-kategori-info strong{font-size:.88rem}
+.profil-kategori-info span{font-size:.72rem;color:var(--muted-foreground)}
+.profil-kategori-nilai{font-weight:600;color:var(--foreground)!important;font-size:.8rem!important}
+.profil-kategori-badge{margin-left:auto;flex:none}
+.badge-merah{font-size:.65rem;padding:3px 8px;border-radius:999px;background:rgba(239,68,68,.12);color:#dc2626;white-space:nowrap}
+.badge-hijau{font-size:.65rem;padding:3px 8px;border-radius:999px;background:rgba(16,185,129,.12);color:#059669;white-space:nowrap;max-width:120px;overflow:hidden;text-overflow:ellipsis;display:inline-block}
+
+.profil-tabel-panel{overflow:hidden}
+.profil-tabel-wrap{overflow-x:auto;margin-top:10px;border:1px solid var(--border);border-radius:10px}
+.profil-tabel{width:100%;border-collapse:collapse;font-size:.78rem;min-width:900px}
+.profil-tabel thead{background:var(--muted);position:sticky;top:0}
+.profil-tabel th{padding:10px 12px;text-align:left;font-weight:600;font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted-foreground);white-space:nowrap}
+.profil-tabel td{padding:9px 12px;border-top:1px solid var(--border);vertical-align:top}
+.profil-tabel tbody tr{transition:background .12s}
+.profil-tabel tbody tr:hover{background:color-mix(in srgb,var(--accent) 4%,transparent)}
+.profil-td-no{color:var(--muted-foreground);font-size:.72rem;white-space:nowrap}
+.profil-td-nama{font-weight:500;min-width:160px}
+.profil-td-nilai{white-space:nowrap;font-weight:500}
+.profil-td-alamat{max-width:220px;font-size:.74rem;color:var(--muted-foreground);line-height:1.4}
