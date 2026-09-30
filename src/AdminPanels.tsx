@@ -797,6 +797,7 @@ export function ProfilAsetPage() {
 function ProfilAsetGrid({ onPilih }: { onPilih: (kode: string) => void }) {
   const [cari, setCari] = useState('')
   const [rekap, setRekap] = useState<RekapSatker[]>([])
+  const [loading, setLoading] = useState(true)
   const cariAktif = cari.trim().toLowerCase()
   const daftar = satkers.filter(s => s.code !== '692507' && `${s.name} ${s.code}`.toLowerCase().includes(cariAktif))
 
@@ -816,7 +817,7 @@ function ProfilAsetGrid({ onPilih }: { onPilih: (kode: string) => void }) {
       <div className="panel-head">
         <div>
           <h2>Profil Aset Satker</h2>
-          <p>Data BMN per Satker untuk keperluan sidak dan monitoring aset.</p>
+          <p>{daftar.length} Satker. Klik kartu untuk melihat data aset BMN.</p>
         </div>
         <label className="filter-cari">
           <Search size={15} />
@@ -829,17 +830,17 @@ function ProfilAsetGrid({ onPilih }: { onPilih: (kode: string) => void }) {
             {daftar.map(s => {
               const rk = rekap.find(r => r.satker_code === s.code)
               const asetTerkait = (rk?.tanah ?? 0) + (rk?.rumah_negara ?? 0) + (rk?.gedung ?? 0)
+              const tone = asetTerkait >= 25 ? 'hijau' : asetTerkait >= 10 ? 'kuning' : 'merah'
               return (
-                <button className="pa2-kartu" key={s.code} onClick={() => onPilih(s.code)}>
+                <button className="pa2-item" key={s.code} onClick={() => onPilih(s.code)}>
                   <div className="pa2-ikon"><Building2 size={18} /></div>
                   <div className="pa2-teks">
                     <span className="pa2-kode">{s.code}</span>
                     <strong className="pa2-nama">{s.name}</strong>
-                    <span className="pa2-sub">{asetTerkait} aset terkait · {formatRupiah(rk?.total_nilai ?? 0)}</span>
                   </div>
-                  <div className="pa2-angka">
+                  <div className={`pa2-badge ${tone}`}>
                     <b>{asetTerkait}</b>
-                    <span>ASET</span>
+                    <span>aset</span>
                   </div>
                 </button>
               )

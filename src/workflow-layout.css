@@ -517,18 +517,18 @@ button.danger:disabled{opacity:.45;cursor:not-allowed}
 .pa-td-nilai{white-space:nowrap;font-weight:600;text-align:right;font-variant-numeric:tabular-nums}
 .pa-td-alamat{max-width:260px;font-size:.72rem;color:var(--muted-foreground);line-height:1.5}
 
-/* -- Profil Aset Satker: grid klasik (4 kolom, kartu horizontal) */
-.pa2-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:0 18px 18px}
-@media (max-width:1100px){.pa2-grid{grid-template-columns:repeat(3,1fr)}}
-@media (max-width:860px){.pa2-grid{grid-template-columns:repeat(2,1fr)}}
-@media (max-width:600px){.pa2-grid{grid-template-columns:1fr}}
-.pa2-kartu{display:grid;grid-template-columns:auto 1fr auto;gap:11px;align-items:center;padding:13px 14px;border:1px solid var(--line,#e2e8f0);border-radius:9px;background:#fff;text-align:left;cursor:pointer;transition:border-color .15s,box-shadow .15s}
-.pa2-kartu:hover{border-color:#8db3d0;box-shadow:0 3px 12px rgba(16,56,88,.08)}
-.pa2-ikon{width:36px;height:36px;border-radius:8px;display:grid;place-items:center;background:#eef2f6;color:#4a6a84;flex:none}
+/* -- Profil Aset Satker: grid flat seperti Monitoring Satker */
+.pa2-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:10px;padding:0 18px 18px}
+.pa2-item{display:grid;grid-template-columns:auto 1fr auto;gap:11px;align-items:center;padding:10px 12px;border:1px solid transparent;border-radius:10px;background:transparent;text-align:left;cursor:pointer;transition:background .15s,border-color .15s}
+.pa2-item:hover{background:color-mix(in srgb,var(--accent) 5%,transparent);border-color:color-mix(in srgb,var(--accent) 18%,transparent)}
+.pa2-ikon{color:var(--foreground);opacity:.75;flex:none;display:grid;place-items:center}
 .pa2-teks{display:flex;flex-direction:column;gap:1px;min-width:0}
-.pa2-kode{font-size:.6rem;color:#8a9baa;letter-spacing:.04em}
+.pa2-kode{font-size:.62rem;color:var(--muted-foreground);letter-spacing:.04em}
 .pa2-nama{font-size:.78rem;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.pa2-sub{font-size:.6rem;color:#8a9baa;margin-top:2px}
-.pa2-angka{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:44px;flex:none}
-.pa2-angka b{font-size:1.15rem;color:#1e3a52;line-height:1.1}
-.pa2-angka span{font-size:.52rem;color:#8a9baa;text-transform:uppercase;letter-spacing:.06em}
+.pa2-badge{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:50px;padding:7px 6px;border-radius:10px;flex:none}
+.pa2-badge b{font-size:1.05rem;line-height:1.1}
+.pa2-badge span{font-size:.55rem;text-transform:uppercase;letter-spacing:.06em;opacity:.8}
+.pa2-badge.hijau{background:rgba(16,185,129,.13);color:#059669}
+.pa2-badge.kuning{background:rgba(245,158,11,.15);color:#d97706}
+.pa2-badge.merah{background:rgba(239,68,68,.13);color:#dc2626}
+@media (max-width:640px){.pa2-grid{grid-template-columns:1fr}}
