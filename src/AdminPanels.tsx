@@ -1,5 +1,5 @@
 import { useEffect, useId, useMemo, useState } from 'react'
-import { ArrowLeft, Building2, CircleAlert, ClipboardList, Clock3, Printer, Search, TrendingUp, UserCheck } from 'lucide-react'
+import { ArrowLeft, Building2, CircleAlert, ClipboardList, Clock3, Home, LandPlot, Printer, Search, TrendingUp, UserCheck } from 'lucide-react'
 import type { Task } from './data'
 import { asetSatker as rusakSatker } from './rusakBeratData'
 import { satkers, statusLabel } from './data'
@@ -761,9 +761,9 @@ type RekapSatker = {
 }
 
 const jenisAset = [
-  { key: 'TANAH', label: 'Tanah', ikon: '🏗️', warna: '#16a34a', gradasi: 'linear-gradient(135deg,#16a34a,#4ade80)' },
-  { key: 'RUMAH NEGARA', label: 'Rumah Negara', ikon: '🏠', warna: '#6366f1', gradasi: 'linear-gradient(135deg,#6366f1,#a78bfa)' },
-  { key: 'BANGUNAN DAN GEDUNG', label: 'Gedung & Bangunan', ikon: '🏢', warna: '#0ea5e9', gradasi: 'linear-gradient(135deg,#0ea5e9,#38bdf8)' },
+  { key: 'TANAH', label: 'Tanah', Ikon: LandPlot, warna: '#16a34a' },
+  { key: 'RUMAH NEGARA', label: 'Rumah Negara', Ikon: Home, warna: '#6366f1' },
+  { key: 'BANGUNAN DAN GEDUNG', label: 'Gedung & Bangunan', Ikon: Building2, warna: '#0ea5e9' },
 ] as const
 
 function formatRupiah(n: number | null): string {
@@ -923,10 +923,10 @@ function ProfilAsetDetail({ kodeSatker, onKembali }: { kodeSatker: string; onKem
 
   return (
     <div className="info-halaman">
-      <section className="panel admin-page profil-hero">
+      <section className="panel admin-page profil-satu">
         <button className="link-button" onClick={onKembali}><ArrowLeft size={13} /> Kembali ke daftar Satker</button>
-        <div className="profil-hero-baris">
-          <div className="profil-hero-ikon"><Building2 size={24} /></div>
+        <div className="profil-header">
+          <div className="profil-hero-ikon"><Building2 size={22} /></div>
           <div className="profil-hero-teks">
             <h2>{nama}</h2>
             <p>Kode {kodeSatker} · {semuaAsetTerkait.length} aset terkait · Total {formatRupiah(totalNilaiSemua)}</p>
@@ -937,74 +937,75 @@ function ProfilAsetDetail({ kodeSatker, onKembali }: { kodeSatker: string; onKem
             </button>
           )}
         </div>
+
+        {loading
+          ? <p style={{ opacity: .6, margin: '14px 0 0' }}>Memuat data aset…</p>
+          : <div className="profil-kategori-grid">
+              {rekap.map(k => {
+                const IkonKat = k.Ikon
+                return (
+                  <button
+                    key={k.key}
+                    className={`profil-kategori ${aktif === k.key ? 'profil-kategori-aktif' : ''}`}
+                    style={aktif === k.key ? { borderColor: k.warna, boxShadow: `0 3px 14px ${k.warna}20` } : undefined}
+                    onClick={() => setAktif(aktif === k.key ? null : k.key)}
+                  >
+                    <div className="profil-kategori-ikon" style={{ background: `${k.warna}18`, color: k.warna }}><IkonKat size={20} /></div>
+                    <div className="profil-kategori-info">
+                      <strong>{k.label}</strong>
+                      <span>{k.jumlah} aset · {formatLuas(k.totalLuas)}</span>
+                      <span className="profil-kategori-nilai">{formatRupiah(k.totalNilai)}</span>
+                    </div>
+                    {k.tanpaPsp > 0 && <span className="badge-merah">{k.tanpaPsp} tanpa PSP</span>}
+                  </button>
+                )
+              })}
+            </div>}
       </section>
 
-      {loading
-        ? <section className="panel admin-page info-panel"><p style={{ opacity: .6 }}>Memuat data aset…</p></section>
-        : <>
-          <div className="profil-kategori-grid">
-            {rekap.map(k => (
-              <button
-                key={k.key}
-                className={`profil-kategori ${aktif === k.key ? 'profil-kategori-aktif' : ''}`}
-                style={aktif === k.key ? { borderColor: k.warna, boxShadow: `0 4px 18px ${k.warna}22` } : undefined}
-                onClick={() => setAktif(aktif === k.key ? null : k.key)}
-              >
-                <div className="profil-kategori-ikon" style={{ background: k.gradasi }}>{k.ikon}</div>
-                <div className="profil-kategori-info">
-                  <strong>{k.label}</strong>
-                  <span>{k.jumlah} aset · {formatLuas(k.totalLuas)}</span>
-                  <span className="profil-kategori-nilai">{formatRupiah(k.totalNilai)}</span>
-                </div>
-                {k.tanpaPsp > 0 && <span className="badge-merah">{k.tanpaPsp} tanpa PSP</span>}
-              </button>
-            ))}
+      {!loading && kategoriAktif && (
+        <section className="panel admin-page profil-tabel-panel">
+          <div className="profil-tabel-head">
+            <h3>{kategoriAktif.label} — {tabelRows.length} aset</h3>
           </div>
-
-          {kategoriAktif && (
-            <section className="panel admin-page profil-tabel-panel">
-              <div className="profil-tabel-head">
-                <h3>{kategoriAktif.ikon} {kategoriAktif.label} — {tabelRows.length} aset</h3>
-              </div>
-              <div className="profil-tabel-wrap">
-                <table className="profil-tabel">
-                  <thead>
-                    <tr>
-                      <th>No</th>
-                      <th>Kode Barang</th>
-                      <th>NUP</th>
-                      <th>Nama Barang</th>
-                      <th>Kondisi</th>
-                      <th>Tahun</th>
-                      <th>Nilai Perolehan</th>
-                      <th>Luas Tanah (m²)</th>
-                      <th>Luas Bangunan (m²)</th>
-                      <th>Penghuni</th>
-                      <th>Alamat Lengkap</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {tabelRows.map(r => (
-                      <tr key={`${r.no}-${r.nup}`}>
-                        <td className="profil-td-no">{r.no}</td>
-                        <td className="profil-td-kode">{r.kode_barang ?? '—'}</td>
-                        <td>{r.nup ?? '—'}</td>
-                        <td className="profil-td-nama">{r.nama_barang}</td>
-                        <td>{r.kondisi ?? '—'}</td>
-                        <td>{tahunDari(r.tanggal_perolehan)}</td>
-                        <td className="profil-td-nilai">{r.nilai_perolehan?.toLocaleString('id-ID') ?? '—'}</td>
-                        <td>{formatLuas(r.luas_tanah_seluruhnya)}</td>
-                        <td>{formatLuas(r.luas_bangunan)}</td>
-                        <td>{r.penghuni ?? '—'}</td>
-                        <td className="profil-td-alamat">{alamatLengkap(r)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </section>
-          )}
-        </>}
+          <div className="profil-tabel-wrap">
+            <table className="profil-tabel">
+              <thead>
+                <tr>
+                  <th>No</th>
+                  <th>Kode Barang</th>
+                  <th>NUP</th>
+                  <th>Nama Barang</th>
+                  <th>Kondisi</th>
+                  <th>Tahun</th>
+                  <th>Nilai Perolehan</th>
+                  <th>Luas Tanah (m²)</th>
+                  <th>Luas Bangunan (m²)</th>
+                  <th>Penghuni</th>
+                  <th>Alamat Lengkap</th>
+                </tr>
+              </thead>
+              <tbody>
+                {tabelRows.map(r => (
+                  <tr key={`${r.no}-${r.nup}`}>
+                    <td className="profil-td-no">{r.no}</td>
+                    <td className="profil-td-kode">{r.kode_barang ?? '—'}</td>
+                    <td>{r.nup ?? '—'}</td>
+                    <td className="profil-td-nama">{r.nama_barang}</td>
+                    <td>{r.kondisi ?? '—'}</td>
+                    <td>{tahunDari(r.tanggal_perolehan)}</td>
+                    <td className="profil-td-nilai">{r.nilai_perolehan?.toLocaleString('id-ID') ?? '—'}</td>
+                    <td>{formatLuas(r.luas_tanah_seluruhnya)}</td>
+                    <td>{formatLuas(r.luas_bangunan)}</td>
+                    <td>{r.penghuni ?? '—'}</td>
+                    <td className="profil-td-alamat">{alamatLengkap(r)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
     </div>
   )
 }
