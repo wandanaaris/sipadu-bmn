@@ -888,37 +888,59 @@ function ProfilAsetDetail({ kodeSatker, onKembali }: { kodeSatker: string; onKem
   const semuaAsetTerkait = data.filter(r => jenisAset.some(j => j.key === r.jenis_bmn))
   const totalNilaiSemua = semuaAsetTerkait.reduce((n, r) => n + (r.nilai_perolehan ?? 0), 0)
 
-  const cetakPdf = () => {
-    const w = window.open('', '_blank')
-    if (!w) return
-    const rowsHtml = tabelRows.map(r => `<tr>
-      <td>${r.no}</td><td>${r.kode_barang ?? '—'}</td><td>${r.nup ?? '—'}</td>
-      <td>${r.nama_barang}</td><td>${r.kondisi ?? '—'}</td>
-      <td>${tahunDari(r.tanggal_perolehan)}</td>
-      <td style="text-align:right">${r.nilai_perolehan?.toLocaleString('id-ID') ?? '—'}</td>
-      <td style="text-align:right">${r.luas_tanah_seluruhnya?.toLocaleString('id-ID') ?? '—'}</td>
-      <td style="text-align:right">${r.luas_bangunan?.toLocaleString('id-ID') ?? '—'}</td>
-      <td>${r.penghuni ?? '—'}</td>
-      <td>${alamatLengkap(r)}</td>
-    </tr>`).join('')
-    w.document.write(`<!DOCTYPE html><html><head><title>Profil Aset — ${nama}</title>
-      <style>body{font-family:Arial,sans-serif;font-size:11px;padding:20px}
-      h1{font-size:16px;margin:0 0 4px}h2{font-size:13px;margin:12px 0 6px}
-      p{margin:2px 0;color:#555}table{width:100%;border-collapse:collapse;margin-top:8px}
-      th,td{border:1px solid #ccc;padding:5px 7px;text-align:left}
-      th{background:#f3f4f6;font-size:10px;text-transform:uppercase}
-      @media print{body{padding:0}}</style></head><body>
-      <h1>Profil Aset Satker — ${nama}</h1>
-      <p>Kode: ${kodeSatker} · Data SIMAN snapshot 30 September 2026</p>
-      <p>Kategori: ${kategoriAktif?.label ?? 'Semua'} · ${tabelRows.length} aset</p>
-      <table><thead><tr>
-        <th>No</th><th>Kode Barang</th><th>NUP</th><th>Nama Barang</th><th>Kondisi</th>
-        <th>Tahun</th><th>Nilai Perolehan</th><th>Luas Tanah (m²)</th><th>Luas Bangunan (m²)</th>
-        <th>Penghuni</th><th>Alamat Lengkap</th>
-      </tr></thead><tbody>${rowsHtml}</tbody></table>
-      </body></html>`)
-    w.document.close()
-    w.print()
+  const exportPdf = async () => {
+    const { default: jsPDF } = await import('jspdf')
+    const { default: autoTable } = await import('jspdf-autotable')
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
+
+    // Header
+    doc.setFontSize(14)
+    doc.setFont('helvetica', 'bold')
+    doc.text(`Profil Aset Satker — ${nama}`, 14, 15)
+    doc.setFontSize(9)
+    doc.setFont('helvetica', 'normal')
+    doc.setTextColor(100)
+    doc.text(`Kode: ${kodeSatker}  ·  Data SIMAN snapshot 30 September 2026`, 14, 21)
+    doc.text(`Kategori: ${kategoriAktif?.label ?? 'Semua'}  ·  ${tabelRows.length} aset`, 14, 26)
+    doc.setTextColor(0)
+
+    // Tabel
+    const head = [['No', 'Kode Barang', 'NUP', 'Nama Barang', 'Kondisi', 'Tahun', 'Nilai Perolehan', 'Luas Tanah (m²)', 'Luas Bangunan (m²)', 'Penghuni', 'Alamat Lengkap']]
+    const body = tabelRows.map(r => [
+      String(r.no),
+      r.kode_barang ?? '—',
+      r.nup ?? '—',
+      r.nama_barang,
+      r.kondisi ?? '—',
+      tahunDari(r.tanggal_perolehan),
+      r.nilai_perolehan?.toLocaleString('id-ID') ?? '—',
+      r.luas_tanah_seluruhnya?.toLocaleString('id-ID') ?? '—',
+      r.luas_bangunan?.toLocaleString('id-ID') ?? '—',
+      r.penghuni ?? '—',
+      alamatLengkap(r),
+    ])
+
+    autoTable(doc, {
+      head,
+      body,
+      startY: 32,
+      styles: { fontSize: 7, cellPadding: 2 },
+      headStyles: { fillColor: [59, 130, 246], fontSize: 6.5, fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: [245, 247, 250] },
+      columnStyles: {
+        0: { cellWidth: 10 },
+        1: { cellWidth: 22 },
+        2: { cellWidth: 10 },
+        3: { cellWidth: 40 },
+        6: { halign: 'right', cellWidth: 25 },
+        7: { halign: 'right', cellWidth: 20 },
+        8: { halign: 'right', cellWidth: 22 },
+        10: { cellWidth: 55 },
+      },
+      margin: { left: 14, right: 14 },
+    })
+
+    doc.save(`Profil-Aset-${kodeSatker}-${kategoriAktif?.label?.replace(/\\s+/g, '-') ?? 'semua'}.pdf`)
   }
 
   return (
@@ -932,8 +954,8 @@ function ProfilAsetDetail({ kodeSatker, onKembali }: { kodeSatker: string; onKem
             <p>Kode {kodeSatker} · {semuaAsetTerkait.length} aset terkait · Total {formatRupiah(totalNilaiSemua)}</p>
           </div>
           {kategoriAktif && (
-            <button className="profil-cetak" onClick={cetakPdf}>
-              <Printer size={14} /> Cetak PDF
+            <button className="profil-cetak" onClick={() => void exportPdf()}>
+              <Printer size={14} /> Export PDF
             </button>
           )}
         </div>
