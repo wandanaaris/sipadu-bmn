@@ -1,5 +1,5 @@
 import { useEffect, useId, useMemo, useState } from 'react'
-import { ArrowLeft, Building2, CircleAlert, ClipboardList, Clock3, Search, TrendingUp, UserCheck } from 'lucide-react'
+import { ArrowLeft, Building2, CircleAlert, ClipboardList, Clock3, Printer, Search, TrendingUp, UserCheck } from 'lucide-react'
 import type { Task } from './data'
 import { asetSatker as rusakSatker } from './rusakBeratData'
 import { satkers, statusLabel } from './data'
@@ -717,18 +717,20 @@ export function DetailPekerjaanPanel({ task, onTutup, onBukaPekerjaan }: {
   )
 }
 
-
 // ── Profil Aset Satker (data sidak BMN) ─────────────────────────────────────
 type AsetRow = {
   no: number
   jenis_bmn: string
   satker_code: string
   nama_satker: string
+  kode_barang: string | null
+  nup: string | null
   nama_barang: string
   kondisi: string | null
   status_bmn: string | null
   nilai_perolehan: number | null
   nilai_buku: number | null
+  tanggal_perolehan: string | null
   luas_tanah_seluruhnya: number | null
   luas_bangunan: number | null
   luas_tapak_bangunan: number | null
@@ -744,14 +746,24 @@ type AsetRow = {
   kecamatan: string | null
   kab_kota: string | null
   provinsi: string | null
+  kode_pos: string | null
   penghuni: string | null
   pengguna: string | null
 }
 
+type RekapSatker = {
+  satker_code: string
+  tanah: number
+  rumah_negara: number
+  gedung: number
+  total_aset: number
+  total_nilai: number
+}
+
 const jenisAset = [
-  { key: 'TANAH', label: 'Tanah', ikon: '🏗️', warna: '#16a34a' },
-  { key: 'RUMAH NEGARA', label: 'Rumah Negara', ikon: '🏠', warna: '#6366f1' },
-  { key: 'BANGUNAN DAN GEDUNG', label: 'Gedung & Bangunan', ikon: '🏢', warna: '#0ea5e9' },
+  { key: 'TANAH', label: 'Tanah', ikon: '🏗️', warna: '#16a34a', gradasi: 'linear-gradient(135deg,#16a34a,#4ade80)' },
+  { key: 'RUMAH NEGARA', label: 'Rumah Negara', ikon: '🏠', warna: '#6366f1', gradasi: 'linear-gradient(135deg,#6366f1,#a78bfa)' },
+  { key: 'BANGUNAN DAN GEDUNG', label: 'Gedung & Bangunan', ikon: '🏢', warna: '#0ea5e9', gradasi: 'linear-gradient(135deg,#0ea5e9,#38bdf8)' },
 ] as const
 
 function formatRupiah(n: number | null): string {
@@ -766,6 +778,16 @@ function formatLuas(n: number | null): string {
   return `${n.toLocaleString('id-ID')} m²`
 }
 
+function tahunDari(tanggal: string | null): string {
+  if (!tanggal) return '—'
+  const m = tanggal.match(/(\d{4})/)
+  return m ? m[1] : '—'
+}
+
+function alamatLengkap(r: AsetRow): string {
+  return [r.alamat, r.rt_rw ? `RT/RW ${r.rt_rw}` : '', r.kelurahan, r.kecamatan, r.kab_kota, r.provinsi, r.kode_pos].filter(Boolean).join(', ')
+}
+
 export function ProfilAsetPage() {
   const [kode, setKode] = useState<string | null>(null)
   if (kode) return <ProfilAsetDetail kodeSatker={kode} onKembali={() => setKode(null)} />
@@ -774,8 +796,21 @@ export function ProfilAsetPage() {
 
 function ProfilAsetGrid({ onPilih }: { onPilih: (kode: string) => void }) {
   const [cari, setCari] = useState('')
+  const [rekap, setRekap] = useState<RekapSatker[]>([])
+  const [loading, setLoading] = useState(true)
   const cariAktif = cari.trim().toLowerCase()
-  const hasil = satkers.filter(s => s.code !== '692507' && `${s.name} ${s.code}`.toLowerCase().includes(cariAktif))
+  const daftar = satkers.filter(s => s.code !== '692507' && `${s.name} ${s.code}`.toLowerCase().includes(cariAktif))
+
+  useEffect(() => {
+    let mounted = true
+    import('./lib/supabase').then(async ({ supabase }) => {
+      if (!supabase) { setLoading(false); return }
+      const { data } = await supabase.rpc('get_bmn_rekap_satker')
+      if (mounted && Array.isArray(data)) setRekap(data as RekapSatker[])
+      if (mounted) setLoading(false)
+    }).catch(() => { if (mounted) setLoading(false) })
+    return () => { mounted = false }
+  }, [])
 
   return (
     <section className="panel admin-page">
@@ -789,22 +824,31 @@ function ProfilAsetGrid({ onPilih }: { onPilih: (kode: string) => void }) {
           <input value={cari} onChange={e => setCari(e.target.value)} placeholder="Cari nama atau kode Satker" />
         </label>
       </div>
-      <div className="ms-grid">
-        {hasil.map(s => (
-          <button className="ms-kartu" key={s.code} onClick={() => onPilih(s.code)}>
-            <div className="ms-ikon"><Building2 size={18} /></div>
-            <div className="ms-teks">
-              <span className="ms-kode">{s.code}</span>
-              <strong className="ms-nama">{s.name}</strong>
-            </div>
-            <div className="ms-skor hijau">
-              <b>→</b>
-              <span>aset</span>
-            </div>
-          </button>
-        ))}
-      </div>
-      {hasil.length === 0 && <p className="kosong">Satker tidak ditemukan.</p>}
+      {loading
+        ? <p style={{ opacity: .6, padding: '20px 0' }}>Memuat data…</p>
+        : <div className="profil-grid">
+            {daftar.map(s => {
+              const rk = rekap.find(r => r.satker_code === s.code)
+              const asetTerkait = (rk?.tanah ?? 0) + (rk?.rumah_negara ?? 0) + (rk?.gedung ?? 0)
+              return (
+                <button className="profil-kartu" key={s.code} onClick={() => onPilih(s.code)}>
+                  <div className="profil-kartu-ikon"><Building2 size={20} /></div>
+                  <div className="profil-kartu-teks">
+                    <span className="profil-kartu-kode">{s.code}</span>
+                    <strong className="profil-kartu-nama">{s.name}</strong>
+                    <span className="profil-kartu-sub">
+                      {asetTerkait} aset terkait · {formatRupiah(rk?.total_nilai ?? 0)}
+                    </span>
+                  </div>
+                  <div className="profil-kartu-angka">
+                    <b>{asetTerkait}</b>
+                    <span>aset</span>
+                  </div>
+                </button>
+              )
+            })}
+          </div>}
+      {!loading && daftar.length === 0 && <p className="kosong">Satker tidak ditemukan.</p>}
     </section>
   )
 }
@@ -841,17 +885,57 @@ function ProfilAsetDetail({ kodeSatker, onKembali }: { kodeSatker: string; onKem
 
   const kategoriAktif = rekap.find(r => r.key === aktif)
   const tabelRows = aktif ? data.filter(r => r.jenis_bmn === aktif) : []
+  const semuaAsetTerkait = data.filter(r => jenisAset.some(j => j.key === r.jenis_bmn))
+  const totalNilaiSemua = semuaAsetTerkait.reduce((n, r) => n + (r.nilai_perolehan ?? 0), 0)
+
+  const cetakPdf = () => {
+    const w = window.open('', '_blank')
+    if (!w) return
+    const rowsHtml = tabelRows.map(r => `<tr>
+      <td>${r.no}</td><td>${r.kode_barang ?? '—'}</td><td>${r.nup ?? '—'}</td>
+      <td>${r.nama_barang}</td><td>${r.kondisi ?? '—'}</td>
+      <td>${tahunDari(r.tanggal_perolehan)}</td>
+      <td style="text-align:right">${r.nilai_perolehan?.toLocaleString('id-ID') ?? '—'}</td>
+      <td style="text-align:right">${r.luas_tanah_seluruhnya?.toLocaleString('id-ID') ?? '—'}</td>
+      <td style="text-align:right">${r.luas_bangunan?.toLocaleString('id-ID') ?? '—'}</td>
+      <td>${r.penghuni ?? '—'}</td>
+      <td>${alamatLengkap(r)}</td>
+    </tr>`).join('')
+    w.document.write(`<!DOCTYPE html><html><head><title>Profil Aset — ${nama}</title>
+      <style>body{font-family:Arial,sans-serif;font-size:11px;padding:20px}
+      h1{font-size:16px;margin:0 0 4px}h2{font-size:13px;margin:12px 0 6px}
+      p{margin:2px 0;color:#555}table{width:100%;border-collapse:collapse;margin-top:8px}
+      th,td{border:1px solid #ccc;padding:5px 7px;text-align:left}
+      th{background:#f3f4f6;font-size:10px;text-transform:uppercase}
+      @media print{body{padding:0}}</style></head><body>
+      <h1>Profil Aset Satker — ${nama}</h1>
+      <p>Kode: ${kodeSatker} · Data SIMAN snapshot 30 September 2026</p>
+      <p>Kategori: ${kategoriAktif?.label ?? 'Semua'} · ${tabelRows.length} aset</p>
+      <table><thead><tr>
+        <th>No</th><th>Kode Barang</th><th>NUP</th><th>Nama Barang</th><th>Kondisi</th>
+        <th>Tahun</th><th>Nilai Perolehan</th><th>Luas Tanah (m²)</th><th>Luas Bangunan (m²)</th>
+        <th>Penghuni</th><th>Alamat Lengkap</th>
+      </tr></thead><tbody>${rowsHtml}</tbody></table>
+      </body></html>`)
+    w.document.close()
+    w.print()
+  }
 
   return (
     <div className="info-halaman">
-      <section className="panel admin-page info-hero">
+      <section className="panel admin-page profil-hero">
         <button className="link-button" onClick={onKembali}><ArrowLeft size={13} /> Kembali ke daftar Satker</button>
-        <div className="info-hero-baris">
-          <div className="info-hero-ikon"><Building2 size={22} /></div>
-          <div className="info-hero-teks">
+        <div className="profil-hero-baris">
+          <div className="profil-hero-ikon"><Building2 size={24} /></div>
+          <div className="profil-hero-teks">
             <h2>{nama}</h2>
-            <p>Kode {kodeSatker} · {data.length} aset BMN</p>
+            <p>Kode {kodeSatker} · {semuaAsetTerkait.length} aset terkait · Total {formatRupiah(totalNilaiSemua)}</p>
           </div>
+          {kategoriAktif && (
+            <button className="profil-cetak" onClick={cetakPdf}>
+              <Printer size={14} /> Cetak PDF
+            </button>
+          )}
         </div>
       </section>
 
@@ -863,63 +947,56 @@ function ProfilAsetDetail({ kodeSatker, onKembali }: { kodeSatker: string; onKem
               <button
                 key={k.key}
                 className={`profil-kategori ${aktif === k.key ? 'profil-kategori-aktif' : ''}`}
-                style={aktif === k.key ? { borderColor: k.warna } : undefined}
-                
+                style={aktif === k.key ? { borderColor: k.warna, boxShadow: `0 4px 18px ${k.warna}22` } : undefined}
                 onClick={() => setAktif(aktif === k.key ? null : k.key)}
               >
-                <div className="profil-kategori-ikon" style={{ color: k.warna }}>{k.ikon}</div>
+                <div className="profil-kategori-ikon" style={{ background: k.gradasi }}>{k.ikon}</div>
                 <div className="profil-kategori-info">
                   <strong>{k.label}</strong>
                   <span>{k.jumlah} aset · {formatLuas(k.totalLuas)}</span>
                   <span className="profil-kategori-nilai">{formatRupiah(k.totalNilai)}</span>
                 </div>
-                <div className="profil-kategori-badge">
-                  {k.tanpaPsp > 0 && <span className="badge-merah">{k.tanpaPsp} tanpa PSP</span>}
-                </div>
+                {k.tanpaPsp > 0 && <span className="badge-merah">{k.tanpaPsp} tanpa PSP</span>}
               </button>
             ))}
           </div>
 
           {kategoriAktif && (
-            <section className="panel admin-page info-panel profil-tabel-panel">
-              <h3>{kategoriAktif.ikon} {kategoriAktif.label} — {tabelRows.length} aset</h3>
+            <section className="panel admin-page profil-tabel-panel">
+              <div className="profil-tabel-head">
+                <h3>{kategoriAktif.ikon} {kategoriAktif.label} — {tabelRows.length} aset</h3>
+              </div>
               <div className="profil-tabel-wrap">
                 <table className="profil-tabel">
                   <thead>
                     <tr>
                       <th>No</th>
+                      <th>Kode Barang</th>
+                      <th>NUP</th>
                       <th>Nama Barang</th>
-                      {aktif === 'TANAH' && <><th>Luas (m²)</th><th>No Sertifikat</th><th>Status Sertifikasi</th></>}
-                      {aktif === 'RUMAH NEGARA' && <><th>Luas (m²)</th><th>Penghuni</th></>}
-                      {aktif === 'BANGUNAN DAN GEDUNG' && <><th>Luas (m²)</th><th>Lantai</th></>}
-                      <th>Nilai Perolehan</th>
-                      <th>Alamat</th>
-                      <th>No PSP</th>
                       <th>Kondisi</th>
+                      <th>Tahun</th>
+                      <th>Nilai Perolehan</th>
+                      <th>Luas Tanah (m²)</th>
+                      <th>Luas Bangunan (m²)</th>
+                      <th>Penghuni</th>
+                      <th>Alamat Lengkap</th>
                     </tr>
                   </thead>
                   <tbody>
                     {tabelRows.map(r => (
-                      <tr key={r.no}>
+                      <tr key={`${r.no}-${r.nup}`}>
                         <td className="profil-td-no">{r.no}</td>
+                        <td className="profil-td-kode">{r.kode_barang ?? '—'}</td>
+                        <td>{r.nup ?? '—'}</td>
                         <td className="profil-td-nama">{r.nama_barang}</td>
-                        {aktif === 'TANAH' && <>
-                          <td>{formatLuas(r.luas_tanah_seluruhnya)}</td>
-                          <td>{r.no_sertifikat || '—'}</td>
-                          <td>{r.status_sertifikasi || '—'}</td>
-                        </>}
-                        {aktif === 'RUMAH NEGARA' && <>
-                          <td>{formatLuas(r.luas_bangunan)}</td>
-                          <td>{r.penghuni || '—'}</td>
-                        </>}
-                        {aktif === 'BANGUNAN DAN GEDUNG' && <>
-                          <td>{formatLuas(r.luas_bangunan)}</td>
-                          <td>{r.jumlah_lantai ?? '—'}</td>
-                        </>}
-                        <td className="profil-td-nilai">{formatRupiah(r.nilai_perolehan)}</td>
-                        <td className="profil-td-alamat">{[r.alamat, r.kelurahan, r.kecamatan].filter(Boolean).join(', ') || '—'}</td>
-                        <td>{r.no_psp ? <span className="badge-hijau">{r.no_psp}</span> : <span className="badge-merah">Belum</span>}</td>
-                        <td>{r.kondisi || '—'}</td>
+                        <td>{r.kondisi ?? '—'}</td>
+                        <td>{tahunDari(r.tanggal_perolehan)}</td>
+                        <td className="profil-td-nilai">{r.nilai_perolehan?.toLocaleString('id-ID') ?? '—'}</td>
+                        <td>{formatLuas(r.luas_tanah_seluruhnya)}</td>
+                        <td>{formatLuas(r.luas_bangunan)}</td>
+                        <td>{r.penghuni ?? '—'}</td>
+                        <td className="profil-td-alamat">{alamatLengkap(r)}</td>
                       </tr>
                     ))}
                   </tbody>
