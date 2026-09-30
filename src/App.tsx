@@ -568,7 +568,7 @@ function AdminRouter({page,tasks,detail,setDetail,toggleTask,setMonev,onRefresh,
  if(page==='akun-mitra') return <AkunMitraAdmin/>
  if(page==='verification') return <><StagedVerificationSection tasks={tasks} onRefresh={onRefresh}/><SubmissionInbox onTasksChanged={onRefresh} tasks={tasks}/></>
  if(page==='performance') return <PerformanceView/>
- if(page==='profil-aset') return <ProfilAsetPage tasks={tasks}/>
+ if(page==='profil-aset') return <ProfilAsetPage/>
 if(page==='data'){const archiveCount=tasks.filter(t=>!t.active).length;return <section className="admin-page"><div className="data-intro"><Database/><div><h2>Data Center BMN</h2><p>Pusat indeks pekerjaan, dokumen, dan riwayat. Pada MVP, berkas masih berupa data contoh dan tautan sumber.</p></div></div><div className="data-grid">{dataCards(archiveCount).map(([title,text])=><article className="data-card" key={title}><Archive/><h3>{title}</h3><p>{text}</p><button>Lihat indeks →</button></article>)}</div></section>}
 if(page==='archive') {const archived=tasks.filter(t=>!t.active);return <section className="panel admin-page"><div className="panel-head"><div><h2>Arsip pekerjaan</h2><p>Pekerjaan ditutup tetap tersimpan dan dapat dibuka kembali.</p></div></div>{archived.length===0?<EmptyState icon={Archive} title="Arsip masih kosong" text="Pekerjaan yang ditutup akan tersimpan di sini."/>:<div className="archive-grid">{archived.map(t=><article className="archive-card" key={t.id}><MethodIcon method={t.method}/><div><span>{t.due}</span><h3>{t.title}</h3><p>{t.letter}</p></div><button className="ghost" onClick={()=>toggleTask(t.id)}>Buka kembali</button></article>)}</div>}</section>}
  return null

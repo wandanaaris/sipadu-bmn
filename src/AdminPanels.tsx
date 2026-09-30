@@ -740,7 +740,7 @@ type AsetRow = {
   no_sertifikat: string | null
   alamat: string | null
   rt_rw: string | null
-  kelurahan_desa: string | null
+  kelurahan: string | null
   kecamatan: string | null
   kab_kota: string | null
   provinsi: string | null
@@ -766,7 +766,7 @@ function formatLuas(n: number | null): string {
   return `${n.toLocaleString('id-ID')} m²`
 }
 
-export function ProfilAsetPage({ tasks }: { tasks: Task[] }) {
+export function ProfilAsetPage() {
   const [kode, setKode] = useState<string | null>(null)
   if (kode) return <ProfilAsetDetail kodeSatker={kode} onKembali={() => setKode(null)} />
   return <ProfilAsetGrid onPilih={setKode} />
@@ -917,7 +917,7 @@ function ProfilAsetDetail({ kodeSatker, onKembali }: { kodeSatker: string; onKem
                           <td>{r.jumlah_lantai ?? '—'}</td>
                         </>}
                         <td className="profil-td-nilai">{formatRupiah(r.nilai_perolehan)}</td>
-                        <td className="profil-td-alamat">{[r.alamat, r.kelurahan_desa, r.kecamatan].filter(Boolean).join(', ') || '—'}</td>
+                        <td className="profil-td-alamat">{[r.alamat, r.kelurahan, r.kecamatan].filter(Boolean).join(', ') || '—'}</td>
                         <td>{r.no_psp ? <span className="badge-hijau">{r.no_psp}</span> : <span className="badge-merah">Belum</span>}</td>
                         <td>{r.kondisi || '—'}</td>
                       </tr>
