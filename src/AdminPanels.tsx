@@ -1,5 +1,5 @@
 import { useEffect, useId, useMemo, useState } from 'react'
-import { ArrowLeft, Building2, CircleAlert, ClipboardList, Clock3, Home, LandPlot, Printer, Search, TrendingUp, UserCheck } from 'lucide-react'
+import { ArrowLeft, Building2, Car, CircleAlert, ClipboardList, Clock3, Cog, Crosshair, HardHat, Home, LandPlot, Monitor, Package, Printer, Route, Search, TrendingUp, UserCheck, Wrench } from 'lucide-react'
 import type { Task } from './data'
 import { asetSatker as rusakSatker } from './rusakBeratData'
 import { satkers, statusLabel } from './data'
@@ -749,6 +749,10 @@ type AsetRow = {
   kode_pos: string | null
   penghuni: string | null
   pengguna: string | null
+  merk: string | null
+  tipe: string | null
+  no_polisi: string | null
+  no_identitas: string | null
 }
 
 type RekapSatker = {
@@ -757,14 +761,81 @@ type RekapSatker = {
   rumah_negara: number
   gedung: number
   total_aset: number
+  jumlah_jenis: number
   total_nilai: number
 }
 
-const jenisAset = [
-  { key: 'TANAH', label: 'Tanah', Ikon: LandPlot, warna: '#16a34a' },
-  { key: 'RUMAH NEGARA', label: 'Rumah Negara', Ikon: Home, warna: '#6366f1' },
-  { key: 'BANGUNAN DAN GEDUNG', label: 'Gedung & Bangunan', Ikon: Building2, warna: '#0ea5e9' },
-] as const
+// Metadata semua jenis BMN yang ada di database (tabel bmn_assets).
+const jenisBmnMeta: Record<string, { label: string; Ikon: typeof Building2; warna: string }> = {
+  'TANAH': { label: 'Tanah', Ikon: LandPlot, warna: '#16a34a' },
+  'RUMAH NEGARA': { label: 'Rumah Negara', Ikon: Home, warna: '#6366f1' },
+  'BANGUNAN DAN GEDUNG': { label: 'Gedung & Bangunan', Ikon: Building2, warna: '#0ea5e9' },
+  'JALAN DAN JEMBATAN': { label: 'Jalan & Jembatan', Ikon: Route, warna: '#f59e0b' },
+  'KONSTRUKSI DALAM PENGERJAAN (KDP)': { label: 'KDP', Ikon: HardHat, warna: '#a855f7' },
+  'ALAT ANGKUTAN BERMOTOR': { label: 'Kendaraan Bermotor', Ikon: Car, warna: '#ef4444' },
+  'ALAT BESAR': { label: 'Alat Besar', Ikon: Cog, warna: '#64748b' },
+  'ALAT PERSENJATAAN': { label: 'Alat Persenjataan', Ikon: Crosshair, warna: '#78350f' },
+  'MESIN PERALATAN NON TIK': { label: 'Mesin & Peralatan Non-TIK', Ikon: Wrench, warna: '#475569' },
+  'MESIN PERALATAN KHUSUS TIK': { label: 'Peralatan TIK', Ikon: Monitor, warna: '#0891b2' },
+  'ASET TETAP LAINNYA': { label: 'Aset Tetap Lainnya', Ikon: Package, warna: '#71717a' },
+}
+
+// Kolom tabel disesuaikan dengan jenis BMN.
+type KolomTabel = { label: string; ambil: (r: AsetRow) => string; kanan?: boolean; mono?: boolean; lebarPdf?: number }
+
+function kolomUntukJenis(jenis: string): KolomTabel[] {
+  const dasar: KolomTabel[] = [
+    { label: 'Kode Barang', ambil: r => r.kode_barang ?? '—', mono: true, lebarPdf: 22 },
+    { label: 'NUP', ambil: r => r.nup ?? '—', lebarPdf: 9 },
+    { label: 'Nama Barang', ambil: r => r.nama_barang, lebarPdf: 36 },
+    { label: 'Kondisi', ambil: r => r.kondisi ?? '—', lebarPdf: 13 },
+    { label: 'Tahun', ambil: r => tahunDari(r.tanggal_perolehan), lebarPdf: 12 },
+    { label: 'Nilai Perolehan', ambil: r => r.nilai_perolehan?.toLocaleString('id-ID') ?? '—', kanan: true, lebarPdf: 24 },
+  ]
+  const kendaraan: KolomTabel[] = [
+    { label: 'Merk', ambil: r => r.merk ?? '—', lebarPdf: 22 },
+    { label: 'Tipe', ambil: r => r.tipe ?? '—', lebarPdf: 28 },
+    { label: 'No Polisi', ambil: r => r.no_polisi ?? '—', lebarPdf: 18 },
+    { label: 'Pengguna', ambil: r => r.pengguna ?? '—', lebarPdf: 24 },
+  ]
+  const mesin: KolomTabel[] = [
+    { label: 'Merk', ambil: r => r.merk ?? '—', lebarPdf: 26 },
+    { label: 'Tipe', ambil: r => r.tipe ?? '—', lebarPdf: 34 },
+    { label: 'Pengguna', ambil: r => r.pengguna ?? '—', lebarPdf: 26 },
+  ]
+  const properti: KolomTabel[] = [
+    { label: 'Alamat Lengkap', ambil: r => alamatLengkap(r), lebarPdf: 58 },
+  ]
+  switch (jenis) {
+    case 'TANAH':
+      return [...dasar,
+        { label: 'Luas Tanah (m²)', ambil: r => formatLuas(r.luas_tanah_seluruhnya), kanan: true, lebarPdf: 20 },
+        { label: 'No Sertifikat', ambil: r => r.no_sertifikat ?? '—', lebarPdf: 22 },
+        { label: 'Status Sertifikasi', ambil: r => r.status_sertifikasi ?? '—', lebarPdf: 26 },
+        ...properti]
+    case 'RUMAH NEGARA':
+      return [...dasar,
+        { label: 'Luas Bangunan (m²)', ambil: r => formatLuas(r.luas_bangunan), kanan: true, lebarPdf: 22 },
+        { label: 'Penghuni', ambil: r => r.penghuni ?? '—', lebarPdf: 20 },
+        ...properti]
+    case 'BANGUNAN DAN GEDUNG':
+      return [...dasar,
+        { label: 'Luas Bangunan (m²)', ambil: r => formatLuas(r.luas_bangunan), kanan: true, lebarPdf: 22 },
+        { label: 'Luas Tapak (m²)', ambil: r => formatLuas(r.luas_tapak_bangunan), kanan: true, lebarPdf: 20 },
+        { label: 'Lantai', ambil: r => r.jumlah_lantai ? String(r.jumlah_lantai) : '—', lebarPdf: 12 },
+        ...properti]
+    case 'ALAT ANGKUTAN BERMOTOR':
+      return [...dasar, ...kendaraan]
+    case 'MESIN PERALATAN NON TIK':
+    case 'MESIN PERALATAN KHUSUS TIK':
+    case 'ALAT BESAR':
+    case 'ALAT PERSENJATAAN':
+    case 'ASET TETAP LAINNYA':
+      return [...dasar, ...mesin]
+    default:
+      return [...dasar, ...properti]
+  }
+}
 
 function formatRupiah(n: number | null): string {
   if (n == null || n === 0) return '—'
@@ -870,21 +941,34 @@ function ProfilAsetDetail({ kodeSatker, onKembali }: { kodeSatker: string; onKem
     return () => { mounted = false }
   }, [kodeSatker])
 
-  const rekap = useMemo(() => jenisAset.map(j => {
-    const rows = data.filter(r => r.jenis_bmn === j.key)
-    return {
-      ...j,
-      jumlah: rows.length,
-      totalLuas: rows.reduce((n, r) => n + (j.key === 'TANAH' ? (r.luas_tanah_seluruhnya ?? 0) : (r.luas_bangunan ?? 0)), 0),
-      totalNilai: rows.reduce((n, r) => n + (r.nilai_perolehan ?? 0), 0),
-      tanpaPsp: rows.filter(r => !r.no_psp).length,
+  // Kartu kategori dibangun dari jenis BMN yang benar-benar ada di data satker ini,
+  // urut dari jumlah aset terbanyak, hanya jenis yang terdaftar di jenisBmnMeta.
+  const rekap = useMemo(() => {
+    const perJenis = new Map<string, AsetRow[]>()
+    for (const r of data) {
+      if (!jenisBmnMeta[r.jenis_bmn]) continue
+      const list = perJenis.get(r.jenis_bmn) ?? []
+      list.push(r)
+      perJenis.set(r.jenis_bmn, list)
     }
-  }), [data])
+    return [...perJenis.entries()]
+      .sort((a, b) => b[1].length - a[1].length)
+      .map(([key, rows]) => ({
+        key,
+        ...jenisBmnMeta[key],
+        jumlah: rows.length,
+        totalLuas: key === 'TANAH'
+          ? rows.reduce((n, r) => n + (r.luas_tanah_seluruhnya ?? 0), 0)
+          : rows.reduce((n, r) => n + (r.luas_bangunan ?? 0), 0),
+        totalNilai: rows.reduce((n, r) => n + (r.nilai_perolehan ?? 0), 0),
+        tanpaPsp: rows.filter(r => !r.no_psp).length,
+      }))
+  }, [data])
 
   const kategoriAktif = rekap.find(r => r.key === aktif)
   const tabelRows = aktif ? data.filter(r => r.jenis_bmn === aktif) : []
-  const semuaAsetTerkait = data.filter(r => jenisAset.some(j => j.key === r.jenis_bmn))
-  const totalNilaiSemua = semuaAsetTerkait.reduce((n, r) => n + (r.nilai_perolehan ?? 0), 0)
+  const kolom = aktif ? kolomUntukJenis(aktif) : []
+  const totalNilaiSemua = data.reduce((n, r) => n + (r.nilai_perolehan ?? 0), 0)
 
   const exportPdf = async () => {
     const { default: jsPDF } = await import('jspdf')
@@ -902,21 +986,14 @@ function ProfilAsetDetail({ kodeSatker, onKembali }: { kodeSatker: string; onKem
     doc.text(`Kategori: ${kategoriAktif?.label ?? 'Semua'}  ·  ${tabelRows.length} aset`, 14, 26)
     doc.setTextColor(0)
 
-    // Tabel
-    const head = [['No', 'Kode Barang', 'NUP', 'Nama Barang', 'Kondisi', 'Tahun', 'Nilai Perolehan', 'Luas Tanah (m²)', 'Luas Bangunan (m²)', 'Penghuni', 'Alamat Lengkap']]
-    const body = tabelRows.map((r, i) => [
-      String(i + 1),
-      r.kode_barang ?? '—',
-      r.nup ?? '—',
-      r.nama_barang,
-      r.kondisi ?? '—',
-      tahunDari(r.tanggal_perolehan),
-      r.nilai_perolehan?.toLocaleString('id-ID') ?? '—',
-      r.luas_tanah_seluruhnya?.toLocaleString('id-ID') ?? '—',
-      r.luas_bangunan?.toLocaleString('id-ID') ?? '—',
-      r.penghuni ?? '—',
-      alamatLengkap(r),
-    ])
+    // Tabel — kolom mengikuti jenis BMN yang aktif
+    const kolomPdf = kolomUntukJenis(kategoriAktif?.key ?? '')
+    const head = [['No', ...kolomPdf.map(k => k.label)]]
+    const body = tabelRows.map((r, i) => [String(i + 1), ...kolomPdf.map(k => k.ambil(r))])
+    const columnStyles: Record<number, { halign?: 'right'; cellWidth?: number }> = { 0: { cellWidth: 9 } }
+    kolomPdf.forEach((k, idx) => {
+      columnStyles[idx + 1] = { ...(k.kanan ? { halign: 'right' as const } : {}), ...(k.lebarPdf ? { cellWidth: k.lebarPdf } : {}) }
+    })
 
     autoTable(doc, {
       head,
@@ -925,16 +1002,7 @@ function ProfilAsetDetail({ kodeSatker, onKembali }: { kodeSatker: string; onKem
       styles: { fontSize: 7, cellPadding: 2 },
       headStyles: { fillColor: [59, 130, 246], fontSize: 6.5, fontStyle: 'bold' },
       alternateRowStyles: { fillColor: [245, 247, 250] },
-      columnStyles: {
-        0: { cellWidth: 10 },
-        1: { cellWidth: 22 },
-        2: { cellWidth: 10 },
-        3: { cellWidth: 40 },
-        6: { halign: 'right', cellWidth: 25 },
-        7: { halign: 'right', cellWidth: 20 },
-        8: { halign: 'right', cellWidth: 22 },
-        10: { cellWidth: 55 },
-      },
+      columnStyles,
       margin: { left: 14, right: 14 },
     })
 
@@ -960,7 +1028,7 @@ function ProfilAsetDetail({ kodeSatker, onKembali }: { kodeSatker: string; onKem
         </div>
         {!loading && (
           <div className="pa-hero-stats">
-            <div className="pa-stat"><b>{semuaAsetTerkait.length}</b><span>Aset terkait</span></div>
+            <div className="pa-stat"><b>{data.length}</b><span>Total aset</span></div>
             <div className="pa-stat"><b>{formatRupiah(totalNilaiSemua)}</b><span>Total nilai perolehan</span></div>
             <div className="pa-stat"><b>{rekap.reduce((n, k) => n + k.tanpaPsp, 0)}</b><span>Belum PSP</span></div>
           </div>
@@ -1009,32 +1077,16 @@ function ProfilAsetDetail({ kodeSatker, onKembali }: { kodeSatker: string; onKem
               <thead>
                 <tr>
                   <th>No</th>
-                  <th>Kode Barang</th>
-                  <th>NUP</th>
-                  <th>Nama Barang</th>
-                  <th>Kondisi</th>
-                  <th>Tahun</th>
-                  <th>Nilai Perolehan</th>
-                  <th>Luas Tanah (m²)</th>
-                  <th>Luas Bangunan (m²)</th>
-                  <th>Penghuni</th>
-                  <th>Alamat Lengkap</th>
+                  {kolom.map(k => <th key={k.label}>{k.label}</th>)}
                 </tr>
               </thead>
               <tbody>
                 {tabelRows.map((r, i) => (
                   <tr key={`${i}-${r.nup}`}>
                     <td className="pa-td-no">{i + 1}</td>
-                    <td className="pa-td-kode">{r.kode_barang ?? '—'}</td>
-                    <td>{r.nup ?? '—'}</td>
-                    <td className="pa-td-nama">{r.nama_barang}</td>
-                    <td>{r.kondisi ?? '—'}</td>
-                    <td>{tahunDari(r.tanggal_perolehan)}</td>
-                    <td className="pa-td-nilai">{r.nilai_perolehan?.toLocaleString('id-ID') ?? '—'}</td>
-                    <td>{formatLuas(r.luas_tanah_seluruhnya)}</td>
-                    <td>{formatLuas(r.luas_bangunan)}</td>
-                    <td>{r.penghuni ?? '—'}</td>
-                    <td className="pa-td-alamat">{alamatLengkap(r)}</td>
+                    {kolom.map(k => (
+                      <td key={k.label} className={`${k.mono ? 'pa-td-kode ' : ''}${k.kanan ? 'pa-td-nilai' : ''}`}>{k.ambil(r)}</td>
+                    ))}
                   </tr>
                 ))}
               </tbody>
