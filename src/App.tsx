@@ -96,8 +96,11 @@ function App() {
     const result=await loadTasks();setTasks(result.tasks);setDataSource(result.source)
   }
 
+  const isProfilSatkerPath=window.location.pathname.startsWith('/profil-satker')
   return <div className="app-shell">
-    {execOpen
+    {isProfilSatkerPath
+      ? <ProfilAsetPage/>
+      : execOpen
       ? <ExecutivePublicPage tasks={tasks} onRefresh={refreshTasks} onBack={()=>setExecOpen(false)} setView={setView}/>
       : view==='admin'
       ? !authReady?<AuthLoading/>:adminProfile?<AdminView tasks={tasks} adminProfile={adminProfile} onLogout={handleLogout} onRefresh={refreshTasks} dataSource={dataSource} filter={adminFilter} setFilter={setAdminFilter} query={query} setQuery={setQuery} setView={setView} selectedSatker={selectedSatker} setSelectedSatker={setSelectedSatker} detail={detail} setDetail={setDetail} toggleTask={toggleTask} updateAssignment={updateAssignment} onOpenExec={()=>setExecOpen(true)}/>:<AdminLogin onBack={()=>setView('satker')} onSuccess={handleAdminLogin}/>
