@@ -904,8 +904,8 @@ function ProfilAsetDetail({ kodeSatker, onKembali }: { kodeSatker: string; onKem
 
     // Tabel
     const head = [['No', 'Kode Barang', 'NUP', 'Nama Barang', 'Kondisi', 'Tahun', 'Nilai Perolehan', 'Luas Tanah (m²)', 'Luas Bangunan (m²)', 'Penghuni', 'Alamat Lengkap']]
-    const body = tabelRows.map(r => [
-      String(r.no),
+    const body = tabelRows.map((r, i) => [
+      String(i + 1),
       r.kode_barang ?? '—',
       r.nup ?? '—',
       r.nama_barang,
@@ -1022,9 +1022,9 @@ function ProfilAsetDetail({ kodeSatker, onKembali }: { kodeSatker: string; onKem
                 </tr>
               </thead>
               <tbody>
-                {tabelRows.map(r => (
-                  <tr key={`${r.no}-${r.nup}`}>
-                    <td className="pa-td-no">{r.no}</td>
+                {tabelRows.map((r, i) => (
+                  <tr key={`${i}-${r.nup}`}>
+                    <td className="pa-td-no">{i + 1}</td>
                     <td className="pa-td-kode">{r.kode_barang ?? '—'}</td>
                     <td>{r.nup ?? '—'}</td>
                     <td className="pa-td-nama">{r.nama_barang}</td>
