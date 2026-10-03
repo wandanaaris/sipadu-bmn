@@ -87,6 +87,23 @@ function buatBerkasDimensionRusak(nilaiPerolehan = '3.266.200.000'): File {
   return new File([zip.buffer as ArrayBuffer], 'Master aset 03 Oktober 2026.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
 }
 
+
+function buatBerkasDenganHeader(header: string[], isi: string[][]): File {
+  const aoa = [header, ...isi]
+  const sel = aoa.map((baris, r) => baris.map((v, c) => {
+    const alamat = XLSX.utils.encode_cell({ r, c })
+    return `<c r="${alamat}" t="inlineStr"><is><t>${v}</t></is></c>`
+  }).join('')).join('')
+  const sheet = `<?xml version="1.0"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">`
+    + `<dimension ref="A1:F1"/><sheetData>${sel}</sheetData></worksheet>`
+  return new File([buatZip([
+    { nama: '[Content_Types].xml', data: '<?xml version="1.0"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>' },
+    { nama: 'xl/workbook.xml', data: '<?xml version="1.0"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Master Aset" sheetId="1" r:id="rId1"/></sheets></workbook>' },
+    { nama: 'xl/_rels/workbook.xml.rels', data: '<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>' },
+    { nama: 'xl/worksheets/sheet1.xml', data: sheet },
+  ]).buffer as ArrayBuffer], 'Master aset 03 Oktober 2026.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+}
+
 vi.mock('./lib/supabase', () => ({
   supabase: {
     rpc: async (fn: string) =>
@@ -137,6 +154,33 @@ describe('Dimension rusak pada export SIMAN', () => {
     expect(hasil.baris[0].nilai_perolehan).toBe(3266200000)
     expect(hasil.baris[1].kondisi).toBe('Rusak Berat')
     expect(hasil.snapshotDate).toBe('2026-10-03')
+  })
+
+  it('membawa seluruh kolom tabel, bukan hanya yang tampil di UI', async () => {
+    const header = ['No', 'Jenis BMN', 'Kode Satker', 'Nama Satker', 'Kode Barang', 'NUP', 'Nama Barang',
+      'Kondisi', 'Nilai Perolehan', 'No PSP', 'Penghuni', 'Luas Bangunan', 'Kelurahan/Desa',
+      'Kecamatan', 'Kab/Kota', 'No Polisi', 'Jumlah Lantai', 'Tanggal PSP', 'RT/RW', 'Provinsi']
+    const isi = [
+      ['1', 'RUMAH NEGARA', '137040900692519000KD', 'Lapas Terbuka Kelas III Rumbai', '4010102001', '1',
+        'Rumah Negara Tipe D', 'Baik', '150000000', 'PSP/1/2026', 'SUNDARI', '36', 'Rumbai Bukit',
+        'Rumbai Barat', 'KOTA PEKANBARU', 'BM 1234 AB', '1', '2026-01-15', '003', 'RIAU'],
+    ]
+    const f = buatBerkasDenganHeader(header, isi)
+    const hasil = await bacaFileAset(f)
+    const b = hasil.baris[0]
+    // kolom yang dulu hilang
+    expect(b.penghuni).toBe('SUNDARI')
+    expect(b.luas_bangunan).toBe(36)
+    expect(b.kelurahan).toBe('Rumbai Bukit')
+    expect(b.kecamatan).toBe('Rumbai Barat')
+    expect(b.kab_kota).toBe('KOTA PEKANBARU')
+    expect(b.no_polisi).toBe('BM 1234 AB')
+    expect(b.provinsi).toBe('RIAU')
+    expect(b.jumlah_lantai).toBe(1)
+    expect(b.rt_rw).toBe('003')
+    expect(b.tanggal_psp).toBe('2026-01-15')
+    expect(b.nilai_perolehan).toBe(150000000)
+    expect(b.satker_code).toBe('692519')
   })
 })
 

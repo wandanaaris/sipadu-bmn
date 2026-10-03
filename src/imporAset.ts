@@ -24,6 +24,8 @@ export type BarisAsetImport = {
   alamat: string | null
   luas_tanah_seluruhnya: number | null
   luas_bangunan: number | null
+  /** Seluruh kolom tabel bmn_assets; dipakai penuh saat impor. */
+  [kolom: string]: string | number | null | undefined
 }
 
 export type HasilBaca = {
@@ -154,6 +156,90 @@ export function perbaikiRefSheet(ws: Record<string, unknown>, utils: { encode_co
   return ref
 }
 
+/** Peta lengkap kolom SIMAN -> kolom tabel bmn_assets. */
+type TipeKolom = 'teks' | 'angka' | 'tanggal' | 'kode'
+export const PETA_KOLOM: Array<{ kolom: string; header: string; tipe: TipeKolom }> = [
+  { kolom: 'satker_code', header: 'Kode Satker', tipe: 'kode' },
+  { kolom: 'no', header: 'No', tipe: 'angka' },
+  { kolom: 'jenis_bmn', header: 'Jenis BMN', tipe: 'teks' },
+  { kolom: 'kode_satker_raw', header: 'Kode Satker', tipe: 'teks' },
+  { kolom: 'nama_satker', header: 'Nama Satker', tipe: 'teks' },
+  { kolom: 'kode_barang', header: 'Kode Barang', tipe: 'teks' },
+  { kolom: 'nup', header: 'NUP', tipe: 'teks' },
+  { kolom: 'nama_barang', header: 'Nama Barang', tipe: 'teks' },
+  { kolom: 'status_bmn', header: 'Status BMN', tipe: 'teks' },
+  { kolom: 'merk', header: 'Merk', tipe: 'teks' },
+  { kolom: 'tipe', header: 'Tipe', tipe: 'teks' },
+  { kolom: 'kondisi', header: 'Kondisi', tipe: 'teks' },
+  { kolom: 'umur_aset', header: 'Umur Aset', tipe: 'angka' },
+  { kolom: 'intra_extra', header: 'Intra / Extra', tipe: 'teks' },
+  { kolom: 'henti_guna', header: 'Henti Guna', tipe: 'teks' },
+  { kolom: 'status_sbsn', header: 'Status SBSN', tipe: 'teks' },
+  { kolom: 'status_bmn_idle', header: 'Status BMN Idle', tipe: 'teks' },
+  { kolom: 'status_kemitraan', header: 'Status Kemitraan', tipe: 'teks' },
+  { kolom: 'bpybds', header: 'BPYBDS', tipe: 'teks' },
+  { kolom: 'usulan_barang_hilang', header: 'Usulan Barang Hilang', tipe: 'teks' },
+  { kolom: 'usulan_barang_rb', header: 'Usulan Barang RB', tipe: 'teks' },
+  { kolom: 'usul_hapus', header: 'Usul Hapus', tipe: 'teks' },
+  { kolom: 'hibah_dktp', header: 'Hibah DKTP', tipe: 'teks' },
+  { kolom: 'konsensi_jasa', header: 'Konsensi Jasa', tipe: 'teks' },
+  { kolom: 'properti_investasi', header: 'Properti Investasi', tipe: 'teks' },
+  { kolom: 'jenis_dokumen', header: 'Jenis Dokumen', tipe: 'teks' },
+  { kolom: 'no_dokumen', header: 'No Dokumen', tipe: 'teks' },
+  { kolom: 'no_bpkp', header: 'No BPKP', tipe: 'teks' },
+  { kolom: 'no_polisi', header: 'No Polisi', tipe: 'teks' },
+  { kolom: 'status_sertifikasi', header: 'Status Sertifikasi', tipe: 'teks' },
+  { kolom: 'jenis_sertipikat', header: 'Jenis Sertipikat', tipe: 'teks' },
+  { kolom: 'no_sertifikat', header: 'No Sertifikat', tipe: 'teks' },
+  { kolom: 'nama', header: 'Nama', tipe: 'teks' },
+  { kolom: 'tanggal_buku_pertama', header: 'Tanggal Buku Pertama', tipe: 'tanggal' },
+  { kolom: 'tanggal_perolehan', header: 'Tanggal Perolehan', tipe: 'tanggal' },
+  { kolom: 'tanggal_pengapusan', header: 'Tanggal Pengapusan', tipe: 'tanggal' },
+  { kolom: 'nilai_perolehan_pertama', header: 'Nilai Perolehan Pertama', tipe: 'angka' },
+  { kolom: 'nilai_mutasi', header: 'Nilai Mutasi', tipe: 'angka' },
+  { kolom: 'nilai_perolehan', header: 'Nilai Perolehan', tipe: 'angka' },
+  { kolom: 'nilai_penyusutan', header: 'Nilai Penyusutan', tipe: 'angka' },
+  { kolom: 'nilai_buku', header: 'Nilai Buku', tipe: 'angka' },
+  { kolom: 'luas_tanah_seluruhnya', header: 'Luas Tanah Seluruhnya', tipe: 'angka' },
+  { kolom: 'luas_tanah_untuk_bangunan', header: 'Luas Tanah Untuk Bangunan', tipe: 'angka' },
+  { kolom: 'luas_tanah_sarana_lingkungan', header: 'Luas Tanah Untuk Sarana Lingkungan', tipe: 'angka' },
+  { kolom: 'luas_lahan_kosong', header: 'Luas Lahan Kosong', tipe: 'angka' },
+  { kolom: 'luas_bangunan', header: 'Luas Bangunan', tipe: 'angka' },
+  { kolom: 'luas_tapak_bangunan', header: 'Luas Tapak Bangunan', tipe: 'angka' },
+  { kolom: 'luas_pemanfaatan', header: 'Luas Pemanfataan', tipe: 'angka' },
+  { kolom: 'jumlah_lantai', header: 'Jumlah Lantai', tipe: 'angka' },
+  { kolom: 'jumlah_foto', header: 'Jumlah Foto', tipe: 'angka' },
+  { kolom: 'status_penggunaan', header: 'Status Penggunaan', tipe: 'teks' },
+  { kolom: 'no_psp', header: 'No PSP', tipe: 'teks' },
+  { kolom: 'tanggal_psp', header: 'Tanggal PSP', tipe: 'tanggal' },
+  { kolom: 'alamat', header: 'Alamat', tipe: 'teks' },
+  { kolom: 'rt_rw', header: 'RT/RW', tipe: 'teks' },
+  { kolom: 'kelurahan', header: 'Kelurahan/Desa', tipe: 'teks' },
+  { kolom: 'kecamatan', header: 'Kecamatan', tipe: 'teks' },
+  { kolom: 'kab_kota', header: 'Kab/Kota', tipe: 'teks' },
+  { kolom: 'kode_kab_kota', header: 'Kode Kab/Kota', tipe: 'teks' },
+  { kolom: 'provinsi', header: 'Provinsi', tipe: 'teks' },
+  { kolom: 'kode_provinsi', header: 'Kode Provinsi', tipe: 'teks' },
+  { kolom: 'kode_pos', header: 'Kode Pos', tipe: 'teks' },
+  { kolom: 'sbsk', header: 'SBSK', tipe: 'teks' },
+  { kolom: 'optimalisasi', header: 'Optimalisasi', tipe: 'teks' },
+  { kolom: 'penghuni', header: 'Penghuni', tipe: 'teks' },
+  { kolom: 'pengguna', header: 'Pengguna', tipe: 'teks' },
+  { kolom: 'kode_kpknl', header: 'Kode KPKNL', tipe: 'teks' },
+  { kolom: 'uraian_kpknl', header: 'Uraian KPKNL', tipe: 'teks' },
+  { kolom: 'uraian_kanwil_djkn', header: 'Uraian Kanwil DJKN', tipe: 'teks' },
+  { kolom: 'nama_kl', header: 'Nama K/L', tipe: 'teks' },
+  { kolom: 'nama_e1', header: 'Nama E1', tipe: 'teks' },
+  { kolom: 'nama_korwil', header: 'Nama Korwil', tipe: 'teks' },
+  { kolom: 'kode_register', header: 'Kode Register', tipe: 'teks' },
+  { kolom: 'lokasi_ruang', header: 'Lokasi Ruang', tipe: 'teks' },
+  { kolom: 'jenis_identitas', header: 'Jenis Identitas', tipe: 'teks' },
+  { kolom: 'no_identitas', header: 'No Identitas', tipe: 'teks' },
+  { kolom: 'no_stnk', header: 'No STNK', tipe: 'teks' },
+  { kolom: 'nama_pengguna', header: 'Nama Pengguna', tipe: 'teks' },
+  { kolom: 'status_pmk', header: 'Status PMK', tipe: 'teks' },
+]
+
 /**
  * Baca .xlsx. Setiap kolom yang dibutuhkan diambil berdasarkan nama header,
  * bukan posisi, karena urutan kolom hasil export SIMAN bisa berubah.
@@ -188,25 +274,16 @@ export async function bacaFileAset(berkas: File): Promise<HasilBaca> {
     return { ok: false, baris: [], snapshotDate: tebakSnapshotDate(berkas.name), namaSheet, kolom, kurangKolom, masalah: [], jumlahDitolak: 0 }
   }
 
-  const kJenis = cari('Jenis BMN')!
+  // Cari kolom sumber untuk setiap kolom tabel lewat PETA_KOLOM (bukan per posisi).
+  const sumberKolom = new Map<string, string>()
+  for (const p of PETA_KOLOM) {
+    const ketemu = cari(p.header)
+    if (ketemu) sumberKolom.set(p.kolom, ketemu)
+  }
+  const kNama = cari('Nama Barang')!
+  const kSatker = cari('Kode Satker')
   const kKodeBarang = cari('Kode Barang')!
   const kNup = cari('NUP')!
-  const kNama = cari('Nama Barang')!
-  const kKondisi = cari('Kondisi')
-  const kNilai = cari('Nilai Perolehan')
-  const kNilaiBuku = cari('Nilai Buku')
-  const kPsp = cari('No PSP', 'Nomor PSP')
-  const kTglPsp = cari('Tanggal PSP')
-  const kSatker = cari('Kode Satker')
-  const kNamaSatker = cari('Nama Satker')
-  const kStatus = cari('Status BMN')
-  const kMerk = cari('Merk')
-  const kTipe = cari('Tipe')
-  const kTglPerolehan = cari('Tanggal Perolehan')
-  const kPengguna = cari('Pengguna')
-  const kAlamat = cari('Alamat')
-  const kLuasTanah = cari('Luas Tanah Seluruhnya')
-  const kLuasBangunan = cari('Luas Bangunan')
 
   const masalah: Array<{ baris: number; alasan: string }> = []
   const baris: BarisAsetImport[] = []
@@ -244,29 +321,25 @@ export async function bacaFileAset(berkas: File): Promise<HasilBaca> {
     }
     kunciDipakai.add(kunci)
 
-    baris.push({
-      kunci,
-      no,
-      jenis_bmn: teks(r[kJenis]) ?? '',
-      satker_code: satker,
-      nama_satker: kNamaSatker ? (teks(r[kNamaSatker]) ?? satker) : satker,
-      kode_barang: kodeBarang,
-      nup,
-      nama_barang: namaBarang,
-      status_bmn: kStatus ? teks(r[kStatus]) : null,
-      merk: kMerk ? teks(r[kMerk]) : null,
-      tipe: kTipe ? teks(r[kTipe]) : null,
-      kondisi: kKondisi ? teks(r[kKondisi]) : null,
-      nilai_perolehan: kNilai ? angka(r[kNilai]) : null,
-      nilai_buku: kNilaiBuku ? angka(r[kNilaiBuku]) : null,
-      tanggal_perolehan: kTglPerolehan ? tanggal(r[kTglPerolehan]) : null,
-      no_psp: kPsp ? teks(r[kPsp]) : null,
-      tanggal_psp: kTglPsp ? tanggal(r[kTglPsp]) : null,
-      pengguna: kPengguna ? teks(r[kPengguna]) : null,
-      alamat: kAlamat ? teks(r[kAlamat]) : null,
-      luas_tanah_seluruhnya: kLuasTanah ? angka(r[kLuasTanah]) : null,
-      luas_bangunan: kLuasBangunan ? angka(r[kLuasBangunan]) : null,
-    })
+    // Susun SELURUH kolom tabel, bukan hanya kolom yang tampil di UI.
+    const hasil: Record<string, string | number | null> = {}
+    for (const p of PETA_KOLOM) {
+      const sumber = sumberKolom.get(p.kolom)
+      const nilai = sumber ? r[sumber] : null
+      if (p.tipe === 'angka') hasil[p.kolom] = angka(nilai)
+      else if (p.tipe === 'tanggal') hasil[p.kolom] = tanggal(nilai)
+      else if (p.tipe === 'kode' && p.kolom === 'satker_code') hasil[p.kolom] = satker
+      else hasil[p.kolom] = teks(nilai)
+    }
+    // 'Kode Satker' dipetakan ke dua kolom: satker_code (6 digit) dan kode_satker_raw (penuh)
+    const sumberKodeSatker = kSatker ? teks(r[kSatker]) : null
+    hasil.kode_satker_raw = sumberKodeSatker
+    hasil.satker_code = satker
+    if (!hasil.nama_satker) hasil.nama_satker = satker
+    hasil.kunci = kunci
+
+    baris.push(hasil as BarisAsetImport)
+
   })
 
   return {
