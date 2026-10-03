@@ -118,7 +118,7 @@ export async function transferSubmission(id:string,targetCode:string,note:string
 
 export async function submitStagedStage(p_token:string,p_task_key:string,p_stage_index:number){clearTasksCache();if(!supabase)throw new Error('Koneksi belum tersedia.');const{data,error}=await supabase.rpc('submit_staged_stage',{p_token:p_token,p_task_key:p_task_key,p_stage_index:p_stage_index});if(error)throw new Error(error.message);return data as {ok:boolean;error?:string}}
 
-export async function reviewStagedStage(p_task_key:string,p_satker_code:string,p_stage_index:number,p_action:'verify'|'return'){clearTasksCache();if(!supabase)throw new Error('Koneksi belum tersedia.');const{data,error}=await supabase.rpc('review_staged_stage',{p_task_key:p_task_key,p_satker_code:p_satker_code,p_stage_index:p_stage_index,p_action:p_action});if(error)throw new Error(error.message);return data as {ok:boolean;error?:string}}
+export async function reviewStagedStage(p_task_key:string,p_satker_code:string,p_stage_index:number,p_action:'verify'|'return',p_note?:string){clearTasksCache();if(!supabase)throw new Error('Koneksi belum tersedia.');const{data,error}=await supabase.rpc('review_staged_stage',{p_task_key:p_task_key,p_satker_code:p_satker_code,p_stage_index:p_stage_index,p_action:p_action,p_note:p_note?.trim()||null});if(error)throw new Error(error.message);return data as {ok:boolean;error?:string}}
 
 export type SatkerContact={satker_id:string;operator_name:string|null;whatsapp:string}
 export async function loadSatkerContacts():Promise<{contacts:Record<string,SatkerContact>;idsByCode:Record<string,string>}>{

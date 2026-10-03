@@ -12,9 +12,10 @@ export type Assignment = {
   submittedAt?: string
   completedAt?: string
   revisionCount: number
-  currentStage?: number
-  stageStates?: StageState[]
-}
+    currentStage?: number
+    stageStates?: StageState[]
+    reviewNote?: string | null
+  }
 export type StageChoice = { value:string; label:string }
 export type StageField = {
   key:string
