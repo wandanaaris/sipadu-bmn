@@ -11,11 +11,6 @@ const rupiah = (n: number) =>
 
 const angka = (n: number) => new Intl.NumberFormat('id-ID').format(n)
 
-const tanggalPanjang = (iso: string) => {
-  const d = new Date(`${iso}T00:00:00`)
-  if (Number.isNaN(d.getTime())) return iso
-  return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
-}
 
 const RINGKAS = [
   { key: 'totalAset', label: 'Jumlah Aset', icon: Boxes, tone: 'blue' },
@@ -88,7 +83,7 @@ export function BmnAssetInfographic({ satkerCode }: { satkerCode?: string }) {
   }
 
   const satkerDipilih = satkerCode
-    ? data!.perSatker.find((s) => s.code === satkerCode)
+    ? data!.perSatker.find((s) => (s.kode ?? s.code) === satkerCode)
     : undefined
   const perSatker = Boolean(satkerDipilih)
 
@@ -111,12 +106,9 @@ export function BmnAssetInfographic({ satkerCode }: { satkerCode?: string }) {
           <p className="eyebrow">MASTER ASET SIMAN</p>
           <h2>
             {perSatker && satkerDipilih
-              ? `Rekap Aset ${satkerDipilih.name}`
+              ? `Rekap Aset ${satkerDipilih.nama ?? satkerDipilih.name}`
               : 'Rekapitulasi BMN Ditjenpas Riau'}
           </h2>
-          <p className="bmn-infograf__meta">
-            Posisi {tanggalPanjang(data!.snapshotDate)} · {angka(totalJumlah)} aset{perSatker ? ' di satker ini' : ' di Kanwil Ditjenpas Riau'} · sumber {data!.sourceFile}
-          </p>
         </div>
         <div className="bmn-infograf__stamp">
           <Landmark size={18} />
@@ -180,10 +172,6 @@ export function BmnAssetInfographic({ satkerCode }: { satkerCode?: string }) {
         </div>
       ) : null}
 
-      <footer className="bmn-infograf__kaki">
-        Sumber data: export SIMAN posisi {tanggalPanjang(data!.snapshotDate)}. Diagram diperbarui setiap
-        impor ulang dari Master Aset terbaru.
-      </footer>
     </section>
   )
 }
