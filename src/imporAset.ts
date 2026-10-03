@@ -32,6 +32,9 @@ export type HasilBaca = {
   snapshotDate: string | null
   namaSheet: string
   kolom: string[]
+  /** Dimension yang tertulis di berkas, dan yang dipakai setelah diperbaiki. */
+  refAsli?: string
+  refDipakai?: string
   /** Daftar kolom wajib yang tidak ditemukan di header. */
   kurangKolom: string[]
   /** Baris yang dibuang, beserta alasannya (maksimal 20 shown). */
@@ -56,18 +59,36 @@ const teks = (v: Sel): string | null => {
 const angka = (v: Sel): number | null => {
   if (v === null || v === undefined || v === '') return null
   if (typeof v === 'number') return Number.isFinite(v) ? v : null
-  // "1.234.567" atau "1,234" atau "Rp 1.000.000"
-  const s = String(v).replace(/[^\d.,-]/g, '').trim()
+  if (v instanceof Date) return null
+
+  // Buang mata uang dan spasi, sisakan angka, pemisah, dan tanda minus.
+  let s = String(v).replace(/[^\d.,-]/g, '').trim()
   if (!s) return null
-  let cleaned = s
-  if (cleaned.includes(',') && cleaned.includes('.')) {
-    // titik = ribuan, koma = desimal
-    cleaned = cleaned.replace(/\./g, '').replace(',', '.')
-  } else if (cleaned.includes(',')) {
-    cleaned = cleaned.includes('.') ? cleaned.replace(/,/g, '') : cleaned.replace(',', '.')
+  const minus = s.startsWith('-')
+  s = s.replace(/-/g, '')
+
+  // Grup ribuan gaya Indonesia: "3.266.200.000" (titik tiap 3 digit)
+  const titikRibuan = /(\.\d{3})+$/.test(s)
+  // Koma sebagai pemisah ribuan: "3,266,200,000"
+  const komaRibuan = /,\d{3}(,\d{3})*$/.test(s) && !/,\d{1,2}$/.test(s)
+
+  let cleaned: string
+  if (s.includes(',') && s.includes('.')) {
+    // Yang paling kanan adalah tanda desimal, yang lain pemisah ribuan.
+    cleaned = s.lastIndexOf(',') > s.lastIndexOf('.')
+      ? s.replace(/\./g, '').replace(',', '.')
+      : s.replace(/,/g, '')
+  } else if (s.includes(',')) {
+    cleaned = komaRibuan ? s.replace(/,/g, '') : s.replace(',', '.')
+  } else if (s.includes('.')) {
+    cleaned = titikRibuan ? s.replace(/\./g, '') : s
+  } else {
+    cleaned = s
   }
+
   const n = Number(cleaned)
-  return Number.isFinite(n) ? n : null
+  if (!Number.isFinite(n)) return null
+  return minus ? -n : n
 }
 
 const tanggal = (v: Sel): string | null => {
@@ -110,6 +131,30 @@ export function tebakSnapshotDate(namaBerkas: string): string | null {
 }
 
 /**
+ * Beberapa export SIMAN menuliskan <dimension> yang salah (mis. hanya A1:F1)
+ * padahal selnya lengkap. SheetJS memercayai nilai itu, sehingga sheet terbaca
+ * kosong. Kita abaikan !ref dari berkas dan hitung sendiri dari sel yang ada.
+ */
+export function perbaikiRefSheet(ws: Record<string, unknown>, utils: { encode_col: (n: number) => string }): string | null {
+  let maksBaris = 0
+  let maksKol = -1
+  for (const kunci of Object.keys(ws)) {
+    const m = /^([A-Z]+)(\d+)$/.exec(kunci)
+    if (!m) continue
+    let n = 0
+    for (const ch of m[1]) n = n * 26 + (ch.charCodeAt(0) - 64)
+    const kolom = n - 1
+    if (kolom > maksKol) maksKol = kolom
+    const baris = Number(m[2])
+    if (baris > maksBaris) maksBaris = baris
+  }
+  if (maksKol < 0 || maksBaris < 1) return null
+  const ref = `A1:${utils.encode_col(maksKol)}${maksBaris}`
+  ws['!ref'] = ref
+  return ref
+}
+
+/**
  * Baca .xlsx. Setiap kolom yang dibutuhkan diambil berdasarkan nama header,
  * bukan posisi, karena urutan kolom hasil export SIMAN bisa berubah.
  */
@@ -121,8 +166,12 @@ export async function bacaFileAset(berkas: File): Promise<HasilBaca> {
   if (!namaSheet) {
     return { ok: false, baris: [], snapshotDate: null, namaSheet: '', kolom: [], kurangKolom: KOLOM_WAJIB, masalah: [{ baris: 0, alasan: 'Berkas tidak memiliki sheet.' }], jumlahDitolak: 0 }
   }
-  const sheet = wb.Sheets[namaSheet]
-  const aoA = XLSX.utils.sheet_to_json<Record<string, Sel>>(sheet, { defval: null, raw: true })
+  const sheet = wb.Sheets[namaSheet] as unknown as Record<string, unknown>
+  // Abaikan dimension yang salah pada sebagian export SIMAN.
+  const refAsli = (sheet['!ref'] as string | undefined) ?? ''
+  perbaikiRefSheet(sheet, XLSX.utils)
+  const refDipakai = (sheet['!ref'] as string | undefined) ?? refAsli
+  const aoA = XLSX.utils.sheet_to_json<Record<string, Sel>>(sheet as never, { defval: null, raw: true })
   if (aoA.length === 0) {
     return { ok: false, baris: [], snapshotDate: null, namaSheet, kolom: [], kurangKolom: KOLOM_WAJIB, masalah: [{ baris: 0, alasan: 'Sheet kosong.' }], jumlahDitolak: 0 }
   }
@@ -226,6 +275,8 @@ export async function bacaFileAset(berkas: File): Promise<HasilBaca> {
     snapshotDate: tebakSnapshotDate(berkas.name),
     namaSheet,
     kolom,
+    refAsli,
+    refDipakai,
     kurangKolom,
     masalah,
     jumlahDitolak,

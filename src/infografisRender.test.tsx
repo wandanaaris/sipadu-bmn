@@ -51,10 +51,13 @@ function tugasPalsu(): Task {
   } as unknown as Task
 }
 
+// Batas waktu longgar: saat suite penuh, lingkungan uji/jsdom bisa lambat.
+const waitForWkt = (fn: () => void) => waitFor(fn, { timeout: 8000 })
+
 describe('Halaman Monitoring Satker (satu tampilan)', () => {
   it('menampilkan seluruh bagian dari atas ke bawah setelah Satker dipilih', async () => {
     render(<MonitoringSatkerPage tasks={[tugasPalsu()]} kodeAwal={kode} />)
-    await waitFor(() => expect(document.querySelectorAll('.pa-kategori').length).toBeGreaterThan(0))
+    await waitForWkt(() => expect(document.querySelectorAll('.pa-kategori').length).toBeGreaterThan(0))
 
     // Bagian 1 — hero + kartu aset (tanpa judul, mengikuti Profil Aset Satker)
     expect(screen.getByText(/Data SIMAN snapshot 30 September 2026/i)).toBeTruthy()
@@ -63,15 +66,16 @@ describe('Halaman Monitoring Satker (satu tampilan)', () => {
     expect(screen.getByText(/Komposisi status pekerjaan/i)).toBeTruthy()
     // Bagian 3 — daftar pekerjaan + tombol salin
     // Klik kartu aset -> tabel muncul di tempat (bukan pindah halaman)
+    await waitForWkt(() => expect(document.querySelectorAll('.pa-kategori').length).toBeGreaterThan(0))
     const kartuTanah = [...document.querySelectorAll('.pa-kategori')]
       .find(k => k.textContent?.includes('Tanah')) as HTMLElement
     kartuTanah.click()
-    await waitFor(() => expect(document.querySelector('.pa-tabel-panel')).toBeTruthy())
+    await waitForWkt(() => expect(document.querySelector('.pa-tabel-panel')).toBeTruthy())
     expect(screen.getAllByText('Tanah Kantor').length).toBeGreaterThan(0)
 
     // Kartu aset yang perlu perhatian bisa diklik, angka diambil dari database
     expect(document.querySelectorAll('.pt-kartu').length).toBe(4)
-    await waitFor(() => expect(screen.getAllByText('Rusak Berat A').length).toBeGreaterThan(0))
+    await waitForWkt(() => expect(screen.getAllByText('Rusak Berat A').length).toBeGreaterThan(0))
     // tidak boleh ada data rusak berat yang dibaca dari berkas lokal
     expect(document.querySelectorAll('.pt-kartu')[1]?.textContent).toContain('183')
 
