@@ -58,6 +58,8 @@ export type BarisSatker = {
   menungguVerifikasi: number
   progressRata: number
   ketepatanWaktu: number
+  /** Jumlah tugas yang tepat waktu (dasar dari ketepatanWaktu). */
+  ketepatanWaktuTepat: number
   status: 'baik' | 'berjalan' | 'terlambat'
 }
 
@@ -90,7 +92,7 @@ export function barisSatker(tasks: Task[]): BarisSatker[] {
         namaSatker: satkerNama(a.satker),
         total: 0, selesai: 0, berjalan: 0, belumMulai: 0,
         perluPerbaikan: 0, menungguVerifikasi: 0, progressRata: 0,
-        ketepatanWaktu: 0, status: 'berjalan' as const,
+        ketepatanWaktu: 0, ketepatanWaktuTepat: 0, status: 'berjalan' as const,
       }
       row.total += 1
       if (status === 'selesai') row.selesai += 1
@@ -101,6 +103,7 @@ export function barisSatker(tasks: Task[]): BarisSatker[] {
         row.menungguVerifikasi += 1
       }
       row.progressRata += progressForAssignment(task, a)
+      if (tepatWaktu(task, a)) row.ketepatanWaktuTepat += 1
       row.ketepatanWaktu += tepatWaktu(task, a) ? 1 : 0
       map.set(a.satker, row)
     }
@@ -108,7 +111,7 @@ export function barisSatker(tasks: Task[]): BarisSatker[] {
   return [...map.values()]
     .map(r => {
       const avg = r.total ? Math.round(r.progressRata / r.total) : 0
-      const tepat = r.total ? Math.round((r.ketepatanWaktu / r.total) * 100) : 0
+      const tepat = r.total ? Math.round((r.ketepatanWaktuTepat / r.total) * 100) : 0
       return {
         ...r,
         progressRata: avg,

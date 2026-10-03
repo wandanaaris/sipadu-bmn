@@ -1,8 +1,10 @@
-import { useEffect, useId, useMemo, useState } from 'react'
-import { ArrowLeft, Building2, Car, CircleAlert, ClipboardList, Clock3, Cog, Crosshair, HardHat, Home, LandPlot, Monitor, Package, Printer, Route, Search, TrendingUp, UserCheck, Wrench } from 'lucide-react'
+import { useEffect, useId, useMemo, useRef, useState } from 'react'
+import { ArrowLeft, Building2, Car, CircleAlert, ClipboardList, Database, Upload, Clock3, Cog, Crosshair, HardHat, Home, LandPlot, Monitor, Package, Printer, Route, Search, TrendingUp, UserCheck, Wrench, X } from 'lucide-react'
 import type { Task } from './data'
-import { asetSatker as rusakSatker } from './rusakBeratData'
-import { satkers, statusLabel } from './data'
+import type { KategoriRusak } from './rusakBeratData'
+import { useUptScores } from './uptScore'
+import { bacaFileAset, type HasilBaca, type HasilBanding } from './imporAset'
+import { satkers, statusLabel, type TaskStatus } from './data'
 import {
   barisSatker,
   filterTugas,
@@ -316,6 +318,7 @@ export function MonitoringSatkerPage({ tasks, kodeAwal }: { tasks: Task[]; kodeA
 function DaftarSatker({ tasks, onPilih }: { tasks: Task[]; onPilih: (kode: string) => void }) {
   const [cari, setCari] = useState('')
   const baris = useMemo(() => barisSatker(tasks), [tasks])
+  const skorUpt = useUptScores()
   const cariAktif = cari.trim().toLowerCase()
   const hasil = baris.filter(b => `${b.namaSatker} ${b.kodeSatker}`.toLowerCase().includes(cariAktif))
 
@@ -324,16 +327,28 @@ function DaftarSatker({ tasks, onPilih }: { tasks: Task[]; onPilih: (kode: strin
       <div className="panel-head">
         <div>
           <h2>Monitoring Satker</h2>
-          <p>{baris.length} Satker. Klik kartu untuk melihat infografis Satker.</p>
+          <p>{cariAktif ? `${hasil.length} dari ${baris.length} Satker cocok dengan "${cari.trim()}"` : `${baris.length} Satker. Klik kartu untuk melihat infografis Satker.`}</p>
         </div>
         <label className="filter-cari">
           <Search size={15} />
-          <input value={cari} onChange={e => setCari(e.target.value)} placeholder="Cari nama atau kode Satker" />
+          <input
+            value={cari}
+            onChange={e => setCari(e.target.value)}
+            placeholder="Cari nama atau kode Satker…"
+            aria-label="Cari Satker"
+          />
+          {cari && (
+            <button type="button" className="filter-cari-x" onClick={() => setCari('')} aria-label="Bersihkan pencarian">
+              <X size={13} />
+            </button>
+          )}
         </label>
       </div>
       <div className="ms-grid">
         {hasil.map(b => {
-          const skor = b.ketepatanWaktu
+          // Angka utama = Skor UPT, sumbernya sama dengan menu Kinerja UPT.
+          const upt = skorUpt.get(b.kodeSatker)
+          const skor = upt?.score ?? 0
           const tone = skor >= 80 ? 'hijau' : skor >= 50 ? 'kuning' : 'merah'
           return (
             <button className="ms-kartu" key={b.kodeSatker} onClick={() => onPilih(b.kodeSatker)}>
@@ -341,11 +356,11 @@ function DaftarSatker({ tasks, onPilih }: { tasks: Task[]; onPilih: (kode: strin
               <div className="ms-teks">
                 <span className="ms-kode">{b.kodeSatker}</span>
                 <strong className="ms-nama">{b.namaSatker}</strong>
-                <div className="ms-bar"><i style={{ width: `${b.progressRata}%` }} /></div>
+                <div className="ms-bar"><i style={{ width: `${upt?.completionRate ?? 0}%` }} /></div>
               </div>
               <div className={`ms-skor ${tone}`}>
                 <b>{skor}</b>
-                <span>skor</span>
+                <span>skor UPT</span>
               </div>
             </button>
           )
@@ -428,31 +443,49 @@ function DonatStatus({ items }: { items: Array<{ label: string; nilai: number; w
   )
 }
 
-function BarisAset({ items }: { items: Array<{ label: string; nilai: number; warna: string }> }) {
-  const aktif = pakaiAnimasi()
-  const puncak = Math.max(1, ...items.map(i => i.nilai))
-  return (
-    <div className="baris-aset">
-      {items.map(i => (
-        <div className="baris-aset-item" key={i.label}>
-          <span className="baris-aset-label">{i.label}</span>
-          <div className="baris-aset-track"><i style={{ width: aktif ? `${(i.nilai / puncak) * 100}%` : '0%', background: i.warna }} /></div>
-          <b>{i.nilai}</b>
-        </div>
-      ))}
-    </div>
-  )
+function persenNilai(nilai: number, total: number): string {
+  if (!total) return '0'
+  const p = (nilai / total) * 100
+  return p >= 10 ? p.toFixed(0) : p.toFixed(1)
+}
+
+/** Teks pengingat untuk Satker — dipakai tombol "Salin pesan". */
+export function susunPesanReminder(namaSatker: string, items: Array<{ title: string; status: TaskStatus; progress: number }>): string {
+  const baris = items.map(i => `• ${i.title} — ${statusTeks[i.status] ?? i.status} (${i.progress}%)`)
+  return [
+    `Yth. Operator ${namaSatker},`,
+    '',
+    'Kami dari Korwil BMN Ditjenpas Riau ingin mengingatkan pekerjaan SIPADU BMN berikut yang masih perlu ditindaklanjuti:',
+    '',
+    baris.length ? baris.join('\n') : '• Tidak ada pekerjaan yang masih perlu ditindaklanjuti.',
+    '',
+    'Mohon segera dikerjakan dan diunggah melalui portal SIPADU BMN (https://sipadu-bmn.vercel.app). Jika ada kendala, silakan hubungi Korwil BMN.',
+    '',
+    'Terima kasih.',
+    '— Korwil BMN Ditjenpas Riau',
+  ].join('\n')
 }
 
 function InfografisSatker({ tasks, kodeSatker, onKembali }: { tasks: Task[]; kodeSatker: string; onKembali: () => void }) {
+  const petaSkor = useUptScores()
+  const uptSkor = petaSkor.get(kodeSatker)
   const satker = satkers.find(s => s.code === kodeSatker)
   const nama = satker?.name ?? kodeSatker
   const baris = useMemo(() => barisSatker(tasks).find(b => b.kodeSatker === kodeSatker), [tasks, kodeSatker])
   const aset = useMemo(() => rekapAsetSatker(kodeSatker), [kodeSatker])
-  const [rusakA, rusakB, rusakC] = useMemo(() => {
-    const a = rusakSatker(kodeSatker, 'A'), b = rusakSatker(kodeSatker, 'B'), c = rusakSatker(kodeSatker, 'C')
-    return [a.jumlah, b.jumlah, c.jumlah]
+  // Rekap rusak berat dibaca dari database (kondisi = 'Rusak Berat' pada bmn_assets)
+  const [rusakRekap, setRusakRekap] = useState<{ A: number; B: number; C: number; total: number; nilai: number }>({ A: 0, B: 0, C: 0, total: 0, nilai: 0 })
+  useEffect(() => {
+    let mounted = true
+    import('./lib/supabase').then(async ({ supabase }) => {
+      if (!supabase) return
+      const { data } = await supabase.rpc('get_bmn_rusak_rekap', { p_satker: kodeSatker })
+      const row = (Array.isArray(data) ? data[0] : data) as typeof rusakRekap | null
+      if (mounted && row) setRusakRekap(row)
+    }).catch(() => { /* biarkan nol bila gagal */ })
+    return () => { mounted = false }
   }, [kodeSatker])
+  const rusakA = rusakRekap.A, rusakB = rusakRekap.B, rusakC = rusakRekap.C
 
   const tugas = useMemo(() => tasks
     .filter(t => t.active && t.assignments.some(a => a.satker === kodeSatker))
@@ -473,6 +506,92 @@ function InfografisSatker({ tasks, kodeSatker, onKembali }: { tasks: Task[]; kod
     })
     .sort((a, b) => b.progress - a.progress), [tasks, kodeSatker])
 
+  // ── Reminder: susun pesan singkat per pekerjaan atau sekali jalan ────────
+  const [salin, setSalin] = useState<'idle' | 'ok' | 'gagal'>('idle')
+  const tulisClipboard = async (teks: string) => {
+    try { await navigator.clipboard.writeText(teks); setSalin('ok') }
+    catch { setSalin('gagal') }
+    setTimeout(() => setSalin('idle'), 2500)
+  }
+  const salinPesan = async (task: Task, status: string, tahap: string, progress: number) => {
+    await tulisClipboard(susunPesanReminder(nama, [
+      { title: `${task.title} — ${tahap}`, status: status as TaskStatus, progress },
+    ]))
+  }
+  const salinSemua = async () => {
+    const teksBelum = belum.length
+      ? belum.map(t => ({ title: `${t.task.title} — ${t.tahap}`, status: t.status as TaskStatus, progress: t.progress }))
+      : belum.length === 0 && selesai.length === 0
+        ? [{ title: 'Belum ada pekerjaan yang ditugaskan.', status: 'belum' as TaskStatus, progress: 0 }]
+        : []
+    const akhir = belum.length === 0
+      ? '\n\nSeluruh pekerjaan yang ditugaskan sudah selesai. Terima kasih atas kerja samanya.'
+      : ''
+    await tulisClipboard(susunPesanReminder(nama, teksBelum) + akhir)
+  }
+
+  // ── Profil Satker: rekap jenis BMN dari tabel bmn_assets ─────────────────
+  const [jenisAset, setJenisAset] = useState<Array<{ jenis: string; jumlah: number; nilai: number; tanpa_psp: number; luas: number }>>([])
+  useEffect(() => {
+    let mounted = true
+    import('./lib/supabase').then(async ({ supabase }) => {
+      if (!supabase) return
+      const { data } = await supabase.rpc('get_bmn_rekap_jenis', { p_satker: kodeSatker })
+      if (mounted && Array.isArray(data)) setJenisAset(data as typeof jenisAset)
+    }).catch(() => { /* biarkan kosong bila gagal */ })
+    return () => { mounted = false }
+  }, [kodeSatker])
+
+  const kartuAset = useMemo(() => jenisAset
+    .filter(j => jenisBmnMeta[j.jenis])
+    .map(j => ({ ...j, ...jenisBmnMeta[j.jenis] })), [jenisAset])
+  const totalAset = kartuAset.reduce((n, k) => n + k.jumlah, 0)
+  const totalNilaiAset = kartuAset.reduce((n, k) => n + k.nilai, 0)
+
+  // ── Klik kartu jenis aset -> tampilkan tabel detail-nya di tempat ──────
+  const [kategoriAktif, setKategoriAktif] = useState<string | null>(null)
+  const [detailAset, setDetailAset] = useState<AsetRow[]>([])
+  const [detailLoading, setDetailLoading] = useState(false)
+  useEffect(() => {
+    if (!kategoriAktif) { setDetailAset([]); return }
+    let mounted = true
+    setDetailLoading(true)
+    import('./lib/supabase').then(async ({ supabase }) => {
+      if (!supabase) { if (mounted) setDetailLoading(false); return }
+      const { data } = await supabase.rpc('get_bmn_aset_satker', { p_satker: kodeSatker })
+      if (mounted && Array.isArray(data)) setDetailAset(data as AsetRow[])
+      if (mounted) setDetailLoading(false)
+    }).catch(() => { if (mounted) setDetailLoading(false) })
+    return () => { mounted = false }
+  }, [kategoriAktif, kodeSatker])
+
+  const kategoriTerpilih = kartuAset.find(k => k.jenis === kategoriAktif)
+  const barisDetail = kategoriAktif ? detailAset.filter(r => r.jenis_bmn === kategoriAktif) : []
+  const kolomDetail = kategoriAktif ? kolomUntukJenis(kategoriAktif) : []
+
+  // ── Aset yang perlu perhatian: klik untuk melihat daftar barangnya ────────
+  const [perhatian, setPerhatian] = useState<'psp' | 'rusak' | null>(null)
+  const [isiPerhatian, setIsiPerhatian] = useState<any[]>([])
+  const [perhatianLoading, setPerhatianLoading] = useState(false)
+  const [filterRusak, setFilterRusak] = useState<KategoriRusak | 'semua'>('semua')
+  useEffect(() => {
+    if (!perhatian) { setIsiPerhatian([]); return }
+    let mounted = true
+    setPerhatianLoading(true)
+    import('./lib/supabase').then(async ({ supabase }) => {
+      if (!supabase) { if (mounted) setPerhatianLoading(false); return }
+      const { data } = await supabase.rpc('get_bmn_perhatian', { p_satker: kodeSatker, p_jenis: perhatian })
+      if (mounted && Array.isArray(data)) setIsiPerhatian(data as any[])
+      if (mounted) setPerhatianLoading(false)
+    }).catch(() => { if (mounted) setPerhatianLoading(false) })
+    return () => { mounted = false }
+  }, [perhatian, kodeSatker])
+
+  const barisRusak = useMemo(() => filterRusak === 'semua'
+    ? isiPerhatian
+    : isiPerhatian.filter(r => r.kategori === filterRusak), [isiPerhatian, filterRusak])
+
+
   const selesai = tugas.filter(t => t.status === 'selesai')
   const belum = tugas.filter(t => t.status !== 'selesai')
   const persen = baris?.ketepatanWaktu ?? 0
@@ -486,46 +605,188 @@ function InfografisSatker({ tasks, kodeSatker, onKembali }: { tasks: Task[]; kod
   ]
 
   return (
-    <div className="info-halaman">
-      <section className="panel admin-page info-hero">
-        <button className="link-button" onClick={onKembali}><ArrowLeft size={13} /> Kembali ke daftar Satker</button>
-        <div className="info-hero-baris">
-          <div className="info-hero-ikon"><Building2 size={22} /></div>
-          <div className="info-hero-teks">
+    <div className="pa-halaman">
+      {/* Hero & kartu aset — sama persis dengan halaman Profil Aset Satker */}
+      <section className="pa-hero">
+        <button className="pa-hero-back" onClick={onKembali}><ArrowLeft size={13} /> Kembali ke daftar Satker</button>
+        <div className="pa-hero-baris">
+          <div className="pa-hero-ikon"><Building2 size={26} /></div>
+          <div className="pa-hero-teks">
             <h2>{nama}</h2>
-            <p>Kode {kodeSatker} · {tugas.length} pekerjaan aktif</p>
-          </div>
-          <div className="info-hero-chip">
-            <span><b>{aset.belumPsp}</b> belum PSP</span>
-            <span><b>{aset.rusakBerat}</b> rusak berat</span>
+            <p>Kode {kodeSatker} · Data SIMAN snapshot 30 September 2026</p>
           </div>
         </div>
+        <div className="pa-hero-stats">
+          <div className="pa-stat"><b>{totalAset.toLocaleString('id-ID')}</b><span>Total aset</span></div>
+          <div className="pa-stat"><b>{formatRupiah(totalNilaiAset)}</b><span>Total nilai perolehan</span></div>
+          <div className="pa-stat"><b>{kartuAset.reduce((n, k) => n + k.tanpa_psp, 0)}</b><span>Belum PSP</span></div>
+        </div>
       </section>
+      {salin !== 'idle' && (
+        <div className={`info-toast ${salin}`} role="status">
+          {salin === 'ok' ? 'Pesan tersalin — siap ditempel di WhatsApp.' : 'Gagal menyalin. Pilih teksnya secara manual.'}
+        </div>
+      )}
 
+      {/* Kartu jenis aset — kelas yang sama dengan halaman Profil Aset Satker */}
+      {kartuAset.length === 0
+        ? <p className="pa-loading">Memuat data aset…</p>
+        : <div className="pa-kategori-grid">
+            {kartuAset.map((k, idx) => {
+              const Ikon = k.Ikon
+              const isAktif = kategoriAktif === k.jenis
+              return (
+                <button
+                  key={k.jenis}
+                  className={`pa-kategori ${kategoriAktif === k.jenis ? 'pa-kategori-aktif' : ''}`}
+                  style={{ animationDelay: `${idx * 70}ms`, ['--pa-warna' as never]: k.warna }}
+                  onClick={() => setKategoriAktif(isAktif ? null : k.jenis)}
+                >
+                  <i className="pa-kategori-bar" />
+                  <div className="pa-kategori-atas">
+                    <div className="pa-kategori-ikon"><Ikon size={20} /></div>
+                    {k.tanpa_psp > 0 && <span className="pa-badge-merah">{k.tanpa_psp} tanpa PSP</span>}
+                  </div>
+                  <strong className="pa-kategori-label">{k.label}</strong>
+                  <b className="pa-kategori-jumlah">{k.jumlah.toLocaleString('id-ID')}<span> aset</span></b>
+                  <div className="pa-kategori-rinci">
+                    <span>{k.luas > 0 ? formatLuas(k.luas) : '—'}</span>
+                    <span className="pa-kategori-nilai">{k.nilai > 0 ? formatRupiah(k.nilai) : '—'}</span>
+                  </div>
+                </button>
+              )
+            })}
+          </div>}
+
+      {/* Tabel detail aset — muncul di bawah grid saat kartu diklik */}
+      {kategoriAktif && (
+        <section className="pa-tabel-panel">
+          <div className="pa-tabel-head">
+            <h3>{kategoriTerpilih?.label} <span className="pa-hitung">{barisDetail.length} aset</span></h3>
+            <button className="pa-tabel-export" onClick={() => setKategoriAktif(null)}>Tutup tabel</button>
+          </div>
+          {detailLoading
+            ? <p className="pa-loading">Memuat data aset…</p>
+            : barisDetail.length === 0
+              ? <p className="pa-loading">Belum ada data untuk kategori ini.</p>
+              : <div className="pa-tabel-wrap">
+                  <table className="pa-tabel">
+                    <thead>
+                      <tr><th>No</th>{kolomDetail.map(c => <th key={c.label}>{c.label}</th>)}</tr>
+                    </thead>
+                    <tbody>
+                      {barisDetail.map((r, i) => (
+                        <tr key={`${i}-${r.nup}`}>
+                          <td className="pa-td-no">{i + 1}</td>
+                          {kolomDetail.map(c => (
+                            <td key={c.label} className={`${c.mono ? 'pa-td-kode ' : ''}${c.kanan ? 'pa-td-nilai' : ''}`}>{c.ambil(r)}</td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>}
+        </section>
+      )}
+
+      {/* 2. Kinerja Satker + komposisi status pekerjaan */}
       <div className="info-dua">
         <section className="panel admin-page info-panel">
-          <h3>Kinerja Satker</h3>
+          <div className="info-panel-head">
+            <h3>Kinerja Satker</h3>
+            {uptSkor && <span className="info-panel-ket">Skor UPT — sama dengan menu Kinerja UPT</span>}
+          </div>
           <div className="info-rings">
-            <Cincin persen={persen} label="Ketepatan waktu" sub={`${baris?.total ?? 0} pekerjaan`} dari="#6366f1" ke="#8b5cf6" />
-            <Cincin persen={baris?.progressRata ?? 0} label="Progres rata-rata" sub={`${selesai.length} dari ${tugas.length} selesai`} dari="#10b981" ke="#34d399" />
-            <Cincin persen={tugas.length ? (selesai.length / tugas.length) * 100 : 0} label="Pekerjaan selesai" sub={`${selesai.length} tuntas`} dari="#0ea5e9" ke="#38bdf8" />
+            <Cincin persen={uptSkor?.score ?? 0} label="Skor UPT" sub={`${uptSkor?.completed ?? 0} dari ${uptSkor?.totalAssignments ?? 0} tugas selesai`} dari="#6366f1" ke="#8b5cf6" />
+            <Cincin persen={uptSkor?.completionRate ?? 0} label="Tingkat selesai" sub="70% bobot skor" dari="#0ea5e9" ke="#38bdf8" />
+            <Cincin persen={uptSkor?.revisionScore ?? 0} label="Skor revisi" sub={`${uptSkor?.totalRevisions ?? 0} revisi · 30% bobot`} dari="#10b981" ke="#34d399" />
+          </div>
+          <div className="info-keterangan">
+            <div><b>Ketepatan waktu</b><span>{persen}%</span><i>{baris?.ketepatanWaktuTepat ?? 0} dari {baris?.total ?? 0} tugas selesai tepat sebelum batas waktu</i></div>
+            <div><b>Progres rata-rata</b><span>{baris?.progressRata ?? 0}%</span><i>Rata-rata progres seluruh pekerjaan aktif Satker ini</i></div>
+            <div><b>Dalam perbaikan</b><span>{baris?.perluPerbaikan ?? 0}</span><i>Pekerjaan yang dikembalikan Korwil untuk diperbaiki</i></div>
           </div>
         </section>
         <section className="panel admin-page info-panel">
           <h3>Komposisi status pekerjaan</h3>
           <DonatStatus items={statusGrafik} />
           <h3 className="mt">Aset yang perlu perhatian</h3>
-          <BarisAset items={[
-            { label: 'Belum PSP', nilai: aset.belumPsp, warna: '#f59e0b' },
-            { label: 'Rusak berat A', nilai: rusakA, warna: '#ef4444' },
-            { label: 'Rusak berat B', nilai: rusakB, warna: '#dc2626' },
-            { label: 'Rusak berat C', nilai: rusakC, warna: '#b91c1c' },
-          ]} />
+          <div className="pt-grid">
+            {([
+              { id: 'psp', label: 'Belum PSP', n: aset.belumPsp, warna: '#f59e0b' },
+              { id: 'rusak', label: 'Rusak Berat A', n: rusakA, warna: '#ef4444' },
+              { id: 'rusak', label: 'Rusak Berat B', n: rusakB, warna: '#dc2626' },
+              { id: 'rusak', label: 'Rusak Berat C', n: rusakC, warna: '#b91c1c' },
+            ] as const).map(t => {
+              const aktif = perhatian === t.id && (t.id === 'psp' || filterRusak === 'semua' || t.label.endsWith(filterRusak))
+              return (
+                <button
+                  key={t.label}
+                  className={`pt-kartu ${aktif ? 'aktif' : ''} ${t.n === 0 ? 'nol' : ''}`}
+                  style={{ ['--pt-warna' as never]: t.warna }}
+                  disabled={t.n === 0}
+                  onClick={() => {
+                    if (aktif) { setPerhatian(null); return }
+                    setPerhatian(t.id)
+                    setFilterRusak(t.id === 'psp' ? 'semua' : (t.label.slice(-1) as KategoriRusak))
+                  }}
+                >
+                  <b>{t.n.toLocaleString('id-ID')}</b>
+                  <span>{t.label}</span>
+                  <i>{t.n === 0 ? 'tidak ada' : 'klik untuk lihat barang'}</i>
+                </button>
+              )
+            })}
+          </div>
+
+          {perhatian && (
+            <div className="pt-daftar">
+              <div className="pt-daftar-head">
+                <strong>{perhatian === 'psp' ? 'Daftar aset belum PSP' : `Daftar aset rusak berat${filterRusak === 'semua' ? '' : ` kategori ${filterRusak}`}`}</strong>
+                <div className="filter-tab">
+                  {(['semua', 'A', 'B', 'C'] as const).filter(k => k === 'semua' || perhatian === 'rusak').map(k => (
+                    <button key={k} className={filterRusak === k ? 'aktif' : ''} onClick={() => setFilterRusak(k as never)}>
+                      {k === 'semua' ? 'Semua' : `Kategori ${k}`}
+                    </button>
+                  ))}
+                  <button onClick={() => setPerhatian(null)}>Tutup</button>
+                </div>
+              </div>
+              {perhatianLoading
+                ? <p className="pa-loading">Memuat…</p>
+                : barisRusak.length === 0
+                  ? <p className="pa-loading">Tidak ada aset pada kategori ini.</p>
+                  : <div className="pa-tabel-wrap">
+                      <table className="pa-tabel">
+                        <thead>
+                          <tr><th>No</th><th>Nama Barang</th><th>Jenis BMN</th>{perhatian === 'rusak' && <th>Kategori</th>}<th>Kondisi</th>{perhatian === 'rusak' && <th>Merk / Tipe</th>}<th>Nilai Perolehan</th></tr>
+                        </thead>
+                        <tbody>
+                          {barisRusak.map((r, i) => (
+                            <tr key={`${i}-${r.nup}-${r.nama_barang}`}>
+                              <td className="pa-td-no">{i + 1}</td>
+                              <td className="pa-td-nama">{r.nama_barang}</td>
+                              <td>{jenisBmnMeta[r.jenis_bmn]?.label ?? r.jenis_bmn}</td>
+                              {perhatian === 'rusak' && <td><span className={`pt-kat kat-${r.kategori}`}>{r.kategori}</span></td>}
+                              <td>{r.kondisi || '—'}</td>
+                              {perhatian === 'rusak' && <td>{[r.merk, r.tipe].filter(Boolean).join(' · ') || '—'}</td>}
+                              <td className="pa-td-nilai">{r.nilai_perolehan ? r.nilai_perolehan.toLocaleString('id-ID') : '—'}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>}
+              {barisRusak.length >= 500 && <p className="pa-keterangan">Menampilkan 500 baris pertama. Gunakan pencarian di tabel aset untuk rincian lengkap.</p>}
+            </div>
+          )}
         </section>
       </div>
 
       <section className="panel admin-page info-panel">
-        <h3>Pekerjaan belum selesai <span className="hitung">{belum.length}</span></h3>
+        <div className="info-panel-head">
+          <h3>Pekerjaan belum selesai <span className="hitung">{belum.length}</span></h3>
+          <button className="info-salin-semua" onClick={() => void salinSemua()}>Salin pesan</button>
+        </div>
         {belum.length === 0
           ? <p className="catatan-aman">Seluruh pekerjaan Satker ini sudah selesai.</p>
           : <ul className="info-list">{belum.map(t => (
@@ -537,12 +798,16 @@ function InfografisSatker({ tasks, kodeSatker, onKembali }: { tasks: Task[]; kod
                 <div className="info-list-meter">
                   <div className="info-list-track"><i style={{ width: `${t.progress}%` }} /></div>
                   <b className={`skor ${t.status}`}>{t.progress}%</b>
+                  <button className="info-list-salin" onClick={() => void salinPesan(t.task, t.status, t.tahap, t.progress)}>Salin pesan</button>
                 </div>
               </li>))}</ul>}
       </section>
 
       <section className="panel admin-page info-panel">
-        <h3>Pekerjaan selesai <span className="hitung">{selesai.length}</span></h3>
+        <div className="info-panel-head">
+          <h3>Pekerjaan selesai <span className="hitung">{selesai.length}</span></h3>
+          <button className="info-salin-semua" onClick={() => void salinSemua()}>Salin pesan</button>
+        </div>
         {selesai.length === 0
           ? <p className="catatan-aman">Belum ada pekerjaan yang selesai.</p>
           : <ul className="info-list">{selesai.map(t => (
@@ -560,16 +825,57 @@ function InfografisSatker({ tasks, kodeSatker, onKembali }: { tasks: Task[]; kod
 
 // ── Daftar seluruh pekerjaan ────────────────────────────────────────────────
 export function TaskListPage({ tasks, setDetail }: { tasks: Task[]; setDetail: (id: string) => void }) {
+  const [cari, setCari] = useState('')
+  const [status, setStatus] = useState<'semua' | 'aktif' | 'ditutup'>('semua')
+  const q = cari.trim().toLowerCase()
+  const hasil = tasks.filter(t => {
+    if (status === 'aktif' && !t.active) return false
+    if (status === 'ditutup' && t.active) return false
+    if (!q) return true
+    const namaSatker = t.assignments
+      .map(a => satkers.find(s => s.code === a.satker)?.name ?? '')
+      .join(' ')
+    return `${t.title} ${t.description} ${t.letter} ${t.method} ${namaSatker}`.toLowerCase().includes(q)
+  })
+
   return (
     <section className="panel admin-page">
       <div className="panel-head">
         <div>
           <h2>Seluruh Pekerjaan</h2>
-          <p>Klik pekerjaan untuk melihat Satker yang sudah dan belum selesai, lalu salin ringkasannya ke grup WhatsApp.</p>
+          <p>{q || status !== 'semua' ? `${hasil.length} dari ${tasks.length} pekerjaan cocok.` : 'Klik pekerjaan untuk melihat Satker yang sudah dan belum selesai, lalu salin ringkasannya ke grup WhatsApp.'}</p>
+        </div>
+        <div className="panel-head-alat">
+          <div className="filter-tab" role="group" aria-label="Saring status pekerjaan">
+            {([['semua', 'Semua'], ['aktif', 'Aktif'], ['ditutup', 'Ditutup']] as const).map(([k, l]) => (
+              <button
+                key={k}
+                className={status === k ? 'aktif' : ''}
+                onClick={() => setStatus(k)}
+                aria-pressed={status === k}
+              >
+                {l}
+              </button>
+            ))}
+          </div>
+          <label className="filter-cari">
+            <Search size={15} />
+            <input
+              value={cari}
+              onChange={e => setCari(e.target.value)}
+              placeholder="Cari pekerjaan, dasar, atau nama Satker…"
+              aria-label="Cari pekerjaan"
+            />
+            {cari && (
+              <button type="button" className="filter-cari-x" onClick={() => setCari('')} aria-label="Bersihkan pencarian">
+                <X size={13} />
+              </button>
+            )}
+          </label>
         </div>
       </div>
       <div className="task-daftar">
-        {tasks.map(task => {
+        {hasil.map(task => {
           const avg = task.assignments.length
             ? Math.round(task.assignments.reduce((n, a) => n + progressForAssignment(task, a), 0) / task.assignments.length)
             : 0
@@ -590,6 +896,7 @@ export function TaskListPage({ tasks, setDetail }: { tasks: Task[]; setDetail: (
           )
         })}
       </div>
+      {hasil.length === 0 && <p className="kosong">Tidak ada pekerjaan yang cocok dengan pencarian Anda.</p>}
     </section>
   )
 }
@@ -922,7 +1229,7 @@ function ProfilAsetGrid({ onPilih }: { onPilih: (kode: string) => void }) {
   )
 }
 
-function ProfilAsetDetail({ kodeSatker, onKembali }: { kodeSatker: string; onKembali: () => void }) {
+export function ProfilAsetDetail({ kodeSatker, onKembali }: { kodeSatker: string; onKembali: () => void }) {
   const [data, setData] = useState<AsetRow[]>([])
   const [loading, setLoading] = useState(true)
   const [aktif, setAktif] = useState<string | null>(null)
@@ -1094,6 +1401,496 @@ function ProfilAsetDetail({ kodeSatker, onKembali }: { kodeSatker: string; onKem
           </div>
         </section>
       )}
+    </div>
+  )
+}
+
+// ── Data Center BMN: rekap seluruh Riau ──────────────────────────────────────
+type RekapWilayah = {
+  snapshot_date: string
+  source_file: string
+  total_aset: number
+  total_nilai: number
+  jumlah_satker: number
+  jumlah_jenis: number
+  tanpa_psp: number
+  per_jenis: Array<{ jenis: string; jumlah: number; nilai: number }>
+  per_satker: Array<{ kode: string; nama: string; jumlah: number; nilai: number; tanpa_psp: number }>
+  top_aset: Array<{ nama_barang: string; jenis_bmn: string; satker_code: string; nama_satker: string; nilai: number }>
+}
+
+export function DataCenterBmnPage({ onBukaSatker }: { onBukaSatker: (kode: string) => void }) {
+  const [data, setData] = useState<RekapWilayah | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    let mounted = true
+    import('./lib/supabase').then(async ({ supabase }) => {
+      if (!supabase) { if (mounted) setError('Koneksi database tidak tersedia.'); if (mounted) setLoading(false); return }
+      const { data: rows, error: err } = await supabase.rpc('get_bmn_rekap_wilayah')
+      if (!mounted) return
+      if (err) setError(err.message)
+      else setData((Array.isArray(rows) ? rows[0] : rows) as RekapWilayah)
+      setLoading(false)
+    }).catch(e => { if (mounted) { setError(e instanceof Error ? e.message : 'Data belum dapat dimuat.'); setLoading(false) } })
+    return () => { mounted = false }
+  }, [])
+
+  // Klik tombol jenis BMN -> ambil seluruh detail aset jenis itu di Riau
+  const [jenisAktif, setJenisAktif] = useState<string | null>(null)
+  const [detailWilayah, setDetailWilayah] = useState<{ jumlah: number; nilai: number; satker: number; baris: AsetRow[] } | null>(null)
+  const [detailWilayahLoading, setDetailWilayahLoading] = useState(false)
+
+  useEffect(() => {
+    if (!jenisAktif) { setDetailWilayah(null); return }
+    let hidup = true
+    setDetailWilayahLoading(true)
+    import('./lib/supabase').then(async ({ supabase }) => {
+      if (!supabase) { if (hidup) setDetailWilayahLoading(false); return }
+      const { data: rows, error } = await supabase.rpc('get_bmn_aset_wilayah', { p_jenis: jenisAktif, p_limit: 500 })
+      if (!hidup) return
+      if (error) setDetailWilayah({ jumlah: 0, nilai: 0, satker: 0, baris: [] })
+      else {
+        const r = (Array.isArray(rows) ? rows[0] : rows) as { jumlah: number; nilai: number; satker: number; baris: AsetRow[] }
+        setDetailWilayah({ jumlah: r.jumlah, nilai: r.nilai, satker: r.satker, baris: r.baris ?? [] })
+      }
+      if (hidup) setDetailWilayahLoading(false)
+    }).catch(() => { if (hidup) setDetailWilayahLoading(false) })
+    return () => { hidup = false }
+  }, [jenisAktif])
+
+  const bukaJenis = async (jenis: string | null) => { setJenisAktif(jenis) }
+
+  const barisWilayah = detailWilayah?.baris ?? []
+  const kolomWilayah = jenisAktif ? kolomUntukJenis(jenisAktif) : []
+
+  const exportPdf = async () => {
+    if (!data) return
+    const { default: jsPDF } = await import('jspdf')
+    const { default: autoTable } = await import('jspdf-autotable')
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
+    doc.setFontSize(14); doc.setFont('helvetica', 'bold')
+    doc.text('Data Center BMN — Kanwil Ditjenpas Riau', 14, 15)
+    doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(100)
+    doc.text(`Snapshot ${data.snapshot_date} · ${data.total_aset.toLocaleString('id-ID')} aset · ${data.jumlah_satker} Satker · Total ${data.total_nilai.toLocaleString('id-ID')}`, 14, 21)
+    doc.setTextColor(0)
+
+    doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.text('Rekap per Jenis BMN', 14, 30)
+    autoTable(doc, {
+      head: [['Jenis BMN', 'Jumlah Aset', 'Nilai Perolehan']],
+      body: data.per_jenis.map(j => [jenisBmnMeta[j.jenis]?.label ?? j.jenis, j.jumlah.toLocaleString('id-ID'), j.nilai.toLocaleString('id-ID')]),
+      startY: 34, styles: { fontSize: 7.5, cellPadding: 2 },
+      headStyles: { fillColor: [59, 130, 246] }, alternateRowStyles: { fillColor: [245, 247, 250] },
+      columnStyles: { 1: { halign: 'right' }, 2: { halign: 'right' } }, margin: { left: 14, right: 14 },
+    })
+
+    const y = (doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? 34
+    doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.text('Rekap per Satker', 14, y + 8)
+    autoTable(doc, {
+      head: [['Satker', 'Kode', 'Jumlah Aset', 'Tanpa PSP', 'Nilai Perolehan']],
+      body: data.per_satker.map(r => [r.nama, r.kode, r.jumlah.toLocaleString('id-ID'), r.tanpa_psp.toLocaleString('id-ID'), r.nilai.toLocaleString('id-ID')]),
+      startY: y + 12, styles: { fontSize: 7.5, cellPadding: 2 },
+      headStyles: { fillColor: [16, 185, 129] }, alternateRowStyles: { fillColor: [245, 247, 250] },
+      columnStyles: { 2: { halign: 'right' }, 3: { halign: 'right' }, 4: { halign: 'right' } },
+      margin: { left: 14, right: 14 },
+    })
+    doc.save('Data-Center-BMN-Kanwil-Riau.pdf')
+  }
+
+  if (loading) return <section className="panel admin-page"><p className="kosong">Memuat data aset…</p></section>
+  if (error || !data) return <section className="panel admin-page"><p className="kosong">{error || 'Data belum tersedia.'}</p></section>
+
+  return (
+    <div className="pa-halaman">
+      <section className="pa-hero">
+        <div className="pa-hero-baris">
+          <div className="pa-hero-ikon"><Database size={26} /></div>
+          <div className="pa-hero-teks">
+            <h2>Data Center BMN</h2>
+            <p>Rekap seluruh BMN Kanwil Ditjenpas Riau · snapshot {data.snapshot_date}</p>
+          </div>
+          <button className="pa-hero-export" onClick={() => void exportPdf()}><Printer size={14} /> Export PDF</button>
+        </div>
+        <div className="pa-hero-stats">
+          <div className="pa-stat"><b>{data.total_aset.toLocaleString('id-ID')}</b><span>Total aset</span></div>
+          <div className="pa-stat"><b>{formatRupiah(data.total_nilai)}</b><span>Total nilai perolehan</span></div>
+          <div className="pa-stat"><b>{data.jumlah_satker}</b><span>Satker</span></div>
+          <div className="pa-stat"><b>{data.jumlah_jenis}</b><span>Jenis BMN</span></div>
+          <div className="pa-stat"><b>{data.tanpa_psp}</b><span>Belum PSP</span></div>
+        </div>
+      </section>
+
+      {/* Tombol per jenis BMN — klik untuk melihat seluruh detail asetnya */}
+      <div className="pa-kategori-grid">
+        {data.per_jenis.map((j, idx) => {
+          const meta = jenisBmnMeta[j.jenis]
+          const Ikon = meta?.Ikon ?? Package
+          const warna = meta?.warna ?? '#94a3b8'
+          return (
+            <button
+              key={j.jenis}
+              className={`pa-kategori ${jenisAktif === j.jenis ? 'pa-kategori-aktif' : ''}`}
+              style={{ animationDelay: `${idx * 70}ms`, ['--pa-warna' as never]: warna }}
+              onClick={() => void bukaJenis(jenisAktif === j.jenis ? null : j.jenis)}
+            >
+              <i className="pa-kategori-bar" />
+              <div className="pa-kategori-atas">
+                <div className="pa-kategori-ikon"><Ikon size={20} /></div>
+              </div>
+              <strong className="pa-kategori-label">{meta?.label ?? j.jenis}</strong>
+              <b className="pa-kategori-jumlah">{j.jumlah.toLocaleString('id-ID')}<span> aset</span></b>
+              <div className="pa-kategori-rinci">
+                <span>{formatRupiah(j.nilai)}</span>
+                <span className="pa-kategori-nilai">{persenNilai(j.nilai, data.total_nilai)}%</span>
+              </div>
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Tabel detail seluruh Riau untuk jenis yang dipilih */}
+      {jenisAktif && (
+        <section className="pa-tabel-panel">
+          <div className="pa-tabel-head">
+            <h3>{jenisBmnMeta[jenisAktif]?.label ?? jenisAktif}{' '}
+              <span className="pa-hitung">{detailWilayah?.jumlah ?? 0} aset · {detailWilayah?.satker ?? 0} Satker</span>
+            </h3>
+            <button className="pa-tabel-export" onClick={() => setJenisAktif(null)}>Tutup tabel</button>
+          </div>
+          {detailWilayahLoading
+            ? <p className="pa-loading">Memuat detail aset…</p>
+            : barisWilayah.length === 0
+              ? <p className="pa-loading">Belum ada data untuk jenis ini.</p>
+              : <>
+                  <div className="pa-tabel-wrap">
+                    <table className="pa-tabel">
+                      <thead>
+                        <tr><th>No</th><th>Satker</th>{kolomWilayah.map(c => <th key={c.label}>{c.label}</th>)}</tr>
+                      </thead>
+                      <tbody>
+                        {barisWilayah.map((r, i) => (
+                          <tr key={`${i}-${r.nup}-${r.nama_barang}`}>
+                            <td className="pa-td-no">{i + 1}</td>
+                            <td className="pa-td-nama">{r.nama_satker}</td>
+                            {kolomWilayah.map(c => (
+                              <td key={c.label} className={`${c.mono ? 'pa-td-kode ' : ''}${c.kanan ? 'pa-td-nilai' : ''}`}>{c.ambil(r)}</td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  {detailWilayah && barisWilayah.length < detailWilayah.jumlah && (
+                    <p className="pa-keterangan">
+                      Menampilkan {barisWilayah.length} dari {detailWilayah.jumlah} aset, diurutkan dari nilai perolehan tertinggi.
+                    </p>
+                  )}
+                </>}
+        </section>
+      )}
+
+      <section className="panel admin-page info-panel">
+        <div className="pa-tabel-head">
+          <h3>Rekap per Satker <span className="pa-hitung">{data.jumlah_satker} Satker</span></h3>
+        </div>
+        <div className="pa-tabel-wrap">
+          <table className="pa-tabel">
+            <thead>
+              <tr><th>Satker</th><th>Kode</th><th>Jumlah Aset</th><th>Tanpa PSP</th><th>Nilai Perolehan</th><th /></tr>
+            </thead>
+            <tbody>
+              {data.per_satker.map(r => (
+                <tr key={r.kode}>
+                  <td className="pa-td-nama">{r.nama}</td>
+                  <td className="pa-td-kode">{r.kode}</td>
+                  <td className="pa-td-nilai">{r.jumlah.toLocaleString('id-ID')}</td>
+                  <td>{r.tanpa_psp > 0 ? <span className="pa-badge-merah">{r.tanpa_psp}</span> : '0'}</td>
+                  <td className="pa-td-nilai">{r.nilai.toLocaleString('id-ID')}</td>
+                  <td><button className="link-button" onClick={() => onBukaSatker(r.kode)}>Profil →</button></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section className="panel admin-page info-panel">
+        <div className="pa-tabel-head">
+          <h3>20 aset bernilai tertinggi</h3>
+        </div>
+        <div className="pa-tabel-wrap">
+          <table className="pa-tabel">
+            <thead>
+              <tr><th>No</th><th>Nama Barang</th><th>Jenis BMN</th><th>Satker</th><th>Nilai Perolehan</th></tr>
+            </thead>
+            <tbody>
+              {data.top_aset.map((a, i) => (
+                <tr key={`${a.satker_code}-${i}`}>
+                  <td className="pa-td-no">{i + 1}</td>
+                  <td className="pa-td-nama">{a.nama_barang}</td>
+                  <td>{jenisBmnMeta[a.jenis_bmn]?.label ?? a.jenis_bmn}</td>
+                  <td>{a.nama_satker}</td>
+                  <td className="pa-td-nilai">{a.nilai.toLocaleString('id-ID')}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  )
+}
+
+// ── Impor Data Aset (export SIMAN) ─────────────────────────────────────────
+type SnapshotInfo = {
+  id: number
+  snapshot_date: string
+  source_file: string
+  status: 'draft' | 'active' | 'arsip'
+  total_baris: number | null
+  total_nilai: number | null
+  jumlah_satker: number | null
+  jumlah_jenis: number | null
+  catatan: string | null
+  created_at: string
+  umur_hari: number
+}
+
+const labelUmur = (n: number): string =>
+  n <= 0 ? 'hari ini'
+    : n === 1 ? 'kemarin'
+    : n < 31 ? `${n} hari lalu`
+    : n < 365 ? `${Math.floor(n / 30)} bulan lalu`
+    : `${Math.floor(n / 365)} tahun lalu`
+
+export function ImporAsetPage() {
+  const [snapshots, setSnapshots] = useState<SnapshotInfo[]>([])
+  const [memuat, setMemuat] = useState(true)
+  const [tahap, setTahap] = useState<'pilih' | 'pratinjau'>('pilih')
+  const [hasil, setHasil] = useState<HasilBaca | null>(null)
+  const [namaBerkas, setNamaBerkas] = useState('')
+  const [tanggal, setTanggal] = useState('')
+  const [banding, setBanding] = useState<HasilBanding | null>(null)
+  const [kesalahan, setKesalahan] = useState('')
+  const [sibuk, setSibuk] = useState(false)
+  const [sukses, setSukses] = useState('')
+  const inputBerkas = useRef<HTMLInputElement>(null)
+
+  const muatSnapshot = async () => {
+    setMemuat(true)
+    try {
+      const { supabase } = await import('./lib/supabase')
+      if (!supabase) { setKesalahan('Koneksi database tidak tersedia.'); return }
+      const { data } = await supabase.rpc('bmn_daftar_snapshot')
+      if (Array.isArray(data)) setSnapshots(data as SnapshotInfo[])
+    } catch { setKesalahan('Daftar snapshot belum dapat dimuat.') }
+    finally { setMemuat(false) }
+  }
+  useEffect(() => { void muatSnapshot() }, [])
+
+  const aktif = snapshots.find(s => s.status === 'active')
+
+  const pilihBerkas = async (berkas: File) => {
+    setKesalahan(''); setSukses('')
+    setNamaBerkas(berkas.name)
+    const baca = await bacaFileAset(berkas)
+    setHasil(baca)
+    if (!baca.ok) { setKesalahan('Berkas tidak dapat dibaca sebagai export Master Aset.'); setTahap('pilih'); return }
+    setTanggal(baca.snapshotDate ?? new Date().toISOString().slice(0, 10))
+    setTahap('pratinjau')
+
+    const { supabase } = await import('./lib/supabase')
+    if (!supabase) { setKesalahan('Koneksi database tidak tersedia.'); return }
+    const { data, error } = await supabase.rpc('bmn_banding', { p_baru: baca.baris as never })
+    if (error) setBanding(null)
+    else setBanding((Array.isArray(data) ? data[0] : data) as HasilBanding)
+  }
+
+  const simpanDanAktifkan = async () => {
+    if (!hasil) return
+    setSibuk(true); setKesalahan(''); setSukses('')
+    try {
+      const { supabase } = await import('./lib/supabase')
+      if (!supabase) throw new Error('Koneksi database tidak tersedia.')
+      const db = supabase
+      const { data, error } = await db.rpc('bmn_simpan_snapshot', {
+        p_snapshot_date: tanggal,
+        p_source_file: namaBerkas,
+        p_baris: hasil.baris as never,
+        p_catatan: `Diimpor melalui portal oleh Korwil`,
+      })
+      if (error) throw new Error(error.message)
+      const baru = (Array.isArray(data) ? data[0] : data) as { id: number; total: number }
+      const { error: e2 } = await supabase.rpc('bmn_aktifkan_snapshot', { p_id: baru.id })
+      if (e2) throw new Error(e2.message)
+      setSukses(`Snapshot ${tanggal} aktif. ${baru.total.toLocaleString('id-ID')} aset tersimpan.`)
+      setTahap('pilih'); setHasil(null); setBanding(null)
+      await muatSnapshot()
+    } catch (e) {
+      setKesalahan(e instanceof Error ? e.message : 'Penyimpanan gagal.')
+    } finally { setSibuk(false) }
+  }
+
+  const aktifkanLama = async (id: number) => {
+    setSibuk(true); setKesalahan(''); setSukses('')
+    try {
+      const { supabase } = await import('./lib/supabase')
+      if (!supabase) throw new Error('Koneksi database tidak tersedia.')
+      const { error } = await supabase.rpc('bmn_aktifkan_snapshot', { p_id: id })
+      if (error) throw new Error(error.message)
+      setSukses('Snapshot aktif berhasil dipindahkan.')
+      await muatSnapshot()
+    } catch (e) { setKesalahan(e instanceof Error ? e.message : 'Gagal.') }
+    finally { setSibuk(false) }
+  }
+
+  const mulaiUlang = () => { setTahap('pilih'); setHasil(null); setBanding(null); setKesalahan(''); setSukses(''); if (inputBerkas.current) inputBerkas.current.value = '' }
+
+  return (
+    <div className="pa-halaman">
+      <section className="pa-hero">
+        <div className="pa-hero-baris">
+          <div className="pa-hero-ikon"><Database size={26} /></div>
+          <div className="pa-hero-teks">
+            <h2>Impor Data Aset</h2>
+            <p>Unggah hasil export Master Aset dari SIMAN. Data menjadi snapshot baru — snapshot lama tetap tersimpan dan dapat diaktifkan kembali.</p>
+          </div>
+        </div>
+        {aktif && (
+          <div className="pa-hero-stats">
+            <div className="pa-stat"><b>{aktif.total_baris?.toLocaleString('id-ID') ?? '—'}</b><span>Aset aktif</span></div>
+            <div className="pa-stat"><b>{aktif.snapshot_date}</b><span>Snapshot terakhir</span></div>
+            <div className="pa-stat"><b>{aktif.umur_hari <= 0 ? 'hari ini' : aktif.umur_hari < 31 ? aktif.umur_hari + ' hari' : Math.floor(aktif.umur_hari / 30) + ' bulan'}</b><span>Umur data</span></div>
+          </div>
+        )}
+      </section>
+
+      {sukses && <div className="imp-sukses" role="status">{sukses}</div>}
+      {kesalahan && <div className="imp-galat" role="alert">{kesalahan}</div>}
+
+      {tahap === 'pilih' && (
+        <section className="panel admin-page info-panel">
+          <div className="pa-tabel-head"><h3>Langkah 1 — Pilih berkas</h3></div>
+          <label className="imp-zona">
+            <Upload size={22} />
+            <strong>Pilih berkas .xlsx hasil export SIMAN</strong>
+            <span>Berkas tetap berada di komputer Anda — hanya isinya yang dikirim ke portal.</span>
+            <input
+              ref={inputBerkas}
+              type="file"
+              accept=".xlsx,.xls"
+              onChange={e => { const f = e.target.files?.[0]; if (f) void pilihBerkas(f) }}
+            />
+          </label>
+          {hasil && !hasil.ok && (
+            <div className="imp-galat">
+              <p>Kolom wajib yang tidak ditemukan: <b>{hasil.kurangKolom.join(', ')}</b></p>
+              <p>Kolom yang terbaca: {hasil.kolom.slice(0, 12).join(', ')}{hasil.kolom.length > 12 ? ' …' : ''}</p>
+            </div>
+          )}
+          {hasil && hasil.jumlahDitolak > 0 && hasil.ok && (
+            <div className="imp-catatan">
+              <p><b>{hasil.jumlahDitolak} baris dilewati</b> karena tidak terbaca atau kuncinya ganda.</p>
+              <ul>{hasil.masalah.map((m, i) => <li key={i}>Baris {m.baris}: {m.alasan}</li>)}</ul>
+            </div>
+          )}
+        </section>
+      )}
+
+      {tahap === 'pratinjau' && hasil && (
+        <section className="panel admin-page info-panel">
+          <div className="pa-tabel-head">
+            <h3>Langkah 2 — Periksa dulu sebelum disimpan</h3>
+            <button className="pa-tabel-export" onClick={mulaiUlang}>Ganti berkas</button>
+          </div>
+
+          <div className="imp-ringkas">
+            <div><b>{hasil.baris.length.toLocaleString('id-ID')}</b><span>baris terbaca</span></div>
+            <div><b>{hasil.namaSheet}</b><span>nama sheet</span></div>
+            {hasil.jumlahDitolak > 0 && <div className="imp-kuning"><b>{hasil.jumlahDitolak}</b><span>baris dilewati</span></div>}
+          </div>
+
+          {banding && (
+            <>
+              <h3 className="imp-subjudul">Perubahan terhadap snapshot aktif</h3>
+              <div className="imp-band">
+                <div className="imp-band-kotak baru"><b>+{banding.aset_baru}</b><span>aset baru</span></div>
+                <div className="imp-band-kotak ubah"><b>{banding.berubah}</b><span>berubah</span></div>
+                <div className="imp-band-kotak sama"><b>{banding.sama}</b><span>tetap sama</span></div>
+                <div className="imp-band-kotak hilang"><b>−{banding.hilang}</b><span>tidak ada di berkas baru</span></div>
+              </div>
+              <div className="imp-band-total">
+                <div><span>Aset dalam berkas baru</span><b>{banding.total_baru.toLocaleString('id-ID')}</b></div>
+                <div><span>Aset pada snapshot aktif</span><b>{banding.baris_lama.toLocaleString('id-ID')}</b></div>
+                <div><span>Nilai perolehan berkas baru</span><b>{formatRupiah(banding.nilai_baru)}</b></div>
+                <div><span>Nilai perolehan snapshot aktif</span><b>{formatRupiah(banding.nilai_lama)}</b></div>
+              </div>
+              {banding.hilang > 0 && (
+                <div className="imp-catatan imp-kuning-bg">
+                  <p><b>{banding.hilang} aset</b> ada di snapshot aktif tetapi tidak ada di berkas baru. Snapshot lama tetap tersimpan, jadi tidak ada data yang hilang permanen.</p>
+                </div>
+              )}
+            </>
+          )}
+
+          <label className="imp-tanggal">
+            Tanggal snapshot
+            <input type="date" value={tanggal} onChange={e => setTanggal(e.target.value)} />
+          </label>
+
+          <div className="imp-aksi">
+            <button className="ghost" onClick={mulaiUlang} disabled={sibuk}>Batal</button>
+            <button className="primary" onClick={() => void simpanDanAktifkan()} disabled={sibuk || !hasil.baris.length}>
+              {sibuk ? 'Menyimpan…' : 'Simpan & jadikan aktif'}
+            </button>
+          </div>
+        </section>
+      )}
+
+      <section className="panel admin-page info-panel">
+        <div className="pa-tabel-head">
+          <h3>Riwayat snapshot <span className="pa-hitung">{snapshots.length}</span></h3>
+        </div>
+        {memuat
+          ? <p className="pa-loading">Memuat riwayat…</p>
+          : snapshots.length === 0
+            ? <p className="pa-loading">Belum ada snapshot.</p>
+            : <div className="pa-tabel-wrap">
+                <table className="pa-tabel">
+                  <thead>
+                    <tr><th>Status</th><th>Tanggal</th><th>Berkas</th><th>Aset</th><th>Nilai</th><th>Satker</th><th>Umur</th><th /></tr>
+                  </thead>
+                  <tbody>
+                    {snapshots.map(s => (
+                      <tr key={s.id}>
+                        <td>
+                          <span className={`imp-status ${s.status}`}>
+                            {s.status === 'active' ? 'Aktif' : s.status === 'draft' ? 'Draf' : 'Arsip'}
+                          </span>
+                        </td>
+                        <td className="pa-td-nilai">{s.snapshot_date}</td>
+                        <td className="pa-td-nama">{s.source_file}</td>
+                        <td>{s.total_baris?.toLocaleString('id-ID') ?? '—'}</td>
+                        <td className="pa-td-nilai">{formatRupiah(s.total_nilai)}</td>
+                        <td>{s.jumlah_satker ?? '—'}</td>
+                        <td>{labelUmur(s.umur_hari)}</td>
+                        <td>
+                          {s.status !== 'active' && (
+                            <button className="link-button" onClick={() => void aktifkanLama(s.id)} disabled={sibuk}>
+                              Aktifkan
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>}
+        <p className="pa-keterangan">
+          Portal selalu membaca snapshot berstatus <b>Aktif</b>. Mengaktifkan kembali snapshot lama berguna bila ada unggahan yang ternyata keliru.
+        </p>
+      </section>
     </div>
   )
 }

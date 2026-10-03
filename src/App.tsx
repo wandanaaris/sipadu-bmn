@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
-import { Activity, Archive, ArrowLeft, BarChart3, Bell, Building2, CalendarDays, Check, CircleAlert, ClipboardCheck, Clock3, Database, ExternalLink, Eye, EyeOff, FileInput, FileSpreadsheet, FileText, Filter, KeyRound, LayoutDashboard, LockKeyhole, LogOut, Mail, Menu, Search, Settings, ShieldCheck, TrendingUp, Upload, Users, X } from 'lucide-react'
+import { Activity, Archive, ArrowLeft, BarChart3, Building2, CalendarDays, Check, CircleAlert, ClipboardCheck, Clock3, Database, ExternalLink, Eye, EyeOff, FileInput, FileSpreadsheet, FileText, Filter, KeyRound, LayoutDashboard, LockKeyhole, LogOut, Mail, Menu, Search, Settings, ShieldCheck, TrendingUp, Upload, Users, X } from 'lucide-react'
 import { telaahRkbmn, satkers, statusLabel, type Task, type TaskMethod, type TaskStatus, type WorkflowStage } from './data'
 import { finalTasks } from './finalTasks'
-import { countPendingVerifications, createOpenSubmission, createTask, documentPreviewUrl, loadSatkerContacts, loadSubmissions, loadTasks, persistAssignmentStatus, persistTaskActive, reviewStagedStage, reviewSubmission, saveSatkerContact, submitLinkSubmission, submitStagedStage, transferSubmission, type SatkerContact, type SubmissionRecord } from './lib/repository'
+import { countPendingVerifications, createOpenSubmission, createTask, documentPreviewUrl, loadSubmissions, loadTasks, persistAssignmentStatus, persistTaskActive, reviewStagedStage, reviewSubmission, submitLinkSubmission, submitStagedStage, transferSubmission, type SubmissionRecord } from './lib/repository'
 import { currentAdmin, signInAdmin, signOutAdmin, type AdminProfile } from './lib/auth'
 import { AkunMitraForm } from './AkunMitraForm'
 import { AkunMitraAdmin } from './AkunMitraAdmin'
 import { sortSatkerWorkItems } from './taskSorting'
 import { StageFieldsForm, PspInfoPanel, AsetRusakPanel, readIsian, type IsianTahap } from './PemanfaatanFields'
-import { DetailPekerjaanPanel, MonitoringSatkerPage, ProfilAsetPage, TaskListPage } from './AdminPanels'
+import { DataCenterBmnPage, DetailPekerjaanPanel, ImporAsetPage, MonitoringSatkerPage, ProfilAsetDetail, ProfilAsetPage, TaskListPage } from './AdminPanels'
 import { BmnAssetInfographic } from './BmnAssetInfographic'
 import { loadBmnOverview } from './lib/bmnAssets'
 import './bmn-infographic.css'
@@ -22,7 +22,7 @@ import './workflow-layout.css'
 
 type View = 'admin' | 'satker'
 type FilterState = 'semua' | TaskStatus
-type AdminPage = 'summary' | 'executive' | 'monev' | 'reminder' | 'tasks' | 'profil-aset' | 'data' | 'akun-mitra' | 'verification' | 'archive' | 'performance' | 'settings'
+type AdminPage = 'summary' | 'executive' | 'monev' | 'tasks' | 'data' | 'impor' | 'akun-mitra' | 'verification' | 'archive' | 'performance' | 'settings'
 
 const methodMeta: Record<TaskMethod,{label:string; Icon: typeof FileSpreadsheet}> = {
   spreadsheet:{label:'Spreadsheet eksternal',Icon:FileSpreadsheet},
@@ -132,7 +132,7 @@ function AdminView({tasks,dataSource,adminProfile,onLogout,onRefresh,filter,setF
   const [showCreate,setShowCreate]=useState(false)
   const [verify,setVerify]=useState(0)
   useEffect(()=>{let mounted=true;void loadSubmissions().then(items=>{if(mounted)setVerify(countPendingVerifications(items))}).catch(()=>{if(mounted)setVerify(0)});return()=>{mounted=false}},[tasks])
-  const pageTitle:Record<AdminPage,string>={summary:'Dashboard Korwil BMN',executive:'Ringkasan Pimpinan',monev:'Monitoring Satker',reminder:'Reminder Satker','profil-aset':'Profil Aset Satker',tasks:'Daftar Pekerjaan',data:'Data Center BMN','akun-mitra':'Data Akun Mitra',verification:'Verifikasi Pekerjaan',archive:'Arsip Pekerjaan',performance:'Kinerja UPT',settings:'Pengaturan Portal'}
+  const pageTitle:Record<AdminPage,string>={summary:'Dashboard Korwil BMN',executive:'Ringkasan Pimpinan',monev:'Monitoring Satker',tasks:'Daftar Pekerjaan',data:'Data Center BMN',impor:'Impor Data Aset','akun-mitra':'Data Akun Mitra',verification:'Verifikasi Pekerjaan',archive:'Arsip Pekerjaan',performance:'Kinerja UPT',settings:'Pengaturan Portal'}
   const active=tasks.filter(t=>t.active)
   const allAssignments=active.flatMap(t=>t.assignments.map(a=>({...a,task:t})))
   const stagedPendingCount=tasks.filter(t=>t.workflow==='staged-destruction'&&t.active).flatMap(t=>t.assignments.filter(a=>(a.stageStates??[]).includes('menunggu_verifikasi'))).length
@@ -141,7 +141,7 @@ function AdminView({tasks,dataSource,adminProfile,onLogout,onRefresh,filter,setF
   const filtered=allAssignments.filter(x=>(filter==='semua'||x.status===filter)&&`${x.task.title} ${satkers.find(s=>s.code===x.satker)?.name}`.toLowerCase().includes(query.toLowerCase()))
   const selectedTask=detail?tasks.find(t=>t.id===detail):null
 
-  return <div className="admin-layout">
+  return <div className={`admin-layout${selectedTask?' has-drawer':''}`}>
     <aside className="sidebar">
       <Brand/>
       <nav>
@@ -149,9 +149,8 @@ function AdminView({tasks,dataSource,adminProfile,onLogout,onRefresh,filter,setF
         <button onClick={onOpenExec}><TrendingUp/>Ringkasan Pimpinan</button>
         <button className={adminPage==='tasks'?'nav-active':''} onClick={()=>setAdminPage('tasks')}><ClipboardCheck/>Pekerjaan <span>{active.length}</span></button>
         <button className={adminPage==='monev'?'nav-active':''} onClick={()=>{setMonevSatker(null);setAdminPage('monev')}}><Users/>Monitoring Satker</button>
-        <button className={adminPage==='reminder'?'nav-active':''} onClick={()=>setAdminPage('reminder')}><Bell/>Reminder Satker</button>
-        <button className={adminPage==='profil-aset'?'nav-active':''} onClick={()=>setAdminPage('profil-aset')}><Database/>Profil Aset Satker</button>
         <button className={adminPage==='data'?'nav-active':''} onClick={()=>setAdminPage('data')}><Database/>Data Center BMN</button>
+        <button className={adminPage==='impor'?'nav-active':''} onClick={()=>setAdminPage('impor')}><Upload/>Impor Data Aset</button>
         <button className={adminPage==='akun-mitra'?'nav-active':''} onClick={()=>setAdminPage('akun-mitra')}><KeyRound/>Data Akun Mitra</button>
         <button className={adminPage==='verification'?'nav-active':''} onClick={()=>setAdminPage('verification')}><ShieldCheck/>Verifikasi <span>{verify+stagedPendingCount}</span></button>
         <button className={adminPage==='archive'?'nav-active':''} onClick={()=>setAdminPage('archive')}><Archive/>Arsip</button>
@@ -213,11 +212,6 @@ export function CreateTaskModal({onClose,onCreated}:{onClose:()=>void;onCreated:
  return <div className="drawer-backdrop create-backdrop"><section className="create-modal"><div className="drawer-head"><button onClick={onClose}><X/></button><span>Buat Pekerjaan Baru</span></div><form onSubmit={submit}><div className="create-grid"><label className="full">Nama pekerjaan<input required value={title} onChange={e=>setTitle(e.target.value)} placeholder="Contoh: Laporan Pengamanan Aset"/></label><label className="full">Deskripsi<textarea required value={description} onChange={e=>setDescription(e.target.value)} placeholder="Jelaskan tujuan dan data yang harus disampaikan"/></label><label>Metode<select value={method} onChange={e=>setMethod(e.target.value as TaskMethod)}><option value="upload">Unggah dokumen</option><option value="spreadsheet">Spreadsheet eksternal</option><option value="portal">Formulir portal</option></select></label><label>Tenggat<input type="date" value={dueDate} onChange={e=>setDueDate(e.target.value)}/></label><label className="full">Dasar surat<input value={sourceLetter} onChange={e=>setSourceLetter(e.target.value)}/></label>{method==='spreadsheet'&&<label className="full">Tautan spreadsheet<input type="url" required value={sourceUrl} onChange={e=>setSourceUrl(e.target.value)}/></label>}<label className="full">Requirement — satu dokumen/field per baris<textarea value={requirements} onChange={e=>setRequirements(e.target.value)}/></label></div><div className="target-head"><div><strong>Satker tujuan</strong><span>{targets.length} UPT dipilih</span></div><button type="button" className="text-button" onClick={()=>setTargets(targets.length===upt.length?[]:upt.map(s=>s.code))}>{targets.length===upt.length?'Batalkan semua':'Pilih semua'}</button></div><div className="target-grid">{upt.map(s=><label key={s.code}><input type="checkbox" checked={targets.includes(s.code)} onChange={()=>toggle(s.code)}/><span>{s.name}</span></label>)}</div>{error&&<div className="auth-message error">{error}</div>}<div className="create-actions"><button type="button" className="ghost" onClick={onClose}>Batal</button><button className="primary" disabled={loading}>{loading?'Membuat pekerjaan…':'Buat pekerjaan'}</button></div></form></section></div>
 }
 
-function dataCards(archiveCount:number):[string,string][]{
- return [['Tanah & Bangunan','Data tanah, gedung, pagar, dan dokumen legal'],['Rumah Negara','Status rumah negara, penghuni, dan papan nama'],['Peralatan & Mesin','Kendaraan, perangkat kerja, dan alat keamanan'],['BMN Idle & Rusak Berat','Klarifikasi, tindak lanjut, dan data dukung'],['RKBMN','Hasil penelaahan dan dokumen perencanaan'],['Arsip Pekerjaan',archiveCount+' pekerjaan telah ditutup']]
-}
-
-type UptScore={satker:string;satkerName:string;totalAssignments:number;completed:number;inRevision:number;pendingVerification:number;totalRevisions:number;completionRate:number;revisionScore:number;score:number}
 function ExecutiveView({tasks,onRefresh}:{tasks:Task[];onRefresh:()=>Promise<void>}){
   const active=tasks.filter(t=>t.active)
   const allAssignments=active.flatMap(t=>t.assignments.map(a=>({...a,task:t})))
@@ -483,6 +477,7 @@ function satkerRankList(tasks:Task[]):Array<{code:string;name:string;done:number
   return [...map.entries()].map(([code,v])=>({code,name:satkers.find(s=>s.code===code)?.name??code,done:v.done,total:v.total,pct:Math.round(v.done/(v.total||1)*100)})).sort((a,b)=>b.pct-a.pct||a.name.localeCompare(b.name))
 }
 
+type UptScore={satker:string;satkerName:string;totalAssignments:number;completed:number;inRevision:number;pendingVerification:number;totalRevisions:number;completionRate:number;revisionScore:number;score:number}
 function PerformanceView(){
   const [scores,setScores]=useState<UptScore[]>([])
   const [loading,setLoading]=useState(true)
@@ -491,88 +486,19 @@ function PerformanceView(){
   const sorted=[...scores].sort((a,b)=>b.score-a.score)
   const medal=(rank:number)=>rank===0?'🥇':rank===1?'🥈':rank===2?'🥉':`${rank+1}`
   const tone=(score:number)=>score>=90?'excellent':score>=75?'good':score>=60?'fair':'poor'
-  return <section className="admin-page performance-page"><div className="performance-hero"><BarChart3/><div><span>NILAI KINERJA UPT</span><h2>Peringkat Kinerja UPT</h2><p>Skor dihitung dari data penugasan portal: tingkat penyelesaian pekerjaan (bobot 70%) dan kualitas pengajuan tanpa perbaikan (bobot 30%). Diperbarui otomatis mengikuti data terbaru.</p></div></div>{error&&<div className="auth-message error">{error}</div>}{loading?<div className="empty-state"><div className="auth-spinner"/><p>Memuat nilai kinerja…</p></div>:<div className="table-wrap performance-table"><table><thead><tr><th>Peringkat</th><th>Satker</th><th>Skor</th><th>Selesai</th><th>Perlu Perbaikan</th><th>Total Perbaikan</th><th>Tingkat Penyelesaian</th></tr></thead><tbody>{sorted.map((s,i)=><tr key={s.satker}><td><span className={`rank-medal ${tone(s.score)}`}>{medal(i)}</span></td><td><strong>{s.satkerName}</strong><span>{s.satker}</span></td><td><b className={`score-badge score-${tone(s.score)}`}>{s.score}</b></td><td>{s.completed}/{s.totalAssignments}</td><td>{s.inRevision}</td><td>{s.totalRevisions}</td><td>{s.completionRate}%</td></tr>)}</tbody></table></div>}<div className="policy-note"><CircleAlert/><p>Skor ini merupakan alat bantu monitoring internal Korwil, bukan penilaian resmi kinerja pegawai. Bobot penilaian dapat ditinjau bersama pimpinan sebelum digunakan lebih lanjut.</p></div></section>
+  return <section className="admin-page performance-page"><div className="performance-hero"><BarChart3/><div><span>NILAI KINERJA UPT</span><h2>Peringkat Kinerja UPT</h2><p>Skor = (tingkat penyelesaian × 70%) + (skor revisi × 30%). Tingkat penyelesaian = selesai ÷ total penugasan. Skor revisi = 100 − (jumlah perbaikan × 10). Angka ini sama persis dengan skor pada kartu menu Monitoring Satker.</p></div></div>{error&&<div className="auth-message error">{error}</div>}{loading?<div className="empty-state"><div className="auth-spinner"/><p>Memuat nilai kinerja…</p></div>:<div className="table-wrap performance-table"><table><thead><tr><th>Peringkat</th><th>Satker</th><th>Skor UPT</th><th>Tingkat Selesai<br/><span>70%</span></th><th>Skor Revisi<br/><span>30%</span></th><th>Selesai</th><th>Perlu Perbaikan</th><th>Total Perbaikan</th></tr></thead><tbody>{sorted.map((s,i)=><tr key={s.satker}><td><span className={`rank-medal ${tone(s.score)}`}>{medal(i)}</span></td><td><strong>{s.satkerName}</strong><span>{s.satker}</span></td><td><b className={`score-badge score-${tone(s.score)}`}>{s.score}</b></td><td>{s.completionRate}%</td><td>{s.revisionScore}<span className="rev-note">({s.totalRevisions}×)</span></td><td>{s.completed}/{s.totalAssignments}</td><td>{s.inRevision}</td><td>{s.totalRevisions}</td></tr>)}</tbody></table></div>}<div className="policy-note"><CircleAlert/><p>Skor ini merupakan alat bantu monitoring internal Korwil, bukan penilaian resmi kinerja pegawai. Bobot penilaian dapat ditinjau bersama pimpinan sebelum digunakan lebih lanjut.</p></div></section>
 }
 
-function buildReminderMessage(satkerName:string,items:Array<{title:string;status:TaskStatus;progress:number}>):string{
-  const lines=items.map(item=>`• ${item.title} — ${statusLabel[item.status]} (${item.progress}%)`)
-  return `Yth. Operator ${satkerName},\n\nKami dari Korwil BMN Ditjenpas Riau ingin mengingatkan pekerjaan SIPADU BMN berikut yang masih perlu ditindaklanjuti:\n\n${lines.join('\n')}\n\nMohon segera dikerjakan dan diunggah melalui portal SIPADU BMN (https://sipadu-bmn.vercel.app). Jika ada kendala, silakan hubungi Korwil BMN.\n\nTerima kasih.\n— Korwil BMN Ditjenpas Riau`
-}
-
-function normalizeWaNumber(raw:string):string{
-  const digits=raw.replace(/[^0-9]/g,'')
-  if(digits.startsWith('0'))return '62'+digits.slice(1)
-  if(digits.startsWith('62'))return digits
-  if(digits.startsWith('8'))return '62'+digits
-  return digits
-}
-
-function RemindSatkerPanel({tasks}:{tasks:Task[]}){
-  const pending=tasks.filter(t=>t.active).flatMap(t=>t.assignments.filter(a=>a.status==='belum'||a.status==='perbaikan').map(a=>({task:t,assignment:a})))
-  const bySatker=new Map<string,Array<{title:string;status:TaskStatus;progress:number}>>()
-  for(const p of pending){
-    const list=bySatker.get(p.assignment.satker)??[]
-    list.push({title:p.task.title,status:p.assignment.status,progress:p.assignment.progress})
-    bySatker.set(p.assignment.satker,list)
-  }
-  const [selected,setSelected]=useState<string|null>(null)
-  const [contacts,setContacts]=useState<Record<string,SatkerContact>>({})
-  const [idsByCode,setIdsByCode]=useState<Record<string,string>>({})
-  const [editing,setEditing]=useState<string|null>(null)
-  const [waInput,setWaInput]=useState('')
-  const [nameInput,setNameInput]=useState('')
-  const [saving,setSaving]=useState(false)
-  const [copied,setCopied]=useState(false)
-  useEffect(()=>{let mounted=true;loadSatkerContacts().then(r=>{if(mounted){setContacts(r.contacts);setIdsByCode(r.idsByCode)}}).catch(()=>{});return()=>{mounted=false}},[])
-  const satkerEntries=[...bySatker.entries()].sort((a,b)=>satkers.find(s=>s.code===a[0])?.name.localeCompare(satkers.find(s=>s.code===b[0])?.name??'')??0)
-  const copyMessage=async(code:string)=>{
-    const items=bySatker.get(code)??[]
-    const name=satkers.find(s=>s.code===code)?.name??code
-    const msg=buildReminderMessage(name,items)
-    try{await navigator.clipboard.writeText(msg);setCopied(true);window.setTimeout(()=>setCopied(false),2000)}catch{alert(msg)}
-  }
-  const openWhatsApp=(code:string)=>{
-    const items=bySatker.get(code)??[]
-    const name=satkers.find(s=>s.code===code)?.name??code
-    const contact=contacts[idsByCode[code]??'']
-    if(!contact){setEditing(code);setWaInput('');setNameInput('');return}
-    const msg=buildReminderMessage(name,items)
-    window.open(`https://wa.me/${contact.whatsapp}?text=${encodeURIComponent(msg)}`,'_blank','noopener')
-  }
-  const saveContact=async(code:string)=>{
-    const satkerId=idsByCode[code]
-    if(!satkerId){alert('Data satker tidak ditemukan.');return}
-    const normalized=normalizeWaNumber(waInput)
-    if(normalized.length<9){alert('Nomor WhatsApp tidak valid. Gunakan format 08xxx atau 62xxx.');return}
-    setSaving(true)
-    try{
-      await saveSatkerContact(satkerId,normalized,nameInput)
-      setContacts(current=>({...current,[satkerId]:{satker_id:satkerId,operator_name:nameInput||null,whatsapp:normalized}}))
-      setEditing(null)
-    }catch(err){alert(err instanceof Error?err.message:'Gagal menyimpan kontak.')}finally{setSaving(false)}
-  }
-  const copyAll=async()=>{
-    const all=satkerEntries.map(([code])=>{
-      const items=bySatker.get(code)??[]
-      const name=satkers.find(s=>s.code===code)?.name??code
-      return buildReminderMessage(name,items)
-    }).join('\n\n───────────────────\n\n')
-    try{await navigator.clipboard.writeText(all);setCopied(true);window.setTimeout(()=>setCopied(false),2000)}catch{alert('Gagal menyalin. Salin manual dari masing-masing satker.')}
-  }
-  if(!satkerEntries.length)return null
-  return <section className="panel admin-page remind-panel"><div className="panel-head"><div><h2>Ingatkan Satker</h2><p>{satkerEntries.length} satker memiliki pekerjaan belum selesai ({pending.length} penugasan). Tombol WhatsApp membuka chat dengan pesan sudah terisi — tinggal tekan kirim.</p></div><button className="ghost" onClick={()=>void copyAll()}>Salin Semua Pesan</button></div><div className="remind-list">{satkerEntries.map(([code,items])=>{const name=satkers.find(s=>s.code===code)?.name??code;const open=selected===code;const satkerId=idsByCode[code]??'';const contact=contacts[satkerId] as SatkerContact|undefined;return <div className="remind-row" key={code}><button className="remind-row-head" onClick={()=>setSelected(open?null:code)}><strong>{name}</strong><span>{items.length} pekerjaan belum selesai{contact?.operator_name?` · ${contact.operator_name}`:''}</span><b>{open?'▲':'▼'}</b></button>{open&&<div className="remind-row-body"><ul>{items.map(item=><li key={item.title}><span>{item.title}</span><StatusPill status={item.status}/><small>{item.progress}%</small></li>)}</ul>{editing===code?<div className="remind-contact-form"><label>Nama operator<input value={nameInput} onChange={e=>setNameInput(e.target.value)} placeholder="Nama operator (opsional)"/></label><label>Nomor WhatsApp<input value={waInput} onChange={e=>setWaInput(e.target.value)} placeholder="08xxxxxxxxxx"/></label><div className="remind-contact-actions"><button className="primary" disabled={saving} onClick={()=>void saveContact(code)}>{saving?'Menyimpan…':'Simpan Kontak'}</button><button className="ghost" onClick={()=>setEditing(null)}>Batal</button></div></div>:<div className="remind-actions">{contact?<button className="primary" onClick={()=>openWhatsApp(code)}>Kirim WhatsApp ke {contact.whatsapp}</button>:<button className="ghost" onClick={()=>{setEditing(code);setWaInput('');setNameInput('')}}>+ Tambah Nomor WA</button>}<button className="ghost" onClick={()=>void copyMessage(code)}>Salin Pesan</button>{contact&&<button className="link-button" onClick={()=>{setEditing(code);setWaInput(contact.whatsapp);setNameInput(contact.operator_name??'')}}>Edit kontak</button>}</div>}{copied&&<small className="remind-copied">Pesan tersalin ke clipboard.</small>}</div>}</div>})}</div></section>
-}
-
-// Routing halaman Dashboard Korwil selain ringkasan.
 function AdminRouter({page,tasks,detail,setDetail,toggleTask,setMonev,onRefresh,monevSatker}:{page:AdminPage;tasks:Task[];detail:string|null;setDetail:(v:string|null)=>void;toggleTask:(id:string)=>void;setMonev:(k:string)=>void;onRefresh:()=>Promise<void>;monevSatker:string|null}){
- if(page==='monev') return <MonitoringSatkerPage tasks={tasks} kodeAwal={monevSatker??undefined}/>
- if(page==='reminder') return <RemindSatkerPanel tasks={tasks}/>
+ const [kodeAset,setKodeAset]=useState<string|null>(null)
+ if(kodeAset)return <ProfilAsetDetail kodeSatker={kodeAset} onKembali={()=>setKodeAset(null)}/>
+ if(page==='monev') return <MonitoringSatkerPage tasks={tasks} kodeAwal={monevSatker??undefined} />
  if(page==='tasks'){const t=detail?tasks.find(x=>x.id===detail):null;return t?<DetailPekerjaanPanel task={t} onTutup={()=>setDetail(null)} onBukaPekerjaan={setMonev}/>:<TaskListPage tasks={tasks} setDetail={setDetail}/>}
  if(page==='akun-mitra') return <AkunMitraAdmin/>
  if(page==='verification') return <><StagedVerificationSection tasks={tasks} onRefresh={onRefresh}/><SubmissionInbox onTasksChanged={onRefresh} tasks={tasks}/></>
  if(page==='performance') return <PerformanceView/>
- if(page==='profil-aset') return <ProfilAsetPage/>
-if(page==='data'){const archiveCount=tasks.filter(t=>!t.active).length;return <section className="admin-page"><div className="data-intro"><Database/><div><h2>Data Center BMN</h2><p>Pusat indeks pekerjaan, dokumen, dan riwayat. Pada MVP, berkas masih berupa data contoh dan tautan sumber.</p></div></div><div className="data-grid">{dataCards(archiveCount).map(([title,text])=><article className="data-card" key={title}><Archive/><h3>{title}</h3><p>{text}</p><button>Lihat indeks →</button></article>)}</div></section>}
+if(page==='data')return <DataCenterBmnPage onBukaSatker={setMonev}/>
+ if(page==='impor')return <ImporAsetPage/>
 if(page==='archive') {const archived=tasks.filter(t=>!t.active);return <section className="panel admin-page"><div className="panel-head"><div><h2>Arsip pekerjaan</h2><p>Pekerjaan ditutup tetap tersimpan dan dapat dibuka kembali.</p></div></div>{archived.length===0?<EmptyState icon={Archive} title="Arsip masih kosong" text="Pekerjaan yang ditutup akan tersimpan di sini."/>:<div className="archive-grid">{archived.map(t=><article className="archive-card" key={t.id}><MethodIcon method={t.method}/><div><span>{t.due}</span><h3>{t.title}</h3><p>{t.letter}</p></div><button className="ghost" onClick={()=>toggleTask(t.id)}>Buka kembali</button></article>)}</div>}</section>}
  return null
 }
@@ -734,20 +660,27 @@ function EmptyState({icon:Icon,title,text}:{icon:typeof Activity;title:string;te
 function Metric({label,value,hint,tone,icon:Icon}:{label:string;value:string|number;hint:string;tone:string;icon:typeof Activity}){return <div className="metric"><div className={`metric-icon ${tone}`}><Icon/></div><div><span>{label}</span><strong>{value}</strong><small>{hint}</small></div></div>}
 
 type StageState='terkunci'|'terbuka'|'menunggu_verifikasi'|'selesai'|'perbaikan'
-function stageStatesFor(assignment:Task['assignments'][number],stages:NonNullable<Task['stages']>):StageState[]{
- if(assignment.stageStates&&assignment.stageStates.length===stages.length)return assignment.stageStates
- const s:StageState[]=[];for(let i=0;i<stages.length;i++)s.push(i===0?'terbuka':'terkunci');return s
-}
-
 function TaskDrawer({task,onClose,onToggle,updateAssignment: _updateAssignment,onRefresh}:{task:Task;onClose:()=>void;onToggle:()=>void;updateAssignment:(taskId:string,satker:string,status:TaskStatus)=>void;onRefresh:()=>Promise<void>}){
  const [search,setSearch]=useState('');const rows=task.assignments.filter(a=>satkers.find(s=>s.code===a.satker)?.name.toLowerCase().includes(search.toLowerCase()))
- return <div className="drawer-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)onClose()}}><aside className="drawer"><div className="drawer-head"><button onClick={onClose}><X/></button><span>Detail pekerjaan</span></div><div className="drawer-title"><MethodIcon method={task.method} size={22}/><div><h2>{task.title}</h2><p>{task.description}</p></div></div><dl><div><dt>Metode</dt><dd>{methodMeta[task.method].label}</dd></div><div><dt>Batas waktu</dt><dd>{task.due}</dd></div><div><dt>Dasar</dt><dd>{task.letter}</dd></div></dl>{task.workflow==='staged-destruction'&&rows.map(a=><StagedAdminSummary key={`staged-${a.satker}`} task={task} assignment={a} onRefresh={onRefresh}/>)}<div className="drawer-actions"><button className={task.active?'danger':'primary'} onClick={onToggle}>{task.active?'Tutup pekerjaan':'Buka kembali'}</button>{task.link&&<a href={task.link} target="_blank">Buka sumber <ExternalLink/></a>}{task.uploadLink&&<a href={task.uploadLink} target="_blank" rel="noopener noreferrer">Data dukung <ExternalLink/></a>}</div><div className="drawer-section"><div className="drawer-section-head"><h3>Penugasan satker</h3><label><Search/><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Cari satker"/></label></div>{rows.map(a=><div className="assignment" key={a.satker}><div><strong>{satkers.find(s=>s.code===a.satker)?.name}</strong><span>{a.missing.length?a.missing.join(' · '):'Tidak ada kekurangan'}</span></div><Progress value={a.progress}/><StatusPill status={a.status}/></div>)}</div></aside></div>
+ useEffect(()=>{const onKey=(e:KeyboardEvent)=>{if(e.key==='Escape')onClose()};window.addEventListener('keydown',onKey);return()=>window.removeEventListener('keydown',onKey)},[onClose])
+ return <div className="drawer-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)onClose()}}><aside className="drawer" role="dialog" aria-label="Detail pekerjaan"><div className="drawer-head"><button onClick={onClose}><X/></button><span>Detail pekerjaan</span></div><div className="drawer-title"><MethodIcon method={task.method} size={22}/><div><h2>{task.title}</h2><p>{task.description}</p></div></div><dl><div><dt>Metode</dt><dd>{methodMeta[task.method].label}</dd></div><div><dt>Batas waktu</dt><dd>{task.due}</dd></div><div><dt>Dasar</dt><dd>{task.letter}</dd></div></dl>{task.workflow==='staged-destruction'&&<section className="drawer-section"><div className="drawer-section-head"><h3>Progres tahapan per Satker</h3><span>{rows.length} Satker</span></div>{rows.map(a=><StagedAdminSummary key={`staged-${a.satker}`} task={task} assignment={a} onRefresh={onRefresh}/>)}</section>}<div className="drawer-actions"><button className={task.active?'danger':'primary'} onClick={onToggle}>{task.active?'Tutup pekerjaan':'Buka kembali'}</button>{task.link&&<a href={task.link} target="_blank">Buka sumber <ExternalLink/></a>}{task.uploadLink&&<a href={task.uploadLink} target="_blank" rel="noopener noreferrer">Data dukung <ExternalLink/></a>}</div><div className="drawer-section"><div className="drawer-section-head"><h3>Penugasan satker</h3><label><Search/><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Cari satker"/></label></div>{rows.map(a=><div className="assignment" key={a.satker}><div><strong>{satkers.find(s=>s.code===a.satker)?.name}</strong><span>{a.missing.length?a.missing.join(' · '):'Tidak ada kekurangan'}</span></div><Progress value={a.progress}/><StatusPill status={a.status}/></div>)}</div></aside></div>
 }
 
 function StagedAdminSummary({task,assignment,onRefresh}:{task:Task;assignment:Task['assignments'][number];onRefresh:()=>Promise<void>}){
  const stages=task.stages??[]
- const states=stageStatesFor(assignment,stages)
+ // Baca status yang benar: dari DB bila bentuknya cocok, selain itu dari storage
+ // pratinjau. Helper lama selalu mengembalikan status default sehingga semua
+ // satker tampak sama walaupun progress-nya berbeda.
+ const usingDb=!!(assignment.stageStates&&assignment.stageStates.length===stages.length)
+ const states:StageState[]=(usingDb?assignment.stageStates:readStageStates(task.id,assignment.satker,stages.length))??[]
  const [busy,setBusy]=useState(false)
+ const nama=satkers.find(s=>s.code===assignment.satker)?.name??assignment.satker
+ const adaMenunggu=states.some(s=>s==='menunggu_verifikasi')
+ const berjalan=states.findIndex(s=>s!=='selesai'&&s!=='terkunci')
+ const selesai=states.filter(s=>s==='selesai').length
+ const persen=stages.length?Math.round(selesai/stages.length*100):0
+ const [buka,setBuka]=useState(adaMenunggu)
+ useEffect(()=>{if(adaMenunggu)setBuka(true)},[adaMenunggu])
  const act=async(action:'verify'|'return',index:number)=>{
    if(busy)return
    setBusy(true)
@@ -757,9 +690,18 @@ function StagedAdminSummary({task,assignment,onRefresh}:{task:Task;assignment:Ta
      await onRefresh()
    }catch(err){alert(err instanceof Error?err.message:'Operasi gagal.')}finally{setBusy(false)}
  }
- return <div className="staged-admin-summary"><h3>Progress tahapan</h3>{stages.map((stage,index)=>{const state=states[index];return <div key={stage.id}><span>{stage.label}</span><b className={`stage-dot stage-dot-${state}`}>{state==='selesai'?'Selesai':state==='menunggu_verifikasi'?'Menunggu verifikasi':state==='perbaikan'?'Perlu perbaikan':state==='terbuka'?'Sedang berjalan':'Terkunci'}</b>{(state==='menunggu_verifikasi')&&<div className="admin-stage-actions"><button className="primary" disabled={busy} onClick={()=>void act('verify',index)}>Setujui</button><button className="ghost" disabled={busy} onClick={()=>void act('return',index)}>Perbaiki</button></div>}</div>})}</div>
+ // Ringkas per Satker supaya drawer tidak memanjang bertumpuk.
+ return <details className="sas" open={buka} onToggle={e=>setBuka((e.target as HTMLDetailsElement).open)}>
+  <summary>
+   <span className="sas-nama">{nama}</span>
+   <span className="sas-posisi">{selesai===stages.length?'Semua tahap selesai':berjalan>=0?stages[berjalan]?.label:'Belum ada tahap berjalan'}</span>
+   <span className="sas-persen" data-selesai={selesai} data-total={stages.length}>{persen}%</span>
+  </summary>
+  <div className="sas-tahap">
+   {stages.map((stage,index)=>{const state=states[index]??'terkunci';return <div key={stage.id} className={`sas-baris sas-${state}`}><span className="sas-nomor">{state==='selesai'?<Check size={13}/>:index+1}</span><span className="sas-label">{stage.label}</span><b className={`stage-dot stage-dot-${state}`}>{state==='selesai'?'Selesai':state==='menunggu_verifikasi'?'Menunggu verifikasi':state==='perbaikan'?'Perlu perbaikan':state==='terbuka'?'Sedang berjalan':'Terkunci'}</b>{(state==='menunggu_verifikasi')&&<span className="sas-aksi"><button className="primary" disabled={busy} onClick={e=>{e.preventDefault();void act('verify',index)}}>Setujui</button><button className="ghost" disabled={busy} onClick={e=>{e.preventDefault();void act('return',index)}}>Perbaiki</button></span>}</div>})}
+  </div>
+ </details>
 }
-
 function SatkerView({tasks,selectedSatker,setSelectedSatker,setView,detail,setDetail,flash,onOpenTelaah,onRefresh}:SharedProps&{flash:(s:string)=>void;onOpenTelaah:()=>void;onRefresh:()=>Promise<void>}){
  const [entered,setEntered]=useState(false)
  const satker=satkers.find(s=>s.code===selectedSatker)!;
