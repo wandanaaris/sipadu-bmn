@@ -1,53 +1,52 @@
-// Register Penghapusan BMN — dicatat Korwil di halaman Monitoring Satker.
-// Berkas SIMAN hanya memberi tahu barang itu rusak; tidak ada catatan barang
-// mana yang sudah diputus untuk dihapus. Skor Kondisi Aset memakai tabel ini:
-// "sisa rusak berat" = barang rusak SIMAN − barang yang sudah berstatus 'selesai'.
+// Register Penghapusan BMN — Opsi C: Korwil mencatat per kategori, bukan per barang.
+// Satu Satker cukup tiga baris (A, B, C). Angka yang dicatat langsung mengurangi
+// "sisa rusak berat" sehingga Skor Kondisi Aset naik dengan sendirinya.
 import { useEffect, useState } from 'react'
-import { ClipboardCheck, Trash2 } from 'lucide-react'
+import { ClipboardCheck } from 'lucide-react'
 import { supabase } from './lib/supabase'
 
-export type BarisPenghapusan = {
+export type BarisKategori = {
   id: number
   satker_code: string
-  kode_barang: string
-  nup: string
-  nama_barang: string
-  jenis_bmn: string | null
   kategori: 'A' | 'B' | 'C'
-  nilai_perolehan: number | null
-  status: 'usulan' | 'diverifikasi' | 'selesai' | 'ditolak'
+  jumlah_barang: number
+  nilai_total: number
   nomor_tiket: string | null
-  bukti_url: string | null
   catatan: string | null
-  tanggal_usulan: string | null
-  tanggal_selesai: string | null
-  updated_at: string
+  tanggal: string | null
 }
 
-const STATUS_TEKS: Record<BarisPenghapusan['status'], string> = {
-  usulan: 'Usulan', diverifikasi: 'Diverifikasi', selesai: 'Selesai dihapus', ditolak: 'Ditolak',
+/** Berapa barang rusak berat kategori itu yang ada di data Master Aset. */
+export type SisaPerKategori = { A: number; B: number; C: number }
+
+const rupiah = (n: number) =>
+  new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n || 0)
+
+export const ARTI_KATEGORI: Record<'A' | 'B' | 'C', string> = {
+  A: 'BMN selain tanah dan bangunan, nilai di bawah Rp 100 juta',
+  B: 'Kendaraan bermotor dan BMN bernilai di atas Rp 100 juta',
+  C: 'Senjata Api',
 }
 
-const rupiah = (n: number | null) =>
-  n ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n) : '—'
+const KATEGORI: Array<'A' | 'B' | 'C'> = ['A', 'B', 'C']
 
-const kategoriArti = (k: 'A' | 'B' | 'C') =>
-  k === 'C' ? 'C — Senjata Api' : k === 'B' ? 'B — Kendaraan / di atas Rp 100 juta' : 'A — Selain itu'
-
-export function susunPesanPenghapusan(namaSatker: string, kodeSatker: string, baris: BarisPenghapusan[]): string {
-  const menunggu = baris.filter(b => b.status !== 'selesai' && b.status !== 'ditolak')
-  const isi = menunggu.length
-    ? menunggu.map(b => `• ${b.nama_barang} (${b.kategori}) — ${STATUS_TEKS[b.status]}${b.nomor_tiket ? ` · Tiket ${b.nomor_tiket}` : ''}`).join('\n')
-    : '• Tidak ada pengajuan yang menunggu.'
+export function susunPesanPenghapusan(namaSatker: string, kodeSatker: string, baris: BarisKategori[]): string {
+  const isi = KATEGORI
+    .map(k => {
+      const b = baris.find(x => x.kategori === k)
+      if (!b || b.jumlah_barang === 0) return null
+      return `• Kategori ${k} (${ARTI_KATEGORI[k]}): ${b.jumlah_barang} barang senilai ${rupiah(b.nilai_total)}${b.nomor_tiket ? ` · Tiket ${b.nomor_tiket}` : ''}`
+    })
+    .filter(Boolean)
   return [
     `Yth. Operator ${namaSatker},`,
     '',
-    'Korwil BMN Ditjenpas Riau mencatat pengajuan penghapusan BMN berikut untuk unit Anda:',
+    'Korwil BMN Ditjenpas Riau mencatat bahwa penghapusan BMN berikut telah selesai dilaksanakan:',
     '',
-    isi,
+    ...(isi.length ? isi : ['• Belum ada pengajuan penghapusan yang tercatat.']),
     '',
-    'Mohon lengkapi berkas dan proceed through portal SIPADU BMN (https://sipadu-bmn.vercel.app).',
-    'Bila terdapat keberatan, sampaikan kepada Korwil BMN sebelum proses dilanjutkan.',
+    'Data ini diperhitungkan pada skor Kondisi Aset unit Anda.',
+    'Bila tidak sesuai, sampaikan kepada Korwil BMN untuk koreksi.',
     '',
     'Terima kasih.',
     '— Korwil BMN Ditjenpas Riau',
@@ -55,143 +54,155 @@ export function susunPesanPenghapusan(namaSatker: string, kodeSatker: string, ba
   ].join('\n')
 }
 
-export function RegisterPenghapusan({ kodeSatker, namaSatker }: { kodeSatker: string; namaSatker: string }) {
-  const [baris, setBaris] = useState<BarisPenghapusan[]>([])
+type Form = Record<'A' | 'B' | 'C', { jumlah: string; nilai: string; tiket: string }>
+
+const formKosong = (): Form => ({
+  A: { jumlah: '', nilai: '', tiket: '' },
+  B: { jumlah: '', nilai: '', tiket: '' },
+  C: { jumlah: '', nilai: '', tiket: '' },
+})
+
+export function RegisterPenghapusan({
+  kodeSatker, namaSatker, sisa,
+}: { kodeSatker: string; namaSatker: string; sisa: SisaPerKategori }) {
+  const [baris, setBaris] = useState<BarisKategori[]>([])
+  const [form, setForm] = useState<Form>(formKosong())
   const [muat, setMuat] = useState(true)
   const [sibuk, setSibuk] = useState(false)
   const [pesan, setPesan] = useState<'' | 'ok' | 'gagal'>('')
   const [galat, setGalat] = useState('')
-  const [form, setForm] = useState({ kode_barang: '', nup: '', nama_barang: '', nilai_perolehan: '' })
 
   const db = supabase
+
   const muatData = async () => {
     if (!db) { setMuat(false); return }
     setMuat(true)
-    const { data, error } = await db.rpc('bmn_penghapusan_daftar', { p_satker: kodeSatker })
+    const { data, error } = await db.rpc('bmn_hapus_daftar', { p_satker: kodeSatker })
     if (error) setGalat(error.message)
-    else setBaris((data ?? []) as BarisPenghapusan[])
+    else {
+      const daftar = (data ?? []) as BarisKategori[]
+      setBaris(daftar)
+      const f = formKosong()
+      for (const b of daftar) {
+        f[b.kategori] = { jumlah: String(b.jumlah_barang), nilai: String(Number(b.nilai_total || 0)), tiket: b.nomor_tiket ?? '' }
+      }
+      setForm(f)
+    }
     setMuat(false)
   }
   useEffect(() => { void muatData() }, [kodeSatker])
 
-  const simpan = async () => {
-    if (!form.nama_barang.trim()) { setGalat('Nama barang wajib diisi.'); return }
-    if (!db) { setSibuk(false); return }
-    setSibuk(true); setGalat('')
-    const { data, error } = await db.rpc('bmn_penghapusan_simpan', {
-      p_satker: kodeSatker,
-      p_kode_barang: form.kode_barang.trim(),
-      p_nup: form.nup.trim(),
-      p_nama_barang: form.nama_barang.trim(),
-      p_nilai: form.nilai_perolehan ? Number(form.nilai_perolehan) : null,
-    })
-    if (error) setGalat(error.message)
-    else {
-      const kategori = (data as { kategori?: 'A' | 'B' | 'C' } | null)?.kategori
-      setPesan('ok')
-      setTimeout(() => setPesan(''), 2500)
-      setForm({ kode_barang: '', nup: '', nama_barang: '', nilai_perolehan: '' })
-      void kategori
-      await muatData()
+  const simpan = async (k: 'A' | 'B' | 'C') => {
+    if (!db) return
+    const f = form[k]
+    const jumlah = Number(f.jumlah || 0)
+    const nilai = Number(f.nilai || 0)
+    if (!Number.isFinite(jumlah) || jumlah < 0) { setGalat('Jumlah barang harus angka positif.'); return }
+    if (!Number.isFinite(nilai) || nilai < 0) { setGalat('Nilai harus angka positif.'); return }
+    if (jumlah > sisa[k]) {
+      setGalat(`Kategori ${k}: jumlah ${jumlah} melebihi barang rusak berat yang tercatat (${sisa[k]}).`)
+      return
     }
-    setSibuk(false)
-  }
-
-  const ubahStatus = async (id: number, status: BarisPenghapusan['status']) => {
-    if (!db) { setSibuk(false); return }
     setSibuk(true); setGalat('')
-    const { error } = await db.rpc('bmn_penghapusan_ubah_status', { p_id: id, p_status: status })
+    const { error } = await db.rpc('bmn_hapus_simpan', {
+      p_satker: kodeSatker, p_kategori: k, p_jumlah: jumlah,
+      p_nilai: nilai, p_nomor_tiket: f.tiket,
+    })
     if (error) setGalat(error.message)
     await muatData()
     setSibuk(false)
   }
 
-  const hapus = async (id: number) => {
-    if (!db) { setSibuk(false); return }
+  const kosongkan = async (k: 'A' | 'B' | 'C') => {
+    if (!db) return
     setSibuk(true)
-    const { error } = await db.rpc('bmn_penghapusan_hapus', { p_id: id })
+    const { error } = await db.rpc('bmn_hapus_kosongkan', { p_satker: kodeSatker, p_kategori: k })
     if (error) setGalat(error.message)
     await muatData()
     setSibuk(false)
   }
 
   const salinPesan = async () => {
-    const teks = susunPesanPenghapusan(namaSatker, kodeSatker, baris)
-    try { await navigator.clipboard.writeText(teks); setPesan('ok') }
+    try { await navigator.clipboard.writeText(susunPesanPenghapusan(namaSatker, kodeSatker, baris)); setPesan('ok') }
     catch { setPesan('gagal') }
     setTimeout(() => setPesan(''), 2500)
   }
 
-  const menunggu = baris.filter(b => b.status !== 'selesai' && b.status !== 'ditolak').length
-  const selesai = baris.filter(b => b.status === 'selesai')
+  const totalBarang = baris.reduce((n, b) => n + b.jumlah_barang, 0)
+  const totalNilai = baris.reduce((n, b) => n + Number(b.nilai_total || 0), 0)
 
   return (
     <section className="panel admin-page info-panel rp">
       <div className="pa-tabel-head">
-        <h3>Register Penghapusan BMN <span className="pa-hitung">{baris.length} barang</span></h3>
+        <h3>Penghapusan BMN Rusak Berat <span className="pa-hitung">per kategori</span></h3>
         <button className="pa-tabel-export" onClick={() => void salinPesan()} disabled={!baris.length}>
           <ClipboardCheck size={13} /> Salin pesan
         </button>
       </div>
       <p className="rp-keterangan">
-        Dicatat Korwil. Barang yang berstatus <b>Selesai dihapus</b> otomatis mengurangi sisa rusak berat dan menaikkan
-        skor Kondisi Aset Satker. Kategori A/B/C dihitung otomatis dari jenis dan nilai perolehan.
+        Catat <b>jumlah barang</b> dan <b>nilai yang sudah dihapus</b> per kategori. Angka ini langsung mengurangi
+        sisa rusak berat dan menaikkan Skor Kondisi Aset Satker — tanpa perlu mengisi NUP satu per satu.
       </p>
 
       {galat && <div className="imp-galat">{galat}</div>}
       {pesan === 'ok' && <div className="imp-sukses">Pesan tersalin.</div>}
       {pesan === 'gagal' && <div className="imp-galat">Gagal menyalin.</div>}
 
-      <div className="rp-form">
-        <input placeholder="Kode Barang" value={form.kode_barang}
-          onChange={e => setForm(f => ({ ...f, kode_barang: e.target.value }))} />
-        <input placeholder="NUP" value={form.nup}
-          onChange={e => setForm(f => ({ ...f, nup: e.target.value }))} />
-        <input placeholder="Nama barang *" value={form.nama_barang}
-          onChange={e => setForm(f => ({ ...f, nama_barang: e.target.value }))} />
-        <input placeholder="Nilai perolehan" inputMode="numeric" value={form.nilai_perolehan}
-          onChange={e => setForm(f => ({ ...f, nilai_perolehan: e.target.value }))} />
-        <button className="primary" onClick={() => void simpan()} disabled={sibuk}>Tambah</button>
-      </div>
-
-      {muat
-        ? <p className="pa-loading">Memuat register…</p>
-        : baris.length === 0
-          ? <p className="pa-loading">Belum ada barang yang dicatat untuk penghapusan.</p>
-          : <div className="pa-tabel-wrap">
-              <table className="pa-tabel">
-                <thead>
-                  <tr><th>Barang</th><th>Kategori</th><th>Nilai</th><th>Tiket</th><th>Status</th><th>Aksi</th></tr>
-                </thead>
-                <tbody>
-                  {baris.map(b => (
-                    <tr key={b.id}>
-                      <td className="pa-td-nama">{b.nama_barang}
-                        {b.kode_barang && <span className="rp-kode">{b.kode_barang}{b.nup ? ` / NUP ${b.nup}` : ''}</span>}
-                      </td>
-                      <td><span className={`pt-kat kat-${b.kategori}`} title={kategoriArti(b.kategori)}>{b.kategori}</span></td>
-                      <td className="pa-td-nilai">{rupiah(b.nilai_perolehan)}</td>
-                      <td>{b.nomor_tiket || '—'}</td>
-                      <td>
-                        <select value={b.status} disabled={sibuk}
-                          onChange={e => void ubahStatus(b.id, e.target.value as BarisPenghapusan['status'])}>
-                          <option value="usulan">Usulan</option>
-                          <option value="diverifikasi">Diverifikasi</option>
-                          <option value="selesai">Selesai dihapus</option>
-                          <option value="ditolak">Ditolak</option>
-                        </select>
-                      </td>
-                      <td><button className="link-button" onClick={() => void hapus(b.id)} disabled={sibuk}
-                        aria-label="Hapus"><Trash2 size={13} /></button></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>}
-
-      <p className="pa-keterangan">
-        Menunggu tindak lanjut: <b>{menunggu}</b> · Sudah selesai dihapus: <b>{selesai.length}</b>
-      </p>
+      {muat ? <p className="pa-loading">Memuat…</p> : (
+        <div className="pa-tabel-wrap">
+          <table className="pa-tabel">
+            <thead>
+              <tr>
+                <th>Kategori</th><th>Arti</th><th>Sisa Rusak Berat</th>
+                <th>Jumlah dihapus</th><th>Nilai dihapus (Rp)</th><th>Tiket</th><th />
+              </tr>
+            </thead>
+            <tbody>
+              {KATEGORI.map(k => {
+                const f = form[k]
+                const tersimpan = baris.find(b => b.kategori === k)
+                return (
+                  <tr key={k}>
+                    <td><span className={`pt-kat kat-${k}`}>{k}</span></td>
+                    <td className="pa-td-arti">{ARTI_KATEGORI[k]}</td>
+                    <td className="pa-td-nilai">{sisa[k]}</td>
+                    <td>
+                      <input inputMode="numeric" className="rp-input" value={f.jumlah}
+                        onChange={e => setForm(s => ({ ...s, [k]: { ...f, jumlah: e.target.value } }))} placeholder="0" />
+                    </td>
+                    <td>
+                      <input inputMode="numeric" className="rp-input rp-input-lebar" value={f.nilai}
+                        onChange={e => setForm(s => ({ ...s, [k]: { ...f, nilai: e.target.value } }))} placeholder="0" />
+                    </td>
+                    <td>
+                      <input className="rp-input" value={f.tiket}
+                        onChange={e => setForm(s => ({ ...s, [k]: { ...f, tiket: e.target.value } }))} placeholder="—" />
+                    </td>
+                    <td className="rp-aksi">
+                      <button className="link-button" onClick={() => void simpan(k)} disabled={sibuk}>
+                        {tersimpan ? 'Perbarui' : 'Simpan'}
+                      </button>
+                      {tersimpan && (
+                        <button className="link-button rp-hapus" onClick={() => void kosongkan(k)} disabled={sibuk}>
+                          Kosongkan
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+            <tfoot>
+              <tr>
+                <th colSpan={3}>Total tercatat</th>
+                <th className="pa-td-nilai">{totalBarang} barang</th>
+                <th className="pa-td-nilai">{rupiah(totalNilai)}</th>
+                <th colSpan={2} />
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      )}
     </section>
   )
 }

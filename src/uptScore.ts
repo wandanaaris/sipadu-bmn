@@ -28,14 +28,18 @@ export type UptScore = {
   rb_total: number
   rb_sisa: number
   rb_terhapus: number
-  rb_ab: number
+  rb_a: number
+  rb_b: number
   rb_c: number
+  /** Sisa rusak berat per kategori setelah dikurangi yang sudah dihapus. */
+  sisa_a: number
+  sisa_b: number
+  sisa_c: number
   belum_psp: number
   skor_rb: number
   skor_psp: number
   total_aset: number
   nilai_selesai: number
-  terdaftar_hapus: number
 }
 
 // Cache modul supaya kedua halaman tidak memanggil RPC dua kali.

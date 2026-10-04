@@ -702,3 +702,10 @@ button.danger:disabled{opacity:.45;cursor:not-allowed}
 .rp .pa-tabel select{padding:5px 8px;border:1px solid var(--border);border-radius:7px;font-size:.74rem;background:var(--card);color:var(--foreground);cursor:pointer}
 .rp .pa-tabel .link-button{color:var(--muted-foreground)}
 .rp .pa-tabel .link-button:hover{color:#dc2626}
+.rp-input{width:92px;padding:6px 9px;border:1px solid var(--border);border-radius:7px;font-size:.78rem;background:var(--card);color:var(--foreground);text-align:right}
+.rp-input-lebar{width:130px}
+.rp-input:focus{outline:none;border-color:var(--accent)}
+.pa-td-arti{font-size:.7rem;color:var(--muted-foreground);line-height:1.4;min-width:200px}
+.rp-aksi{display:flex;gap:10px;align-items:center;white-space:nowrap}
+.rp-hapus{color:#b91c1c}
+.rp .pa-tabel tfoot th{background:var(--muted);font-size:.72rem}

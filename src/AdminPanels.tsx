@@ -821,7 +821,11 @@ function InfografisSatker({ tasks, kodeSatker, onKembali }: { tasks: Task[]; kod
               </li>))}</ul>}
 
       {/* Register Penghapusan — dicatat Korwil */}
-      <RegisterPenghapusan kodeSatker={kodeSatker} namaSatker={nama} />
+      <RegisterPenghapusan
+        kodeSatker={kodeSatker}
+        namaSatker={nama}
+        sisa={{ A: uptSkor?.sisa_a ?? 0, B: uptSkor?.sisa_b ?? 0, C: uptSkor?.sisa_c ?? 0 }}
+      />
       </section>
     </div>
   )
