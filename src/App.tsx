@@ -520,8 +520,8 @@ function PerformanceView(){
           <li><b>Kinerja Pekerjaan</b><span className="pr-angka">{s.skorKinerja}</span><span>Penyelesaian {s.penyelesaian}% · tepat waktu {s.ketepatan}% · dorongan progres {s.dorongan}% · kualitas {s.kualitas}%</span></li>
           <li className="pr-induk"><b>Kondisi Aset</b><span className="pr-angka">{s.skorKondisi}</span></li>
           <li className="pr-anak"><b>Kelengkapan Data <em>30%</em></b><span className="pr-angka">{s.kelengkapan}%</span><span>Merk dan tipe, penghuni rumah negara, pengguna kendaraan, foto. Lokasi {persenLokasi(s)}% · {s.tanpa_lokasi??0} aset tanpa lokasi</span></li>
-          <li className="pr-anak"><b>Capaian Penghapusan <em>30%</em></b><span className="pr-angka">{s.capaian_penghapusan}%</span><span>Sisa {s.rb_sisa} dari {s.rb_total} barang rusak berat{s.rb_terhapus>0?` · ${s.rb_terhapus} sudah dihapus`:''}</span></li>
-          <li className="pr-anak"><b>Belum PSP <em>25%</em></b><span className="pr-angka">{s.skor_psp??0}%</span><span>{s.belum_psp||0} dari {s.total_aset} aset belum memiliki nomor PSP</span></li>
+          <li className="pr-anak"><b>Capaian Penghapusan <em>40%</em></b><span className="pr-angka">{s.capaian_penghapusan}%</span><span>Sisa {s.rb_sisa} dari {s.rb_total} barang rusak berat{s.rb_terhapus>0?` · ${s.rb_terhapus} sudah dihapus`:''}</span></li>
+          <li className="pr-anak"><b>Belum PSP <em>15%</em></b><span className="pr-angka">{s.skor_psp??0}%</span><span>{s.belum_psp||0} dari {s.total_aset} aset belum memiliki nomor PSP</span></li>
           <li className="pr-anak"><b>Pelepasan Aset <em>15%</em></b><span className="pr-angka">{s.capaian_pelepasan}</span><span>{s.lelang_sk>0?`${s.lelang_sk} SK · ${s.lelang_barang} barang · perolehan ${juta(s.lelang_nilai)} · terjual ${juta(s.lelang_jual)}`:'Belum ada SK penghapusan tercatat'}</span></li>
           <li className="pr-induk"><b>Pekerjaan</b><span className="pr-angka">{s.selesai}/{s.total}</span><span>{s.revisi} revisi · {s.berjalan} berjalan · {s.tepat} tepat waktu</span></li>
         </ul></td></tr>}
@@ -532,8 +532,8 @@ function PerformanceView(){
       <li><b>Kinerja Pekerjaan — 60%</b><span>Penyelesaian 45% · Ketepatan waktu 30% · Dorongan progres 15% · Kualitas pengajuan 10%. Dihitung dari tahap aktif saja</span></li>
       <li><b>Kondisi Aset — 40%</b><span>Rata-rata dari empat variabel di bawah ini</span></li>
       <li><b>Kelengkapan Data — 30%</b><span>Merk dan tipe alat, penghuni rumah negara, pengguna kendaraan bermotor, foto, serta kelengkapan lokasi: alamat untuk tanah, rumah negara, gedung dan bangunan serta jalan, dan lokasi untuk jenis BMN lainnya termasuk barang inventaris di bawah Rp 100 juta</span></li>
-      <li><b>Capaian Penghapusan — 30%</b><span>Jumlah barang rusak berat yang sudah dihapus dibagi sisa barang rusak berat, dirata-ratakan pada kategori A, B, dan C yang berlaku. Kategori tanpa barang rusak berat tidak ikut dihitung</span></li>
-      <li><b>Belum PSP — 25%</b><span>100% dikurangi persentase aset yang belum memiliki nomor PSP</span></li>
+      <li><b>Capaian Penghapusan — 40%</b><span>Jumlah barang rusak berat yang sudah dihapus dibagi sisa barang rusak berat, dirata-ratakan pada kategori A, B, dan C yang berlaku. Kategori tanpa barang rusak berat tidak ikut dihitung</span></li>
+      <li><b>Belum PSP — 15%</b><span>100% dikurangi persentase aset yang belum memiliki nomor PSP. Bobotnya diturunkan karena nomor PSP sudah hampir lengkap di hampir seluruh Satker, sehingga variabel ini jarang membedakan</span></li>
       <li><b>Pelepasan Aset — 15%</b><span>Basis nilai perolehan barang yang dilepas lewat SK penghapusan karena penjualan, setiap Rp 1 miliar bernilai 100 poin, dibatasi maksimal 100</span></li>
     </ol><p className="pp-catatan">Angka yang sama dipakai pada kartu menu Monitoring Satker. Progres pemusnahan persediaan usang amunisi dan non-amunisi sudah masuk di dalam Skor Kinerja Pekerjaan sehingga tidak dihitung dua kali.</p></section>
     <div className="policy-note"><CircleAlert/><p>Skor ini merupakan alat bantu monitoring internal Korwil, bukan penilaian resmi kinerja pegawai. Bobot penilaian dapat ditinjau bersama pimpinan sebelum digunakan lebih lanjut.</p></div>
