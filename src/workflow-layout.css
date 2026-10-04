@@ -754,3 +754,21 @@ button.danger:disabled{opacity:.45;cursor:not-allowed}
 .pr-lencana b{font-weight:700}
 .pr-detail .pr-lencana{background:none;padding:0}
 .pp-bukan-skor{border-left:3px solid var(--amber);padding-left:10px}
+/* — Rincian variabel Kinerja di Monitoring Satker — */
+.ms-rincian{margin:14px 0;display:flex;flex-direction:column;gap:5px}
+.ms-kelompok{margin:10px 0 3px;font-size:.68rem;font-weight:700;color:var(--navy);
+  text-transform:uppercase;letter-spacing:.04em}
+.ms-kelompok:first-child{margin-top:2px}
+.ms-varis{display:grid;grid-template-columns:150px 1fr 42px;gap:9px;align-items:center;font-size:.74rem}
+.ms-varis b{font-weight:500}
+.ms-varis b em{font-style:normal;font-size:.62rem;color:var(--muted);margin-left:3px}
+.ms-bar{display:block;height:7px;border-radius:4px;background:#e6ebef;overflow:hidden;
+  box-shadow:inset 0 0 0 1px rgba(18,51,84,.06)}
+.ms-bar i{display:block;height:100%;border-radius:4px}
+.ms-nilai{text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
+.ms-ket{grid-column:1 / -1;font-size:.64rem;color:var(--muted);margin:-2px 0 3px 159px}
+.ms-lencana{display:flex;align-items:center;gap:7px;margin:12px 0 0;padding:7px 11px;
+  border:1px solid #f0dcb0;border-radius:9px;background:var(--amber-soft);font-size:.68rem}
+.ms-lencana b{color:var(--amber);font-weight:700}
+.ms-lencana em{font-style:normal;color:var(--muted);margin-left:auto}
+@media (max-width:620px){.ms-varis{grid-template-columns:120px 1fr 38px}.ms-ket{margin-left:129px}}

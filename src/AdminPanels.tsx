@@ -2,7 +2,7 @@ import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { ArrowLeft, Building2, Car, CircleAlert, ClipboardList, Database, Upload, Clock3, Cog, Crosshair, HardHat, Home, LandPlot, Monitor, Package, Printer, Route, Search, TrendingUp, UserCheck, Wrench, X } from 'lucide-react'
 import type { Task } from './data'
 import type { KategoriRusak } from './rusakBeratData'
-import { useUptScores } from './uptScore'
+import { tingkatLencanaPemanfaatan, useUptScores } from './uptScore'
 import { RegisterPenghapusan, type BarisLelang } from './RegisterPenghapusan'
 import { bacaFileAset, type HasilBaca, type HasilBanding } from './imporAset'
 import { satkers, statusLabel, type TaskStatus } from './data'
@@ -482,6 +482,8 @@ function InfografisSatker({ tasks, kodeSatker, onKembali }: { tasks: Task[]; kod
 
   const petaSkor = useUptScores()
   const uptSkor = petaSkor.get(kodeSatker)
+  const persenLokasi = (() => { const t = uptSkor?.total_aset ?? 0; return t ? Math.round(100 * (t - (uptSkor?.tanpa_lokasi ?? 0)) / t) : 0 })()
+  const rupiah = (n: number) => 'Rp ' + Math.round(Number(n) || 0).toLocaleString('id-ID')
   const satker = satkers.find(s => s.code === kodeSatker)
   const nama = satker?.name ?? kodeSatker
   const baris = useMemo(() => barisSatker(tasks).find(b => b.kodeSatker === kodeSatker), [tasks, kodeSatker])
@@ -710,14 +712,54 @@ function InfografisSatker({ tasks, kodeSatker, onKembali }: { tasks: Task[]; kod
             {uptSkor && <span className="info-panel-ket">Skor UPT — sama dengan menu Kinerja UPT</span>}
           </div>
           <div className="info-rings">
-            <Cincin persen={uptSkor?.score ?? 0} label="Skor UPT" sub={`${uptSkor?.selesai ?? 0} dari ${uptSkor?.total ?? 0} tugas selesai`} dari="#6366f1" ke="#8b5cf6" />
-            <Cincin persen={uptSkor?.penyelesaian ?? 0} label="Tingkat selesai" sub="70% bobot skor" dari="#0ea5e9" ke="#38bdf8" />
-            <Cincin persen={uptSkor?.kualitas ?? 0} label="Skor revisi" sub={`${uptSkor?.revisi ?? 0} revisi · 30% bobot`} dari="#10b981" ke="#34d399" />
+            <Cincin persen={uptSkor?.score ?? 0} label="Skor UPT" sub={`${uptSkor?.selesai ?? 0} dari ${uptSkor?.total ?? 0} tugas selesai`} dari="#123354" ke="#1769aa" />
+            <Cincin persen={uptSkor?.skorKinerja ?? 0} label="Kinerja Pekerjaan" sub="bobot 60%" dari="#1769aa" ke="#38bdf8" />
+            <Cincin persen={uptSkor?.skorKondisi ?? 0} label="Kondisi Aset" sub="bobot 40%" dari="#15815d" ke="#34d399" />
           </div>
+
+          <div className="ms-rincian">
+            <p className="ms-kelompok">Kinerja Pekerjaan — bobot 60%</p>
+            {([
+              ['Penyelesaian', '45%', uptSkor?.penyelesaian, '#1769aa'],
+              ['Ketepatan waktu', '30%', uptSkor?.ketepatan, '#123354'],
+              ['Dorongan progres', '15%', uptSkor?.dorongan, '#2f8fd0'],
+              ['Kualitas pengajuan', '10%', uptSkor?.kualitas, '#5aa9dd'],
+            ] as const).map(([nama, bobot, nilai, warna]) => (
+              <div className="ms-varis" key={nama}>
+                <b>{nama} <em>{bobot}</em></b>
+                <span className="ms-bar"><i style={{ width: `${nilai ?? 0}%`, background: warna }} /></span>
+                <span className="ms-nilai">{nilai ?? 0}%</span>
+              </div>
+            ))}
+
+            <p className="ms-kelompok">Kondisi Aset — bobot 40%</p>
+            {([
+              ['Kelengkapan Data', '30%', uptSkor?.kelengkapan, '#1769aa', `lokasi ${persenLokasi}% · ${uptSkor?.tanpa_lokasi ?? 0} aset tanpa lokasi`],
+              ['Capaian Penghapusan', '40%', uptSkor?.capaian_penghapusan, '#15815d', `sisa ${uptSkor?.rb_sisa ?? 0} dari ${uptSkor?.rb_total ?? 0} barang rusak berat`],
+              ['Belum PSP', '15%', uptSkor?.skor_psp ?? 0, '#a76509', `${uptSkor?.belum_psp ?? 0} dari ${uptSkor?.total_aset ?? 0} aset belum punya nomor PSP`],
+              ['Pelepasan Aset', '15%', uptSkor?.capaian_pelepasan ?? 0, '#123354', uptSkor?.lelang_sk ? `${uptSkor.lelang_sk} SK · ${rupiah(uptSkor.lelang_nilai)} perolehan` : 'belum ada SK penghapusan'],
+            ] as const).map(([nama, bobot, nilai, warna, ket]) => (
+              <div className="ms-varis" key={nama}>
+                <b>{nama} <em>{bobot}</em></b>
+                <span className="ms-bar"><i style={{ width: `${nilai ?? 0}%`, background: warna }} /></span>
+                <span className="ms-nilai">{nilai ?? 0}</span>
+                <i className="ms-ket">{ket}</i>
+              </div>
+            ))}
+          </div>
+
+          {(uptSkor?.pemanfaatan_item ?? 0) > 0 && (
+            <p className="ms-lencana">
+              {'★'.repeat(tingkatLencanaPemanfaatan(uptSkor?.pemanfaatan_item ?? 0))}
+              <b>{uptSkor?.pemanfaatan_item} item pemanfaatan BMN</b>
+              <em>{uptSkor?.pemanfaatan_sk ?? 0} sudah ada SK Penetapan · pengakuan, tidak masuk skor</em>
+            </p>
+          )}
+
           <div className="info-keterangan">
-            <div><b>Ketepatan waktu</b><span>{persen}%</span><i>{baris?.ketepatanWaktuTepat ?? 0} dari {baris?.total ?? 0} tugas selesai tepat sebelum batas waktu</i></div>
             <div><b>Progres rata-rata</b><span>{baris?.progressRata ?? 0}%</span><i>Rata-rata progres seluruh pekerjaan aktif Satker ini</i></div>
             <div><b>Dalam perbaikan</b><span>{baris?.perluPerbaikan ?? 0}</span><i>Pekerjaan yang dikembalikan Korwil untuk diperbaiki</i></div>
+            <div><b>Ketepatan waktu</b><span>{persen}%</span><i>{baris?.ketepatanWaktuTepat ?? 0} dari {baris?.total ?? 0} tugas selesai tepat sebelum batas waktu</i></div>
           </div>
         </section>
         <section className="panel admin-page info-panel">
