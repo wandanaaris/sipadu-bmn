@@ -36,6 +36,8 @@ export type UptScore = {
   sisa_b: number
   sisa_c: number
   belum_psp: number
+  /** Aset yang alamat atau lokasinya belum diisi. */
+  tanpa_lokasi: number
   skor_rb: number
   skor_psp: number
   total_aset: number

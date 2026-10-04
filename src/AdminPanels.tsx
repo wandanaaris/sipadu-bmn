@@ -468,18 +468,14 @@ export function susunPesanReminder(namaSatker: string, items: Array<{ title: str
 }
 
 function InfografisSatker({ tasks, kodeSatker, onKembali }: { tasks: Task[]; kodeSatker: string; onKembali: () => void }) {
-  // Lelang (SK penghapusan karena penjualan) & progres pemusnahan persediaan usang
+  // Lelang — SK penghapusan karena penjualan
   const [lelangRows, setLelangRows] = useState<BarisLelang[]>([])
-  const [progresAmunisi, setProgresAmunisi] = useState<{ amunisi: number | null; nonAmunisi: number | null }>({ amunisi: null, nonAmunisi: null })
   useEffect(() => {
     let hidup = true
     import('./lib/supabase').then(async ({ supabase }) => {
       if (!supabase) return
       const { data } = await supabase.rpc('bmn_lelang_daftar', { p_satker: kodeSatker })
       if (hidup && Array.isArray(data)) setLelangRows(data as BarisLelang[])
-      const { data: skor } = await supabase.rpc('get_pemusnahan_usang', { p_satker: kodeSatker })
-      const row = (Array.isArray(skor) ? skor[0] : skor) as { amunisi?: number; non_amunisi?: number } | null
-      if (hidup && row) setProgresAmunisi({ amunisi: row.amunisi ?? null, nonAmunisi: row.non_amunisi ?? null })
     }).catch(() => { /* biarkan kosong bila gagal */ })
     return () => { hidup = false }
   }, [kodeSatker])
@@ -841,7 +837,6 @@ function InfografisSatker({ tasks, kodeSatker, onKembali }: { tasks: Task[]; kod
         namaSatker={nama}
         sisa={{ A: uptSkor?.sisa_a ?? 0, B: uptSkor?.sisa_b ?? 0, C: uptSkor?.sisa_c ?? 0 }}
         lelang={lelangRows}
-        amunisi={{ amunisi: progresAmunisi.amunisi, nonAmunisi: progresAmunisi.nonAmunisi }}
       />
       </section>
     </div>

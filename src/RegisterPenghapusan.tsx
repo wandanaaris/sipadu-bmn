@@ -64,13 +64,12 @@ const formKosong = (): Form => ({
 })
 
 export function RegisterPenghapusan({
-  kodeSatker, namaSatker, sisa, lelang, amunisi,
+  kodeSatker, namaSatker, sisa, lelang,
 }: {
   kodeSatker: string
   namaSatker: string
   sisa: SisaPerKategori
   lelang: BarisLelang[]
-  amunisi: { amunisi: number | null; nonAmunisi: number | null }
 }) {
   const [baris, setBaris] = useState<BarisKategori[]>([])
   const [form, setForm] = useState<Form>(formKosong())
@@ -183,11 +182,6 @@ export function RegisterPenghapusan({
           <b>{totalBarang}</b>
           <span>Barang dilepas lewat SK</span>
           <i>Nilai perolehan {rupiah(totalPerolehan)}</i>
-        </div>
-        <div className="rp-info">
-          <b>{amunisi.amunisi !== null ? `${Math.round(amunisi.amunisi)}%` : '—'} / {amunisi.nonAmunisi !== null ? `${Math.round(amunisi.nonAmunisi)}%` : '—'}</b>
-          <span>Pemusnahan amunisi / non-amunisi</span>
-          <i>Sudah masuk Skor Kinerja Pekerjaan, tidak dihitung lagi di sini</i>
         </div>
       </div>
 
