@@ -45,7 +45,10 @@ export type UptScore = {
   lelang_barang: number
   lelang_nilai: number
   lelang_jual: number
-  skor_lelang: number
+  /** Rata-rata rasio penghapusan barang rusak berat per kategori A/B/C. */
+  capaian_penghapusan: number
+  /** Capaian pelepasan aset — basis nilai perolehan (Rp 1 miliar = 100). */
+  capaian_pelepasan: number
 }
 
 // Cache modul supaya kedua halaman tidak memanggil RPC dua kali.

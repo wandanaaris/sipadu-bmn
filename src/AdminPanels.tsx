@@ -3,7 +3,7 @@ import { ArrowLeft, Building2, Car, CircleAlert, ClipboardList, Database, Upload
 import type { Task } from './data'
 import type { KategoriRusak } from './rusakBeratData'
 import { useUptScores } from './uptScore'
-import { RegisterLelang, RegisterPenghapusan } from './RegisterPenghapusan'
+import { RegisterPenghapusan, type BarisLelang } from './RegisterPenghapusan'
 import { bacaFileAset, type HasilBaca, type HasilBanding } from './imporAset'
 import { satkers, statusLabel, type TaskStatus } from './data'
 import {
@@ -468,6 +468,22 @@ export function susunPesanReminder(namaSatker: string, items: Array<{ title: str
 }
 
 function InfografisSatker({ tasks, kodeSatker, onKembali }: { tasks: Task[]; kodeSatker: string; onKembali: () => void }) {
+  // Lelang (SK penghapusan karena penjualan) & progres pemusnahan persediaan usang
+  const [lelangRows, setLelangRows] = useState<BarisLelang[]>([])
+  const [progresAmunisi, setProgresAmunisi] = useState<{ amunisi: number | null; nonAmunisi: number | null }>({ amunisi: null, nonAmunisi: null })
+  useEffect(() => {
+    let hidup = true
+    import('./lib/supabase').then(async ({ supabase }) => {
+      if (!supabase) return
+      const { data } = await supabase.rpc('bmn_lelang_daftar', { p_satker: kodeSatker })
+      if (hidup && Array.isArray(data)) setLelangRows(data as BarisLelang[])
+      const { data: skor } = await supabase.rpc('get_pemusnahan_usang', { p_satker: kodeSatker })
+      const row = (Array.isArray(skor) ? skor[0] : skor) as { amunisi?: number; non_amunisi?: number } | null
+      if (hidup && row) setProgresAmunisi({ amunisi: row.amunisi ?? null, nonAmunisi: row.non_amunisi ?? null })
+    }).catch(() => { /* biarkan kosong bila gagal */ })
+    return () => { hidup = false }
+  }, [kodeSatker])
+
   const petaSkor = useUptScores()
   const uptSkor = petaSkor.get(kodeSatker)
   const satker = satkers.find(s => s.code === kodeSatker)
@@ -820,13 +836,12 @@ function InfografisSatker({ tasks, kodeSatker, onKembali }: { tasks: Task[]; kod
                 <div className="info-list-meter"><b className="skor selesai">100%</b></div>
               </li>))}</ul>}
 
-      <RegisterLelang kodeSatker={kodeSatker} namaSatker={nama} />
-
-      {/* Register Penghapusan — dicatat Korwil */}
-      <RegisterPenghapusan
+<RegisterPenghapusan
         kodeSatker={kodeSatker}
         namaSatker={nama}
         sisa={{ A: uptSkor?.sisa_a ?? 0, B: uptSkor?.sisa_b ?? 0, C: uptSkor?.sisa_c ?? 0 }}
+        lelang={lelangRows}
+        amunisi={{ amunisi: progresAmunisi.amunisi, nonAmunisi: progresAmunisi.nonAmunisi }}
       />
       </section>
     </div>

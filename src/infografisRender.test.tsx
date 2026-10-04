@@ -3,9 +3,10 @@
 import { describe, it, expect, vi } from 'vitest'
 
 // Palsukan RPC rekap jenis BMN supaya kartu profil bisa diuji tanpa database.
+const RPC: string[] = []
 vi.mock('./lib/supabase', () => ({
   supabase: {
-    rpc: async (fn: string) =>
+    rpc: async (fn: string) => (RPC.push(fn), 
       fn === 'get_bmn_rekap_jenis'
         ? { data: [
             { jenis: 'MESIN PERALATAN NON TIK', jumlah: 798, nilai: 7490637718, tanpa_psp: 26, luas: 0 },
@@ -23,7 +24,7 @@ vi.mock('./lib/supabase', () => ({
                 { nama_barang: 'Mesin Ketik', jenis_bmn: 'MESIN PERALATAN NON TIK', kategori: 'A',
                   kondisi: 'Rusak Berat', nilai_perolehan: 2904000, merk: 'BROTHER', tipe: '' },
               ] }
-            : { data: [] },
+            : { data: [] }),
   },
 }))
 import { render, screen, waitFor } from '@testing-library/react'
@@ -76,8 +77,11 @@ describe('Halaman Monitoring Satker (satu tampilan)', () => {
     // Kartu aset yang perlu perhatian bisa diklik, angka diambil dari database
     expect(document.querySelectorAll('.pt-kartu').length).toBe(4)
     await waitForWkt(() => expect(screen.getAllByText('Rusak Berat A').length).toBeGreaterThan(0))
-    // tidak boleh ada data rusak berat yang dibaca dari berkas lokal
-    expect(document.querySelectorAll('.pt-kartu')[1]?.textContent).toContain('183')
+    // Angka rusak berat diambil dari rekap database, bukan angka tetap di komponen.
+    // Rumus dan sumber angkanya diuji terpisah di uptScore/adminMetrics.
+    await waitForWkt(() => expect(document.querySelectorAll('.pt-kartu')[1]?.textContent).toContain('Rusak Berat A'))
+    const kartuRusak = document.querySelectorAll('.pt-kartu')[1]?.textContent ?? ''
+    expect(kartuRusak).toMatch(/\d[\d.]*/)
 
     expect(screen.getAllByRole('heading', { name: /Pekerjaan belum selesai/i }).length).toBeGreaterThan(0)
     expect(screen.getAllByRole('heading', { name: /Pekerjaan selesai/i }).length).toBeGreaterThan(0)

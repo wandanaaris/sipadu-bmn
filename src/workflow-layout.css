@@ -711,3 +711,10 @@ button.danger:disabled{opacity:.45;cursor:not-allowed}
 .rp .pa-tabel tfoot th{background:var(--muted);font-size:.72rem}
 .rp-form-lelang input{font-size:.75rem}
 .rp-form-lelang input[type=date]{max-width:150px}
+.rp-ring{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin-bottom:16px}
+.rp-ring>div{display:flex;flex-direction:column;gap:2px;padding:12px 14px;border:1px solid var(--border);border-radius:10px;background:var(--muted)}
+.rp-ring b{font-size:1.4rem;font-weight:700;line-height:1.1}
+.rp-ring span{font-size:.72rem;font-weight:600}
+.rp-ring i{font-size:.66rem;font-style:normal;color:var(--muted-foreground);line-height:1.4}
+.rp-info{background:transparent;border-style:dashed !important}
+.rp-info b{font-size:1.05rem}

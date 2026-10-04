@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import { ClipboardCheck } from 'lucide-react'
 import { supabase } from './lib/supabase'
 
+
 export type BarisKategori = {
   id: number
   satker_code: string
@@ -63,8 +64,14 @@ const formKosong = (): Form => ({
 })
 
 export function RegisterPenghapusan({
-  kodeSatker, namaSatker, sisa,
-}: { kodeSatker: string; namaSatker: string; sisa: SisaPerKategori }) {
+  kodeSatker, namaSatker, sisa, lelang, amunisi,
+}: {
+  kodeSatker: string
+  namaSatker: string
+  sisa: SisaPerKategori
+  lelang: BarisLelang[]
+  amunisi: { amunisi: number | null; nonAmunisi: number | null }
+}) {
   const [baris, setBaris] = useState<BarisKategori[]>([])
   const [form, setForm] = useState<Form>(formKosong())
   const [muat, setMuat] = useState(true)
@@ -72,6 +79,7 @@ export function RegisterPenghapusan({
   const [pesan, setPesan] = useState<'' | 'ok' | 'gagal'>('')
   const [galat, setGalat] = useState('')
 
+  const { A: sisaA, B: sisaB, C: sisaC } = sisa
   const db = supabase
 
   const muatData = async () => {
@@ -130,23 +138,58 @@ export function RegisterPenghapusan({
 
   const totalBarang = baris.reduce((n, b) => n + b.jumlah_barang, 0)
   const totalNilai = baris.reduce((n, b) => n + Number(b.nilai_total || 0), 0)
+  const totalPerolehan = lelang.reduce((n, b) => n + Number(b.nilai_perolehan || 0), 0)
+  const capaianPenghapusan = (() => {
+    const bagian: number[] = []
+    const p = [['A', sisaA], ['B', sisaB], ['C', sisaC]] as const
+    for (const [k, total] of p) {
+      if (!total) continue
+      const h = baris.find(b => b.kategori === k)?.jumlah_barang ?? 0
+      bagian.push((Math.max(0, total - h) / total) * 100)
+    }
+    return bagian.length ? Math.round(bagian.reduce((a, b) => a + b, 0) / bagian.length) : 100
+  })()
+  const capaianPelepasan = Math.min(100, Math.round(totalPerolehan / 10_000_000))
 
   return (
     <section className="panel admin-page info-panel rp">
       <div className="pa-tabel-head">
-        <h3>Penghapusan BMN Rusak Berat <span className="pa-hitung">per kategori</span></h3>
+        <h3>Penghapusan BMN <span className="pa-hitung">berdasarkan kuantitas</span></h3>
         <button className="pa-tabel-export" onClick={() => void salinPesan()} disabled={!baris.length}>
           <ClipboardCheck size={13} /> Salin pesan
         </button>
       </div>
       <p className="rp-keterangan">
-        Catat <b>jumlah barang</b> dan <b>nilai yang sudah dihapus</b> per kategori. Angka ini langsung mengurangi
-        sisa rusak berat dan menaikkan Skor Kondisi Aset Satker — tanpa perlu mengisi NUP satu per satu.
+        Capaian dihitung dari <b>rasio kuantitas</b>, bukan jumlah Surat Keputusan. Isi jumlah barang yang sudah
+        dihapus per kategori; sistem membandingkan dengan sisa barang rusak berat Satker ini.
       </p>
 
       {galat && <div className="imp-galat">{galat}</div>}
       {pesan === 'ok' && <div className="imp-sukses">Pesan tersalin.</div>}
       {pesan === 'gagal' && <div className="imp-galat">Gagal menyalin.</div>}
+
+      <div className="rp-ring">
+        <div>
+          <b>{capaianPenghapusan}%</b>
+          <span>Capaian penghapusan rusak berat</span>
+          <i>Rata-rata rasio per kategori A/B/C</i>
+        </div>
+        <div>
+          <b>{capaianPelepasan}</b>
+          <span>Capaian pelepasan aset</span>
+          <i>Basis nilai perolehan · Rp 1 miliar = 100 poin</i>
+        </div>
+        <div>
+          <b>{totalBarang}</b>
+          <span>Barang dilepas lewat SK</span>
+          <i>Nilai perolehan {rupiah(totalPerolehan)}</i>
+        </div>
+        <div className="rp-info">
+          <b>{amunisi.amunisi !== null ? `${Math.round(amunisi.amunisi)}%` : '—'} / {amunisi.nonAmunisi !== null ? `${Math.round(amunisi.nonAmunisi)}%` : '—'}</b>
+          <span>Pemusnahan amunisi / non-amunisi</span>
+          <i>Sudah masuk Skor Kinerja Pekerjaan, tidak dihitung lagi di sini</i>
+        </div>
+      </div>
 
       {muat ? <p className="pa-loading">Memuat…</p> : (
         <div className="pa-tabel-wrap">
@@ -203,6 +246,8 @@ export function RegisterPenghapusan({
           </table>
         </div>
       )}
+
+      <RegisterLelang kodeSatker={kodeSatker} namaSatker={namaSatker} />
     </section>
   )
 }
@@ -224,7 +269,7 @@ export type BarisLelang = {
   catatan: string | null
 }
 
-export function RegisterLelang({ kodeSatker, namaSatker }: { kodeSatker: string; namaSatker: string }) {
+function RegisterLelang({ kodeSatker, namaSatker }: { kodeSatker: string; namaSatker: string }) {
   const [baris, setBaris] = useState<BarisLelang[]>([])
   const [muat, setMuat] = useState(true)
   const [sibuk, setSibuk] = useState(false)
