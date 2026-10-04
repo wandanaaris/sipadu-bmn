@@ -692,3 +692,13 @@ button.danger:disabled{opacity:.45;cursor:not-allowed}
 .imp-status.active{color:#065f46;background:rgba(16,185,129,.14)}
 .imp-status.draft{color:#92400e;background:rgba(245,158,11,.14)}
 .imp-status.arsip{color:#475569;background:rgba(148,163,184,.16)}
+
+/* -- Register Penghapusan BMN ---------------------------- */
+.rp-keterangan{font-size:.74rem;color:var(--muted-foreground);margin:0 0 12px;line-height:1.5}
+.rp-kode{display:block;font-size:.66rem;color:var(--muted-foreground);font-weight:400}
+.rp-form{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;align-items:center}
+.rp-form input{flex:1 1 150px;min-width:130px;padding:8px 11px;border:1px solid var(--border);border-radius:8px;font-size:.78rem;background:var(--card);color:var(--foreground)}
+.rp-form input:focus{outline:none;border-color:var(--accent)}
+.rp .pa-tabel select{padding:5px 8px;border:1px solid var(--border);border-radius:7px;font-size:.74rem;background:var(--card);color:var(--foreground);cursor:pointer}
+.rp .pa-tabel .link-button{color:var(--muted-foreground)}
+.rp .pa-tabel .link-button:hover{color:#dc2626}

@@ -3,6 +3,7 @@ import { ArrowLeft, Building2, Car, CircleAlert, ClipboardList, Database, Upload
 import type { Task } from './data'
 import type { KategoriRusak } from './rusakBeratData'
 import { useUptScores } from './uptScore'
+import { RegisterPenghapusan } from './RegisterPenghapusan'
 import { bacaFileAset, type HasilBaca, type HasilBanding } from './imporAset'
 import { satkers, statusLabel, type TaskStatus } from './data'
 import {
@@ -356,7 +357,7 @@ function DaftarSatker({ tasks, onPilih }: { tasks: Task[]; onPilih: (kode: strin
               <div className="ms-teks">
                 <span className="ms-kode">{b.kodeSatker}</span>
                 <strong className="ms-nama">{b.namaSatker}</strong>
-                <div className="ms-bar"><i style={{ width: `${upt?.completionRate ?? 0}%` }} /></div>
+                <div className="ms-bar"><i style={{ width: `${upt?.penyelesaian ?? 0}%` }} /></div>
               </div>
               <div className={`ms-skor ${tone}`}>
                 <b>{skor}</b>
@@ -697,9 +698,9 @@ function InfografisSatker({ tasks, kodeSatker, onKembali }: { tasks: Task[]; kod
             {uptSkor && <span className="info-panel-ket">Skor UPT — sama dengan menu Kinerja UPT</span>}
           </div>
           <div className="info-rings">
-            <Cincin persen={uptSkor?.score ?? 0} label="Skor UPT" sub={`${uptSkor?.completed ?? 0} dari ${uptSkor?.totalAssignments ?? 0} tugas selesai`} dari="#6366f1" ke="#8b5cf6" />
-            <Cincin persen={uptSkor?.completionRate ?? 0} label="Tingkat selesai" sub="70% bobot skor" dari="#0ea5e9" ke="#38bdf8" />
-            <Cincin persen={uptSkor?.revisionScore ?? 0} label="Skor revisi" sub={`${uptSkor?.totalRevisions ?? 0} revisi · 30% bobot`} dari="#10b981" ke="#34d399" />
+            <Cincin persen={uptSkor?.score ?? 0} label="Skor UPT" sub={`${uptSkor?.selesai ?? 0} dari ${uptSkor?.total ?? 0} tugas selesai`} dari="#6366f1" ke="#8b5cf6" />
+            <Cincin persen={uptSkor?.penyelesaian ?? 0} label="Tingkat selesai" sub="70% bobot skor" dari="#0ea5e9" ke="#38bdf8" />
+            <Cincin persen={uptSkor?.kualitas ?? 0} label="Skor revisi" sub={`${uptSkor?.revisi ?? 0} revisi · 30% bobot`} dari="#10b981" ke="#34d399" />
           </div>
           <div className="info-keterangan">
             <div><b>Ketepatan waktu</b><span>{persen}%</span><i>{baris?.ketepatanWaktuTepat ?? 0} dari {baris?.total ?? 0} tugas selesai tepat sebelum batas waktu</i></div>
@@ -818,6 +819,9 @@ function InfografisSatker({ tasks, kodeSatker, onKembali }: { tasks: Task[]; kod
                 </div>
                 <div className="info-list-meter"><b className="skor selesai">100%</b></div>
               </li>))}</ul>}
+
+      {/* Register Penghapusan — dicatat Korwil */}
+      <RegisterPenghapusan kodeSatker={kodeSatker} namaSatker={nama} />
       </section>
     </div>
   )

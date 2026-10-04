@@ -5,15 +5,37 @@ import { supabase } from './lib/supabase'
 
 export type UptScore = {
   satker: string
-  satkerName: string
-  totalAssignments: number
-  completed: number
-  inRevision: number
-  pendingVerification: number
-  totalRevisions: number
-  completionRate: number
-  revisionScore: number
+  nama: string
+  /** Skor akhir = 60% Kinerja Pekerjaan + 40% Kondisi Aset. */
   score: number
+  /** Skor Kinerja Pekerjaan (0-100). */
+  skorKinerja: number
+  /** Skor Kondisi Aset (0-100). */
+  skorKondisi: number
+  // rincian Kinerja Pekerjaan
+  penyelesaian: number
+  ketepatan: number
+  dorongan: number
+  kualitas: number
+  total: number
+  selesai: number
+  tepat: number
+  bisa_nilai: number
+  revisi: number
+  berjalan: number
+  // rincian Kondisi Aset
+  kelengkapan: number
+  rb_total: number
+  rb_sisa: number
+  rb_terhapus: number
+  rb_ab: number
+  rb_c: number
+  belum_psp: number
+  skor_rb: number
+  skor_psp: number
+  total_aset: number
+  nilai_selesai: number
+  terdaftar_hapus: number
 }
 
 // Cache modul supaya kedua halaman tidak memanggil RPC dua kali.
