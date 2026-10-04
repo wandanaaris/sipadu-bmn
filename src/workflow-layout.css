@@ -728,22 +728,23 @@ button.danger:disabled{opacity:.45;cursor:not-allowed}
 .performance-table td{vertical-align:top}
 /* — Tabel Kinerja UPT dua lapis — */
 .performance-table .pr-baris{cursor:pointer;transition:background .12s}
-.performance-table .pr-baris:hover{background:var(--muted)}
-.performance-table .pr-baris.terbuka{background:var(--muted)}
+.performance-table .pr-baris:hover{background:#f4f6f8}
+.performance-table .pr-baris.terbuka{background:#eaf3fb}
 .pr-nama{display:flex;flex-direction:column;align-items:flex-start;gap:1px;background:none;border:0;padding:0;font:inherit;color:inherit;cursor:pointer;text-align:left}
 .pr-nama strong{font-weight:600}
-.pr-nama span{font-size:.66rem;color:var(--muted-foreground)}
-.pr-bar{display:flex;height:9px;width:100%;min-width:130px;border-radius:5px;overflow:hidden;background:var(--muted)}
-.pr-bar span{display:block;height:100%}
-.pr-detail>td{padding:0 !important;background:var(--muted)}
+.pr-nama span{font-size:.66rem;color:var(--muted)}
+.pr-bar{display:flex;height:12px;width:100%;min-width:150px;border-radius:6px;overflow:hidden;background:#e6ebef;box-shadow:inset 0 0 0 1px rgba(18,51,84,.06)}
+.pr-bar span{display:block;height:100%;border-right:1px solid rgba(255,255,255,.55)}
+.pr-bar span:last-child{border-right:0}
+.pr-detail>td{padding:0 !important;background:#f4f6f8}
 .pr-daftar{list-style:none;margin:0;padding:12px 16px;display:flex;flex-direction:column;gap:2px}
 .pr-daftar li{display:grid;grid-template-columns:210px 56px 1fr;gap:12px;align-items:baseline;font-size:.76rem;padding:5px 0}
 .pr-daftar li+li{border-top:1px dashed var(--border)}
-.pr-daftar li b{font-weight:600}
+.pr-daftar li b{font-weight:600;color:var(--navy)}
 .pr-daftar li em{font-style:normal;font-weight:400;font-size:.66rem;color:var(--muted-foreground);margin-left:4px}
-.pr-daftar li span:last-child{color:var(--muted-foreground);line-height:1.5}
+.pr-daftar li span:last-child{color:var(--muted);line-height:1.5}
 .pr-angka{font-weight:700;font-variant-numeric:tabular-nums}
-.pr-induk{background:var(--card)}
+.pr-induk{background:#fff}
 .pr-anak{padding-left:22px !important;grid-template-columns:222px 56px 1fr !important}
-.pr-anak b{font-weight:500;color:var(--muted-foreground)}
+.pr-anak b{font-weight:500;color:var(--muted)}
 @media (max-width:760px){.pr-daftar li,.pr-anak{grid-template-columns:1fr !important;gap:2px}}

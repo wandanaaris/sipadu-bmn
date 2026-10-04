@@ -485,16 +485,16 @@ function PerformanceView(){
   const [buka,setBuka]=useState<string|null>(null)
   useEffect(()=>{let mounted=true;import('./lib/supabase').then(async({supabase})=>{if(!supabase){if(mounted)setLoading(false);return}const{data,error:rpcError}=await supabase.rpc('get_upt_scores');if(!mounted)return;if(rpcError){setError(rpcError.message);setLoading(false);return}setScores((data??[]) as unknown as UptScore[]);setLoading(false)}).catch(()=>{if(mounted){setError('Nilai kinerja belum dapat dimuat.');setLoading(false)}});return()=>{mounted=false}},[])
   const sorted=[...scores].sort((a,b)=>b.score-a.score)
-  const medal=(rank:number)=>rank===0?'\u{1F947}':rank===1?'\u{1F948}':rank===2?'\u{1F949}':`${rank+1}`
+  const medal=(rank:number)=>rank===0?'🥇':rank===1?'🥈':rank===2?'🥉':`${rank+1}`
   const tone=(score:number)=>score>=90?'excellent':score>=75?'good':score>=60?'fair':'poor'
   const juta=(n:number)=>{const v=Number(n)||0;if(v>=1e12)return `Rp ${(v/1e12).toFixed(1).replace('.',',')} T`;if(v>=1e9)return `Rp ${(v/1e9).toFixed(1).replace('.',',')} M`;if(v>=1e6)return `Rp ${(v/1e6).toFixed(1).replace('.',',')} jt`;if(v>=1e3)return `Rp ${Math.round(v/1e3)} rb`;return `Rp ${v.toLocaleString('id-ID')}`}
   const persenLokasi=(s:UptScore)=>{const t=Number(s.total_aset)||0;return t?Math.round(100*(t-(Number(s.tanpa_lokasi)||0))/t):0}
   // Empat variabel Kondisi Aset beserta bobotnya, untuk bar komposisi.
   const KOMPONEN=[
-    {k:'kelengkapan' as const, label:'Kelengkapan Data', warna:'#3b82f6'},
-    {k:'capaian_penghapusan' as const, label:'Capaian Penghapusan', warna:'#10b981'},
-    {k:'skor_psp' as const, label:'Belum PSP', warna:'#f59e0b'},
-    {k:'capaian_pelepasan' as const, label:'Pelepasan Aset', warna:'#8b5cf6'},
+    {k:'kelengkapan' as const, label:'Kelengkapan Data', warna:'var(--blue)'},
+    {k:'capaian_penghapusan' as const, label:'Capaian Penghapusan', warna:'var(--green)'},
+    {k:'skor_psp' as const, label:'Belum PSP', warna:'var(--amber)'},
+    {k:'capaian_pelepasan' as const, label:'Pelepasan Aset', warna:'var(--navy)'},
   ]
   const nilai=(s:UptScore,k:(typeof KOMPONEN)[number]['k'])=>Number(s[k]??0)||0
 
@@ -511,7 +511,7 @@ function PerformanceView(){
           <td><b className={`score-badge score-${tone(s.score)}`}>{s.score}</b></td>
           <td><b>{s.skorKinerja}</b></td>
           <td><b>{s.skorKondisi}</b></td>
-          <td><div className="pr-bar" title={KOMPONEN.map(c=>`${c.label} ${nilai(s,c.k)}%`).join(' \u00b7 ')}>
+          <td><div className="pr-bar" title={KOMPONEN.map(c=>`${c.label} ${nilai(s,c.k)}%`).join(' · ')}>
             {KOMPONEN.map(c=><span key={c.k} style={{width:`${nilai(s,c.k)/4}%`,background:c.warna}}/>)}
           </div></td>
           <td><b>{s.selesai}/{s.total}</b></td>
@@ -519,22 +519,22 @@ function PerformanceView(){
         {buka===s.satker&&<tr className="pr-detail"><td colSpan={7}><ul className="pr-daftar">
           <li><b>Kinerja Pekerjaan</b><span className="pr-angka">{s.skorKinerja}</span><span>Penyelesaian {s.penyelesaian}% · tepat waktu {s.ketepatan}% · dorongan progres {s.dorongan}% · kualitas {s.kualitas}%</span></li>
           <li className="pr-induk"><b>Kondisi Aset</b><span className="pr-angka">{s.skorKondisi}</span></li>
-          <li className="pr-anak"><b>Kelengkapan Data <em>30%</em></b><span className="pr-angka">{s.kelengkapan}%</span><span>Merk dan tipe, penghuni rumah negara, pengguna kendaraan, foto. Lokasi {persenLokasi(s)}% \u00b7 {s.tanpa_lokasi??0} aset tanpa lokasi</span></li>
-          <li className="pr-anak"><b>Capaian Penghapusan <em>30%</em></b><span className="pr-angka">{s.capaian_penghapusan}%</span><span>Sisa {s.rb_sisa} dari {s.rb_total} barang rusak berat{s.rb_terhapus>0?` \u00b7 ${s.rb_terhapus} sudah dihapus`:''}</span></li>
+          <li className="pr-anak"><b>Kelengkapan Data <em>30%</em></b><span className="pr-angka">{s.kelengkapan}%</span><span>Merk dan tipe, penghuni rumah negara, pengguna kendaraan, foto. Lokasi {persenLokasi(s)}% · {s.tanpa_lokasi??0} aset tanpa lokasi</span></li>
+          <li className="pr-anak"><b>Capaian Penghapusan <em>30%</em></b><span className="pr-angka">{s.capaian_penghapusan}%</span><span>Sisa {s.rb_sisa} dari {s.rb_total} barang rusak berat{s.rb_terhapus>0?` · ${s.rb_terhapus} sudah dihapus`:''}</span></li>
           <li className="pr-anak"><b>Belum PSP <em>25%</em></b><span className="pr-angka">{s.skor_psp??0}%</span><span>{s.belum_psp||0} dari {s.total_aset} aset belum memiliki nomor PSP</span></li>
-          <li className="pr-anak"><b>Pelepasan Aset <em>15%</em></b><span className="pr-angka">{s.capaian_pelepasan}</span><span>{s.lelang_sk>0?`${s.lelang_sk} SK \u00b7 ${s.lelang_barang} barang \u00b7 perolehan ${juta(s.lelang_nilai)} \u00b7 terjual ${juta(s.lelang_jual)}`:'Belum ada SK penghapusan tercatat'}</span></li>
-          <li className="pr-induk"><b>Pekerjaan</b><span className="pr-angka">{s.selesai}/{s.total}</span><span>{s.revisi} revisi \u00b7 {s.berjalan} berjalan \u00b7 {s.tepat} tepat waktu</span></li>
+          <li className="pr-anak"><b>Pelepasan Aset <em>15%</em></b><span className="pr-angka">{s.capaian_pelepasan}</span><span>{s.lelang_sk>0?`${s.lelang_sk} SK · ${s.lelang_barang} barang · perolehan ${juta(s.lelang_nilai)} · terjual ${juta(s.lelang_jual)}`:'Belum ada SK penghapusan tercatat'}</span></li>
+          <li className="pr-induk"><b>Pekerjaan</b><span className="pr-angka">{s.selesai}/{s.total}</span><span>{s.revisi} revisi · {s.berjalan} berjalan · {s.tepat} tepat waktu</span></li>
         </ul></td></tr>}
       </Fragment>)}</tbody>
     </table></div>}
     <section className="pp-rincian"><h3>Penjelasan nilai setiap variabel</h3><ol>
-      <li><b>Skor Akhir</b><span>Kinerja Pekerjaan \u00d7 60% + Kondisi Aset \u00d7 40%</span></li>
-      <li><b>Kinerja Pekerjaan \u2014 60%</b><span>Penyelesaian 45% \u00b7 Ketepatan waktu 30% \u00b7 Dorongan progres 15% \u00b7 Kualitas pengajuan 10%. Dihitung dari tahap aktif saja</span></li>
-      <li><b>Kondisi Aset \u2014 40%</b><span>Rata-rata dari empat variabel di bawah ini</span></li>
-      <li><b>Kelengkapan Data \u2014 30%</b><span>Merk dan tipe alat, penghuni rumah negara, pengguna kendaraan bermotor, foto, serta kelengkapan lokasi: alamat untuk tanah, rumah negara, gedung dan bangunan serta jalan, dan lokasi untuk jenis BMN lainnya termasuk barang inventaris di bawah Rp 100 juta</span></li>
-      <li><b>Capaian Penghapusan \u2014 30%</b><span>Jumlah barang rusak berat yang sudah dihapus dibagi sisa barang rusak berat, dirata-ratakan pada kategori A, B, dan C yang berlaku. Kategori tanpa barang rusak berat tidak ikut dihitung</span></li>
-      <li><b>Belum PSP \u2014 25%</b><span>100% dikurangi persentase aset yang belum memiliki nomor PSP</span></li>
-      <li><b>Pelepasan Aset \u2014 15%</b><span>Basis nilai perolehan barang yang dilepas lewat SK penghapusan karena penjualan, setiap Rp 1 miliar bernilai 100 poin, dibatasi maksimal 100</span></li>
+      <li><b>Skor Akhir</b><span>Kinerja Pekerjaan × 60% + Kondisi Aset × 40%</span></li>
+      <li><b>Kinerja Pekerjaan — 60%</b><span>Penyelesaian 45% · Ketepatan waktu 30% · Dorongan progres 15% · Kualitas pengajuan 10%. Dihitung dari tahap aktif saja</span></li>
+      <li><b>Kondisi Aset — 40%</b><span>Rata-rata dari empat variabel di bawah ini</span></li>
+      <li><b>Kelengkapan Data — 30%</b><span>Merk dan tipe alat, penghuni rumah negara, pengguna kendaraan bermotor, foto, serta kelengkapan lokasi: alamat untuk tanah, rumah negara, gedung dan bangunan serta jalan, dan lokasi untuk jenis BMN lainnya termasuk barang inventaris di bawah Rp 100 juta</span></li>
+      <li><b>Capaian Penghapusan — 30%</b><span>Jumlah barang rusak berat yang sudah dihapus dibagi sisa barang rusak berat, dirata-ratakan pada kategori A, B, dan C yang berlaku. Kategori tanpa barang rusak berat tidak ikut dihitung</span></li>
+      <li><b>Belum PSP — 25%</b><span>100% dikurangi persentase aset yang belum memiliki nomor PSP</span></li>
+      <li><b>Pelepasan Aset — 15%</b><span>Basis nilai perolehan barang yang dilepas lewat SK penghapusan karena penjualan, setiap Rp 1 miliar bernilai 100 poin, dibatasi maksimal 100</span></li>
     </ol><p className="pp-catatan">Angka yang sama dipakai pada kartu menu Monitoring Satker. Progres pemusnahan persediaan usang amunisi dan non-amunisi sudah masuk di dalam Skor Kinerja Pekerjaan sehingga tidak dihitung dua kali.</p></section>
     <div className="policy-note"><CircleAlert/><p>Skor ini merupakan alat bantu monitoring internal Korwil, bukan penilaian resmi kinerja pegawai. Bobot penilaian dapat ditinjau bersama pimpinan sebelum digunakan lebih lanjut.</p></div>
   </section>
