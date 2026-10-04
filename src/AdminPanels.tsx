@@ -3,7 +3,7 @@ import { ArrowLeft, Building2, Car, CircleAlert, ClipboardList, Database, Upload
 import type { Task } from './data'
 import type { KategoriRusak } from './rusakBeratData'
 import { useUptScores } from './uptScore'
-import { RegisterPenghapusan } from './RegisterPenghapusan'
+import { RegisterLelang, RegisterPenghapusan } from './RegisterPenghapusan'
 import { bacaFileAset, type HasilBaca, type HasilBanding } from './imporAset'
 import { satkers, statusLabel, type TaskStatus } from './data'
 import {
@@ -819,6 +819,8 @@ function InfografisSatker({ tasks, kodeSatker, onKembali }: { tasks: Task[]; kod
                 </div>
                 <div className="info-list-meter"><b className="skor selesai">100%</b></div>
               </li>))}</ul>}
+
+      <RegisterLelang kodeSatker={kodeSatker} namaSatker={nama} />
 
       {/* Register Penghapusan — dicatat Korwil */}
       <RegisterPenghapusan

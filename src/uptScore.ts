@@ -40,6 +40,12 @@ export type UptScore = {
   skor_psp: number
   total_aset: number
   nilai_selesai: number
+  /** Pencapaian lelang BMN (SK penghapusan karena penjualan). */
+  lelang_sk: number
+  lelang_barang: number
+  lelang_nilai: number
+  lelang_jual: number
+  skor_lelang: number
 }
 
 // Cache modul supaya kedua halaman tidak memanggil RPC dua kali.

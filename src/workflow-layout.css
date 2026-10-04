@@ -709,3 +709,5 @@ button.danger:disabled{opacity:.45;cursor:not-allowed}
 .rp-aksi{display:flex;gap:10px;align-items:center;white-space:nowrap}
 .rp-hapus{color:#b91c1c}
 .rp .pa-tabel tfoot th{background:var(--muted);font-size:.72rem}
+.rp-form-lelang input{font-size:.75rem}
+.rp-form-lelang input[type=date]{max-width:150px}
