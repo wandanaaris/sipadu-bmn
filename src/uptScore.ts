@@ -51,6 +51,18 @@ export type UptScore = {
   capaian_penghapusan: number
   /** Capaian pelepasan aset — basis nilai perolehan (Rp 1 miliar = 100). */
   capaian_pelepasan: number
+  /** Jumlah item pemanfaatan (sewa atau pinjam pakai) yang tercatat. Tidak masuk skor. */
+  pemanfaatan_item: number
+  /** Dari jumlah item tersebut, berapa yang sudah punya SK Penetapan. */
+  pemanfaatan_sk: number
+}
+
+/** Tingkat lencana pemanfaatan: 0 item 0, 1 item 1, 3 item 2, 5 item atau lebih 3. */
+export function tingkatLencanaPemanfaatan(item: number): 0 | 1 | 2 | 3 {
+  if (item >= 5) return 3
+  if (item >= 3) return 2
+  if (item >= 1) return 1
+  return 0
 }
 
 // Cache modul supaya kedua halaman tidak memanggil RPC dua kali.

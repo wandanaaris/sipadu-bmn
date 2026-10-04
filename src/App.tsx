@@ -8,7 +8,7 @@ import { AkunMitraForm } from './AkunMitraForm'
 import { AkunMitraAdmin } from './AkunMitraAdmin'
 import { sortSatkerWorkItems } from './taskSorting'
 import { StageFieldsForm, PspInfoPanel, AsetRusakPanel, readIsian, type IsianTahap } from './PemanfaatanFields'
-import type { UptScore } from './uptScore'
+import { tingkatLencanaPemanfaatan, type UptScore } from './uptScore'
 import { DataCenterBmnPage, DetailPekerjaanPanel, ImporAsetPage, MonitoringSatkerPage, ProfilAsetDetail, ProfilAsetPage, TaskListPage } from './AdminPanels'
 import { BmnAssetInfographic } from './BmnAssetInfographic'
 import { loadBmnOverview } from './lib/bmnAssets'
@@ -488,6 +488,7 @@ function PerformanceView(){
   const medal=(rank:number)=>rank===0?'🥇':rank===1?'🥈':rank===2?'🥉':`${rank+1}`
   const tone=(score:number)=>score>=90?'excellent':score>=75?'good':score>=60?'fair':'poor'
   const juta=(n:number)=>{const v=Number(n)||0;if(v>=1e12)return `Rp ${(v/1e12).toFixed(1).replace('.',',')} T`;if(v>=1e9)return `Rp ${(v/1e9).toFixed(1).replace('.',',')} M`;if(v>=1e6)return `Rp ${(v/1e6).toFixed(1).replace('.',',')} jt`;if(v>=1e3)return `Rp ${Math.round(v/1e3)} rb`;return `Rp ${v.toLocaleString('id-ID')}`}
+  const tingkatLencana=(s:UptScore)=>tingkatLencanaPemanfaatan(s.pemanfaatan_item??0)
   const persenLokasi=(s:UptScore)=>{const t=Number(s.total_aset)||0;return t?Math.round(100*(t-(Number(s.tanpa_lokasi)||0))/t):0}
   // Empat variabel Kondisi Aset beserta bobotnya, untuk bar komposisi.
   const KOMPONEN=[
@@ -507,7 +508,7 @@ function PerformanceView(){
       <tbody>{sorted.map((s,i)=><Fragment key={s.satker}>
         <tr className={`pr-baris ${buka===s.satker?'terbuka':''}`} onClick={()=>setBuka(buka===s.satker?null:s.satker)}>
           <td><span className={`rank-medal ${tone(s.score)}`}>{medal(i)}</span></td>
-          <td><button className="pr-nama"><strong>{s.nama}</strong><span>{s.satker}</span></button></td>
+          <td><button className="pr-nama"><strong>{s.nama}</strong><span>{s.satker}</span>{tingkatLencana(s)>0 && <em className="pr-lencana" title={`Pemanfaatan BMN: ${s.pemanfaatan_item} item, ${s.pemanfaatan_sk} sudah ada SK Penetapan`}>{'★'.repeat(tingkatLencana(s))}<b>{s.pemanfaatan_item}</b> sewa</em>}</button></td>
           <td><b className={`score-badge score-${tone(s.score)}`}>{s.score}</b></td>
           <td><b>{s.skorKinerja}</b></td>
           <td><b>{s.skorKondisi}</b></td>
@@ -529,6 +530,7 @@ function PerformanceView(){
     </table></div>}
     <section className="pp-rincian"><h3>Penjelasan nilai setiap variabel</h3><ol>
       <li><b>Skor Akhir</b><span>Kinerja Pekerjaan × 60% + Kondisi Aset × 40%</span></li>
+      <li className="pp-bukan-skor"><b>Lencana Pemanfaatan BMN</b><span>Pengakuan atas item sewa atau pinjam pakai yang dicatat Satker. Tidak masuk perhitungan skor sama sekali, hanya pengakuan. Tingkat: 1 item 1 bintang, 3 item 2 bintang, 5 item atau lebih 3 bintang</span></li>
       <li><b>Kinerja Pekerjaan — 60%</b><span>Penyelesaian 45% · Ketepatan waktu 30% · Dorongan progres 15% · Kualitas pengajuan 10%. Dihitung dari tahap aktif saja</span></li>
       <li><b>Kondisi Aset — 40%</b><span>Rata-rata dari empat variabel di bawah ini</span></li>
       <li><b>Kelengkapan Data — 30%</b><span>Merk dan tipe alat, penghuni rumah negara, pengguna kendaraan bermotor, foto, serta kelengkapan lokasi: alamat untuk tanah, rumah negara, gedung dan bangunan serta jalan, dan lokasi untuk jenis BMN lainnya termasuk barang inventaris di bawah Rp 100 juta</span></li>

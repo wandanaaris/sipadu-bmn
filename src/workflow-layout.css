@@ -748,3 +748,9 @@ button.danger:disabled{opacity:.45;cursor:not-allowed}
 .pr-anak{padding-left:22px !important;grid-template-columns:222px 56px 1fr !important}
 .pr-anak b{font-weight:500;color:var(--muted)}
 @media (max-width:760px){.pr-daftar li,.pr-anak{grid-template-columns:1fr !important;gap:2px}}
+.pr-lencana{display:inline-flex;align-items:center;gap:3px;margin-top:2px;padding:1px 6px;
+  border-radius:999px;background:var(--amber-soft);color:var(--amber);
+  font-size:.62rem;font-style:normal;font-weight:600;letter-spacing:.02em}
+.pr-lencana b{font-weight:700}
+.pr-detail .pr-lencana{background:none;padding:0}
+.pp-bukan-skor{border-left:3px solid var(--amber);padding-left:10px}
