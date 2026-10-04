@@ -38,6 +38,12 @@ export type UptScore = {
   belum_psp: number
   /** Aset yang alamat atau lokasinya belum diisi. */
   tanpa_lokasi: number
+  /** Rincian lima penyusun Kelengkapan Data. -1 berarti tidak berlaku. */
+  p_merk: number
+  p_penghuni: number
+  p_pengguna: number
+  p_foto: number
+  p_lokasi: number
   skor_rb: number
   skor_psp: number
   total_aset: number
@@ -100,4 +106,16 @@ export function useUptScores(): Map<string, UptScore> {
 /** Skor UPT sebuah Satker; 0 bila Satker tidak ada data. */
 export function skorUpt(skor: Map<string, UptScore>, kode: string): UptScore | undefined {
   return skor.get(kode)
+}
+
+/** Rincian lima penyusun Kelengkapan Data sebagai teks ringkas. */
+export function rincianKelengkapan(s: UptScore): string {
+  const bagian = [
+    `merk/tipe ${s.p_merk}%`,
+    s.p_penghuni >= 0 ? `penghuni ${s.p_penghuni}%` : '',
+    s.p_pengguna >= 0 ? `pengguna ${s.p_pengguna}%` : '',
+    `foto ${s.p_foto}%`,
+    `lokasi ${s.p_lokasi}%`,
+  ].filter(Boolean)
+  return bagian.join(' · ')
 }

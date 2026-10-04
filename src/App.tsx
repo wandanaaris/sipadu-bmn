@@ -8,7 +8,7 @@ import { AkunMitraForm } from './AkunMitraForm'
 import { AkunMitraAdmin } from './AkunMitraAdmin'
 import { sortSatkerWorkItems } from './taskSorting'
 import { StageFieldsForm, PspInfoPanel, AsetRusakPanel, readIsian, type IsianTahap } from './PemanfaatanFields'
-import { tingkatLencanaPemanfaatan, type UptScore } from './uptScore'
+import { rincianKelengkapan, tingkatLencanaPemanfaatan, type UptScore } from './uptScore'
 import { DataCenterBmnPage, DetailPekerjaanPanel, ImporAsetPage, MonitoringSatkerPage, ProfilAsetDetail, ProfilAsetPage, TaskListPage } from './AdminPanels'
 import { BmnAssetInfographic } from './BmnAssetInfographic'
 import { loadBmnOverview } from './lib/bmnAssets'
@@ -489,7 +489,6 @@ function PerformanceView(){
   const tone=(score:number)=>score>=90?'excellent':score>=75?'good':score>=60?'fair':'poor'
   const juta=(n:number)=>{const v=Number(n)||0;if(v>=1e12)return `Rp ${(v/1e12).toFixed(1).replace('.',',')} T`;if(v>=1e9)return `Rp ${(v/1e9).toFixed(1).replace('.',',')} M`;if(v>=1e6)return `Rp ${(v/1e6).toFixed(1).replace('.',',')} jt`;if(v>=1e3)return `Rp ${Math.round(v/1e3)} rb`;return `Rp ${v.toLocaleString('id-ID')}`}
   const tingkatLencana=(s:UptScore)=>tingkatLencanaPemanfaatan(s.pemanfaatan_item??0)
-  const persenLokasi=(s:UptScore)=>{const t=Number(s.total_aset)||0;return t?Math.round(100*(t-(Number(s.tanpa_lokasi)||0))/t):0}
   // Empat variabel Kondisi Aset beserta bobotnya, untuk bar komposisi.
   const KOMPONEN=[
     {k:'kelengkapan' as const, label:'Kelengkapan Data', warna:'var(--blue)'},
@@ -520,7 +519,7 @@ function PerformanceView(){
         {buka===s.satker&&<tr className="pr-detail"><td colSpan={7}><ul className="pr-daftar">
           <li><b>Kinerja Pekerjaan</b><span className="pr-angka">{s.skorKinerja}</span><span>Penyelesaian {s.penyelesaian}% · tepat waktu {s.ketepatan}% · dorongan progres {s.dorongan}% · kualitas {s.kualitas}%</span></li>
           <li className="pr-induk"><b>Kondisi Aset</b><span className="pr-angka">{s.skorKondisi}</span></li>
-          <li className="pr-anak"><b>Kelengkapan Data <em>30%</em></b><span className="pr-angka">{s.kelengkapan}%</span><span>Merk dan tipe, penghuni rumah negara, pengguna kendaraan, foto. Lokasi {persenLokasi(s)}% · {s.tanpa_lokasi??0} aset tanpa lokasi</span></li>
+          <li className="pr-anak"><b>Kelengkapan Data <em>30%</em></b><span className="pr-angka">{s.kelengkapan}%</span><span>{rincianKelengkapan(s)} · rata-rata lima penyusun, komponen yang tidak berlaku tidak dihitung</span></li>
           <li className="pr-anak"><b>Capaian Penghapusan <em>40%</em></b><span className="pr-angka">{s.capaian_penghapusan}%</span><span>Sisa {s.rb_sisa} dari {s.rb_total} barang rusak berat{s.rb_terhapus>0?` · ${s.rb_terhapus} sudah dihapus`:''}</span></li>
           <li className="pr-anak"><b>Belum PSP <em>15%</em></b><span className="pr-angka">{s.skor_psp??0}%</span><span>{s.belum_psp||0} dari {s.total_aset} aset belum memiliki nomor PSP</span></li>
           <li className="pr-anak"><b>Pelepasan Aset <em>15%</em></b><span className="pr-angka">{s.capaian_pelepasan}</span><span>{s.lelang_sk>0?`${s.lelang_sk} SK · ${s.lelang_barang} barang · perolehan ${juta(s.lelang_nilai)} · terjual ${juta(s.lelang_jual)}`:'Belum ada SK penghapusan tercatat'}</span></li>

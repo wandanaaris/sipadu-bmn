@@ -2,7 +2,7 @@ import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { ArrowLeft, Building2, Car, CircleAlert, ClipboardList, Database, Upload, Clock3, Cog, Crosshair, HardHat, Home, LandPlot, Monitor, Package, Printer, Route, Search, TrendingUp, UserCheck, Wrench, X } from 'lucide-react'
 import type { Task } from './data'
 import type { KategoriRusak } from './rusakBeratData'
-import { tingkatLencanaPemanfaatan, useUptScores } from './uptScore'
+import { rincianKelengkapan, tingkatLencanaPemanfaatan, useUptScores } from './uptScore'
 import { RegisterPenghapusan, type BarisLelang } from './RegisterPenghapusan'
 import { bacaFileAset, type HasilBaca, type HasilBanding } from './imporAset'
 import { satkers, statusLabel, type TaskStatus } from './data'
@@ -482,7 +482,6 @@ function InfografisSatker({ tasks, kodeSatker, onKembali }: { tasks: Task[]; kod
 
   const petaSkor = useUptScores()
   const uptSkor = petaSkor.get(kodeSatker)
-  const persenLokasi = (() => { const t = uptSkor?.total_aset ?? 0; return t ? Math.round(100 * (t - (uptSkor?.tanpa_lokasi ?? 0)) / t) : 0 })()
   const rupiah = (n: number) => 'Rp ' + Math.round(Number(n) || 0).toLocaleString('id-ID')
   const satker = satkers.find(s => s.code === kodeSatker)
   const nama = satker?.name ?? kodeSatker
@@ -734,7 +733,7 @@ function InfografisSatker({ tasks, kodeSatker, onKembali }: { tasks: Task[]; kod
 
             <p className="ms-kelompok">Kondisi Aset — bobot 40%</p>
             {([
-              ['Kelengkapan Data', '30%', uptSkor?.kelengkapan, '#1769aa', `lokasi ${persenLokasi}% · ${uptSkor?.tanpa_lokasi ?? 0} aset tanpa lokasi`],
+              ['Kelengkapan Data', '30%', uptSkor?.kelengkapan, '#1769aa', uptSkor ? rincianKelengkapan(uptSkor) : ''],
               ['Capaian Penghapusan', '40%', uptSkor?.capaian_penghapusan, '#15815d', `sisa ${uptSkor?.rb_sisa ?? 0} dari ${uptSkor?.rb_total ?? 0} barang rusak berat`],
               ['Belum PSP', '15%', uptSkor?.skor_psp ?? 0, '#a76509', `${uptSkor?.belum_psp ?? 0} dari ${uptSkor?.total_aset ?? 0} aset belum punya nomor PSP`],
               ['Pelepasan Aset', '15%', uptSkor?.capaian_pelepasan ?? 0, '#123354', uptSkor?.lelang_sk ? `${uptSkor.lelang_sk} SK · ${rupiah(uptSkor.lelang_nilai)} perolehan` : 'belum ada SK penghapusan'],
