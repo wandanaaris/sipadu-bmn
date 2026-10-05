@@ -84,11 +84,13 @@ describe('Papan ketepatan waktu per Satker', () => {
     expect(Bengkalis.total).toBe(3)
   })
 
-  it('tidak menghitung Kanwil sebagai Satker penerima tugas', () => {
+  it('menghitung Kanwil Ditjenpas Riau sebagai Satker yang dinilai', () => {
     const denganKanwil = barisSatker([
       tugas('x', 'Uji', [{ satker: '692507', status: 'belum', progress: 0 }, { satker: '692308', status: 'selesai', progress: 100 }]),
     ])
-    expect(denganKanwil.some(b => b.kodeSatker === '692507')).toBe(false)
+    const kanwil = denganKanwil.find(b => b.kodeSatker === '692507')
+    expect(kanwil).toBeDefined()
+    expect(kanwil!.total).toBe(1)
   })
 
   it('menghitung status selesai, berjalan, belum, dan perbaikan', () => {

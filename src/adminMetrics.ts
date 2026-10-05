@@ -85,7 +85,6 @@ export function barisSatker(tasks: Task[]): BarisSatker[] {
   const map = new Map<string, BarisSatker>()
   for (const task of tasks.filter(t => t.active)) {
     for (const a of task.assignments) {
-      if (a.satker === '692507') continue // Kanwil tidak dihitung sebagai Satker penerima tugas
       const status = statusForAssignment(task, a)
       const row = map.get(a.satker) ?? {
         kodeSatker: a.satker,

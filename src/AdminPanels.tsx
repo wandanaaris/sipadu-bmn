@@ -1238,7 +1238,7 @@ function ProfilAsetGrid({ onPilih }: { onPilih: (kode: string) => void }) {
   const [rekap, setRekap] = useState<RekapSatker[]>([])
   const [loading, setLoading] = useState(true)
   const cariAktif = cari.trim().toLowerCase()
-  const daftar = satkers.filter(s => s.code !== '692507' && `${s.name} ${s.code}`.toLowerCase().includes(cariAktif))
+  const daftar = satkers.filter(s => `${s.name} ${s.code}`.toLowerCase().includes(cariAktif))
 
   useEffect(() => {
     let mounted = true

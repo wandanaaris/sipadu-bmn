@@ -51,8 +51,10 @@ describe('Skor tunggal untuk Monitoring Satker dan Kinerja UPT', () => {
     expect(baris.ketepatanWaktu).toBe(Math.round((baris.ketepatanWaktuTepat / baris.total) * 100))
   })
 
-  it('Satker 692507 tidak dihitung sebagai Satker penerima tugas', () => {
+  it('Satker 692507 Kanwil ikut dihitung agar muncul di Monitoring Satker', () => {
     const baris = barisSatker([tugas('692507', 'selesai', 0)])
-    expect(baris.find(b => b.kodeSatker === '692507')).toBeUndefined()
+    const kanwil = baris.find(b => b.kodeSatker === '692507')
+    expect(kanwil).toBeDefined()
+    expect(kanwil!.total).toBe(1)
   })
 })
