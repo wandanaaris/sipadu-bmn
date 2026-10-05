@@ -37,3 +37,7 @@ supabase-access.txt
 supabase-service.txt
 _gsheet*
 sipadu-secrets/
+src/_router.txt
+storelens-prototype/
+
+
