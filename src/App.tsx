@@ -8,10 +8,10 @@ import { AkunMitraForm } from './AkunMitraForm'
 import { AkunMitraAdmin } from './AkunMitraAdmin'
 import { sortSatkerWorkItems } from './taskSorting'
 import { StageFieldsForm, PspInfoPanel, AsetRusakPanel, readIsian, type IsianTahap } from './PemanfaatanFields'
-import { rincianKelengkapan, tingkatLencanaPemanfaatan, type UptScore } from './uptScore'
+import { rincianKelengkapan, tingkatLencanaPemanfaatan, useUptScores, type UptScore } from './uptScore'
 import { DataCenterBmnPage, DetailPekerjaanPanel, ImporAsetPage, MonitoringSatkerPage, ProfilAsetDetail, ProfilAsetPage, TaskListPage } from './AdminPanels'
 import { BmnAssetInfographic } from './BmnAssetInfographic'
-import { loadBmnOverview } from './lib/bmnAssets'
+import { loadBmnOverview, type BmnOverview } from './lib/bmnAssets'
 import './bmn-infographic.css'
 
 
@@ -214,6 +214,21 @@ export function CreateTaskModal({onClose,onCreated}:{onClose:()=>void;onCreated:
 }
 
 function ExecutiveView({tasks,onRefresh}:{tasks:Task[];onRefresh:()=>Promise<void>}){
+  const [overview,setOverview]=useState<BmnOverview|null>(null)
+  useEffect(()=>{let mounted=true;void loadBmnOverview().then(o=>{if(mounted)setOverview(o)});return()=>{mounted=false}},[])
+  const skorMap=useUptScores()
+  const skorList=[...skorMap.values()].sort((a,b)=>b.score-a.score)
+  const fmtNum=(n:number)=>Math.round(n).toLocaleString('id-ID')
+  const tanggalIndo=(iso:string)=>{const d=new Date(`${iso}T00:00:00`);return isNaN(d.getTime())?iso:d.toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})}
+  const totalRB=skorList.reduce((s,x)=>s+(x.rb_total||0),0)
+  const sisaRB=skorList.reduce((s,x)=>s+(x.rb_sisa||0),0)
+  const lelangBarang=skorList.reduce((s,x)=>s+(x.lelang_barang||0),0)
+  const lelangNilai=skorList.reduce((s,x)=>s+(x.lelang_nilai||0),0)
+  const lelangJual=skorList.reduce((s,x)=>s+(x.lelang_jual||0),0)
+  const rbDihapus=totalRB-sisaRB
+  const pctDihapus=totalRB>0?Math.min(100,Math.round((rbDihapus/totalRB)*100)):0
+  const rbPerSatker=skorList.filter(x=>x.rb_total>0).sort((a,b)=>b.rb_sisa-a.rb_sisa)
+  const lelangPerSatker=skorList.filter(x=>x.lelang_barang>0).sort((a,b)=>b.lelang_barang-a.lelang_barang)
   const active=tasks.filter(t=>t.active)
   const allAssignments=active.flatMap(t=>t.assignments.map(a=>({...a,task:t})))
   const total=allAssignments.length
@@ -239,7 +254,7 @@ function ExecutiveView({tasks,onRefresh}:{tasks:Task[];onRefresh:()=>Promise<voi
     const{avgTask}=taskStats(task)
     return daysLeft(due)<14&&avgTask<100
   })
-  const refresh=()=>{void onRefresh()}
+  const refresh=()=>{void onRefresh();void loadBmnOverview().then(setOverview)}
   return <section className="exec-onepage">
     <header className="exec-hero">
       <div className="exec-hero-inner">
@@ -285,77 +300,54 @@ function ExecutiveView({tasks,onRefresh}:{tasks:Task[];onRefresh:()=>Promise<voi
       </section>
 
       <section id="posisi-bmn" className="exec-section">
-        <div className="exec-section-head"><span className="exec-kicker">POSISI KESELURUHAN BMN</span><h2>Semester I TA 2026</h2><p className="exec-sub">Posisi per 30 Juni 2026 — Sumber: Paparan Rakernis Kanwil Ditjenpas Riau</p></div>
+        <div className="exec-section-head"><span className="exec-kicker">POSISI KESELURUHAN BMN</span><h2>Data Master Aset</h2><p className="exec-sub">{overview?`Posisi ${tanggalIndo(overview.snapshotDate)} · Sumber: ${overview.sourceFile}`:'Memuat data master aset…'}</p></div>
         <div className="exec-table-wrap">
-          <table className="exec-data-table">
-            <thead><tr><th>No</th><th>Jenis Aset</th><th className="num">Nilai (Rp)</th></tr></thead>
+          {overview?<table className="exec-data-table">
+            <thead><tr><th>No</th><th>Jenis BMN</th><th className="num">Jumlah</th><th className="num">Nilai (Rp)</th></tr></thead>
             <tbody>
-              <tr><td>1</td><td>Barang Konsumsi</td><td className="num">12.388.163.276</td></tr>
-              <tr><td>2</td><td>Amunisi</td><td className="num">494.273.580</td></tr>
-              <tr><td>3</td><td>Bahan Pemeliharaan</td><td className="num">619.538.534</td></tr>
-              <tr><td>4</td><td>Tanah</td><td className="num">275.789.883.380</td></tr>
-              <tr><td>5</td><td>Peralatan dan Mesin</td><td className="num">145.766.351.435</td></tr>
-              <tr><td>6</td><td>Gedung dan Bangunan</td><td className="num">419.260.003.412</td></tr>
-              <tr><td>7</td><td>Jalan dan Jembatan</td><td className="num">89.640.000</td></tr>
-              <tr><td>8</td><td>Aset Tetap Lainnya</td><td className="num">155.383.543</td></tr>
-              <tr><td>9</td><td>Konstruksi Dalam Pengerjaan</td><td className="num">141.423.127.251</td></tr>
+              {[...overview.perJenis].sort((a,b)=>b.nilai-a.nilai).map((j,i)=><tr key={j.jenis}><td>{i+1}</td><td>{j.jenis}</td><td className="num">{fmtNum(j.jumlah)}</td><td className="num">{fmtNum(j.nilai)}</td></tr>)}
             </tbody>
-            <tfoot><tr><th colSpan={2}>TOTAL</th><th className="num">841.913.400.031</th></tr></tfoot>
-          </table>
+            <tfoot><tr><th colSpan={2}>TOTAL</th><th className="num">{fmtNum(overview.totalAset)}</th><th className="num">{fmtNum(overview.totalNilai)}</th></tr></tfoot>
+          </table>:<p className="exec-empty">Data master aset sedang dimuat…</p>}
         </div>
-        <div className="exec-highlight-cards">
-          <div className="exec-highlight"><span>Total BMN</span><strong>11.856 unit</strong></div>
-          <div className="exec-highlight warn"><span>Belum PSP</span><strong>362 unit</strong><small>3,05% dari total BMN · Rp 1.410.021.567 (0,17%)</small></div>
-        </div>
-        <p className="exec-note">Seluruh aset sudah dilakukan permohonan PSP, namun belum terbit SK PSP dari Pengguna Barang.</p>
+        {overview&&<div className="exec-highlight-cards">
+          <div className="exec-highlight"><span>Total BMN</span><strong>{fmtNum(overview.totalAset)} unit</strong><small>{overview.jumlahJenis} jenis BMN · {overview.jumlahSatker} Satker</small></div>
+          <div className="exec-highlight warn"><span>Belum PSP</span><strong>{fmtNum(overview.tanpaPsp)} unit</strong><small>{((overview.tanpaPsp/(overview.totalAset||1))*100).toFixed(1).replace('.',',')}% dari total BMN</small></div>
+        </div>}
       </section>
 
       <section id="penghapusan" className="exec-section">
-        <div className="exec-section-head"><span className="exec-kicker">TINDAK LANJUT PENGHAPUSAN</span><h2>BMN Rusak Berat</h2><p className="exec-sub">Periode 1 Januari – 31 Agustus 2026</p></div>
+        <div className="exec-section-head"><span className="exec-kicker">TINDAK LANJUT PENGHAPUSAN</span><h2>BMN Rusak Berat</h2><p className="exec-sub">Dihitung langsung dari data Master Aset dan register Penghapusan BMN di database</p></div>
         <div className="exec-metrics">
-          <div className="exec-metric"><span>Total Rusak Berat</span><strong>1.501</strong><small>unit</small></div>
-          <div className="exec-metric good"><span>Sudah Selesai</span><strong>147</strong><small>unit · Rp 46.418.500</small></div>
-          <div className="exec-metric warn"><span>Proses Lelang</span><strong>678</strong><small>unit</small></div>
-          <div className="exec-metric bad"><span>Belum Pengajuan</span><strong>823</strong><small>unit</small></div>
+          <div className="exec-metric"><span>Total Rusak Berat</span><strong>{fmtNum(totalRB)}</strong><small>unit</small></div>
+          <div className="exec-metric good"><span>Sudah Dihapus</span><strong>{fmtNum(rbDihapus)}</strong><small>unit · {pctDihapus}%</small></div>
+          <div className="exec-metric bad"><span>Belum Dihapus</span><strong>{fmtNum(sisaRB)}</strong><small>unit tersisa</small></div>
+          <div className="exec-metric"><span>Tercatat Terjual Lelang</span><strong>{fmtNum(lelangBarang)}</strong><small>unit · nilai perolehan Rp {fmtNum(lelangNilai)}</small></div>
         </div>
         <div className="exec-progress-overview">
-          <div className="exec-prog-row"><span>Selesai</span><div className="exec-prog-track"><i style={{width:'9.8%'}}/></div><b>9,8%</b></div>
-          <div className="exec-prog-row"><span>Proses Lelang</span><div className="exec-prog-track lelang"><i style={{width:'45.2%'}}/></div><b>45,2%</b></div>
-          <div className="exec-prog-row"><span>Belum Pengajuan</span><div className="exec-prog-track belum"><i style={{width:'54.8%'}}/></div><b>54,8%</b></div>
+          <div className="exec-prog-row"><span>Sudah Dihapus</span><div className="exec-prog-track"><i style={{width:`${pctDihapus}%`}}/></div><b>{pctDihapus}%</b></div>
+          <div className="exec-prog-row"><span>Belum Dihapus</span><div className="exec-prog-track belum"><i style={{width:`${100-pctDihapus}%`}}/></div><b>{100-pctDihapus}%</b></div>
         </div>
+        {lelangPerSatker.length>0&&<><h3>Penghapusan Terjual Lelang (Register Database)</h3>
         <div className="exec-table-wrap">
           <table className="exec-data-table compact">
-            <thead><tr><th>Satker</th><th>Detail</th><th>Status</th></tr></thead>
+            <thead><tr><th>Satker</th><th className="num">Barang</th><th className="num">Nilai Perolehan</th><th className="num">Hasil Jual</th><th>Dasar</th></tr></thead>
             <tbody>
-              <tr><td>Lapas Selat Panjang</td><td>2 unit kendaraan (Rp 13.026.000)</td><td><span className="badge-done">Selesai</span></td></tr>
-              <tr><td>Lapas Teluk Kuantan</td><td>1 unit kendaraan (Rp 29.719.000)</td><td><span className="badge-done">Selesai</span></td></tr>
-              <tr><td>Kanwil Ditjenpas Riau</td><td>144 unit inventaris (Rp 3.673.500)</td><td><span className="badge-done">Selesai</span></td></tr>
-              <tr><td>Kanwil Ditjenpas Riau</td><td>3 unit kendaraan</td><td><span className="badge-proses">Proses Lelang</span></td></tr>
-              <tr><td>Lapas Pasir Pangarayan</td><td>162 unit inventaris</td><td><span className="badge-proses">Proses Lelang (menunggu risalah)</span></td></tr>
-              <tr><td>Rutan Pekanbaru</td><td>290 unit inventaris</td><td><span className="badge-proses">Proses Lelang</span></td></tr>
-              <tr><td>Rutan Dumai</td><td>223 unit inventaris</td><td><span className="badge-proses">Proses Lelang</span></td></tr>
+              {lelangPerSatker.map(x=><tr key={x.satker}><td>{x.nama}</td><td className="num">{fmtNum(x.lelang_barang)} unit</td><td className="num">Rp {fmtNum(x.lelang_nilai)}</td><td className="num">Rp {fmtNum(x.lelang_jual)}</td><td>{x.lelang_sk} SK</td></tr>)}
             </tbody>
+            <tfoot><tr><th>Total</th><th className="num">{fmtNum(lelangBarang)} unit</th><th className="num">Rp {fmtNum(lelangNilai)}</th><th className="num">Rp {fmtNum(lelangJual)}</th><th></th></tr></tfoot>
           </table>
-        </div>
-        <h3 style={{marginTop:24}}>Rincian Satker Belum Mengajukan Penghapusan (823 unit)</h3>
+        </div></>}
+        {rbPerSatker.length>0&&<><h3 style={{marginTop:24}}>Sisa Rusak Berat per Satker (Belum Dihapus)</h3>
         <div className="exec-table-wrap">
           <table className="exec-data-table compact">
-            <thead><tr><th>No</th><th>Satker</th><th className="num">Jumlah Belum Diajukan</th><th>Catatan</th></tr></thead>
+            <thead><tr><th>No</th><th>Satker</th><th className="num">Total Rusak Berat</th><th className="num">Sisa Belum Dihapus</th><th>Catatan</th></tr></thead>
             <tbody>
-              <tr><td>1</td><td>Bapas Kelas I Pekanbaru</td><td className="num"><strong>207 unit</strong></td><td>Terbesar — didominasi kursi besi, PC, printer, kamera digital</td></tr>
-              <tr><td>2</td><td>Lapas Kelas IIA Bagansiapiapi</td><td className="num"><strong>186 unit</strong></td><td>Inventaris kantor, alat dapur, kursi fiber, senjata api (3 pistol, 10 borgol)</td></tr>
-              <tr><td>3</td><td>Lapas Kelas IIB Teluk Kuantan</td><td className="num"><strong>174 unit</strong></td><td>Tiket SIMAN sudah dibuat (PPL26021311214173634) namun belum dinaikkan</td></tr>
-              <tr><td>4</td><td>Lapas Kelas IIA Bangkinang</td><td className="num"><strong>173 unit</strong></td><td>Belum ada tiket SIMAN</td></tr>
-              <tr><td>5</td><td>Kanwil Ditjenpas Riau</td><td className="num"><strong>67 unit</strong></td><td>PC, laptop, printer, UPS, scanner</td></tr>
-              <tr><td>6</td><td>Lapas Kelas IIA Bengkalis</td><td className="num"><strong>8 unit</strong></td><td>Termasuk 1 bangunan gedung darurat (Kat. 2, Rp 1,97 M)</td></tr>
-              <tr><td>7</td><td>LPKA Kelas II Pekanbaru</td><td className="num"><strong>5 unit</strong></td><td>Belum ada tiket SIMAN</td></tr>
-              <tr><td>8</td><td>Rutan Kelas IIB Dumai</td><td className="num"><strong>1 unit</strong></td><td>Hampir selesai</td></tr>
-              <tr><td>9</td><td>Lapas Perempuan Kelas IIA Pekanbaru</td><td className="num"><strong>1 unit</strong></td><td>Hampir selesai</td></tr>
-              <tr><td>10</td><td>Rutan Kelas I Pekanbaru</td><td className="num"><strong>1 unit</strong></td><td>Hampir selesai</td></tr>
+              {rbPerSatker.map((x,i)=><tr key={x.satker}><td>{i+1}</td><td>{x.nama}</td><td className="num">{fmtNum(x.rb_total)} unit</td><td className="num"><strong>{fmtNum(x.rb_sisa)} unit</strong></td><td>{x.rb_sisa===0?'selesai diproses':x.capaian_penghapusan>=100?'tercatat dihapus semua':'perlu pengajuan penghapusan'}</td></tr>)}
             </tbody>
-            <tfoot><tr><th></th><th>Total 10 Satker</th><th className="num"><strong>823 unit</strong></th><th>Data: MONITORING_PENGUSULAN_BMN_RUSAK_BERAT_SIMAN.xlsx</th></tr></tfoot>
+            <tfoot><tr><th></th><th>Total Wilayah</th><th className="num"><strong>{fmtNum(totalRB)} unit</strong></th><th className="num"><strong>{fmtNum(sisaRB)} unit</strong></th><th>Data: register database</th></tr></tfoot>
           </table>
-        </div>
+        </div></>}
       </section>
 
       <section id="rupbasan" className="exec-section">
@@ -443,16 +435,16 @@ function ExecutiveView({tasks,onRefresh}:{tasks:Task[];onRefresh:()=>Promise<voi
       <section id="satker" className="exec-section">
         <div className="exec-section-head"><span className="exec-kicker">SATKER</span><h2>Peringkat Penyelesaian</h2></div>
         <div className="exec-rank-list">
-          {satkerRankList(tasks).map((r,i)=><div className="exec-rank-item" key={r.code}>
+          {skorList.map((x,i)=><div className="exec-rank-item" key={x.satker}>
             <span className={`exec-rank-num ${i<3?'top':''}`}>{i+1}</span>
-            <div className="exec-rank-copy"><strong>{r.name}</strong><span>{r.done}/{r.total} pekerjaan selesai</span></div>
-            <div className="exec-progress"><i style={{width:`${r.pct}%`}}/><span>{r.pct}%</span></div>
+            <div className="exec-rank-copy"><strong>{x.nama}</strong><span>{x.selesai}/{x.total} pekerjaan selesai · Kinerja {Math.round(x.skorKinerja)} · Kondisi {Math.round(x.skorKondisi)}</span></div>
+            <div className="exec-progress"><i style={{width:`${x.score}%`}}/><span>{Math.round(x.score)}</span></div>
           </div>)}
         </div>
       </section>
     </main>
     <footer className="exec-footer">
-      <p>Sumber data: Portal SIPADU BMN Kanwil Ditjenpas Riau + Paparan Rakernis (posisi s.d. 30 Juni 2026) — diperbarui otomatis setiap satker mengirim atau Korwil memverifikasi.</p>
+      <p>Sumber data: database Portal SIPADU BMN Kanwil Ditjenpas Riau{overview?` — Master Aset posisi ${tanggalIndo(overview.snapshotDate)}`:''}. Angka diperbarui otomatis setiap impor aset, pengisian register, atau verifikasi pekerjaan.</p>
     </footer>
   </section>
 }
@@ -462,20 +454,6 @@ function ExecutivePublicPage({tasks,onRefresh,onBack,setView}:{tasks:Task[];onRe
     <header className="landing-header"><Brand/><div className="landing-header-actions"><button className="ghost" onClick={onBack}><ArrowLeft/>Kembali</button><button className="ghost" onClick={()=>setView('admin')}><LockKeyhole/>Dashboard Korwil</button></div></header>
     <ExecutiveView tasks={tasks} onRefresh={onRefresh}/>
   </div>
-}
-
-function satkerRankList(tasks:Task[]):Array<{code:string;name:string;done:number;total:number;pct:number}>{
-  const active=tasks.filter(t=>t.active)
-  const map=new Map<string,{done:number;total:number}>()
-  for(const t of active){
-    for(const a of t.assignments){
-      const cur=map.get(a.satker)??{done:0,total:0}
-      cur.total+=1
-      if(['selesai','ditutup'].includes(a.status))cur.done+=1
-      map.set(a.satker,cur)
-    }
-  }
-  return [...map.entries()].map(([code,v])=>({code,name:satkers.find(s=>s.code===code)?.name??code,done:v.done,total:v.total,pct:Math.round(v.done/(v.total||1)*100)})).sort((a,b)=>b.pct-a.pct||a.name.localeCompare(b.name))
 }
 
 function PerformanceView(){
