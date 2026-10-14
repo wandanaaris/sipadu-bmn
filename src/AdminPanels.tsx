@@ -1736,6 +1736,8 @@ export function ImporAsetPage() {
   const [kesalahan, setKesalahan] = useState('')
   const [sibuk, setSibuk] = useState(false)
   const [sukses, setSukses] = useState('')
+  /** Pesan perkembangan saat impor besar dikirim per batch. */
+  const [progres, setProgres] = useState('')
   const inputBerkas = useRef<HTMLInputElement>(null)
 
   const muatSnapshot = async () => {
@@ -1753,7 +1755,7 @@ export function ImporAsetPage() {
   const aktif = snapshots.find(s => s.status === 'active')
 
   const pilihBerkas = async (berkas: File) => {
-    setKesalahan(''); setSukses('')
+    setKesalahan(''); setSukses(''); setProgres('')
     setNamaBerkas(berkas.name)
     const baca = await bacaFileAset(berkas)
     setHasil(baca)
@@ -1763,34 +1765,61 @@ export function ImporAsetPage() {
 
     const { supabase } = await import('./lib/supabase')
     if (!supabase) { setKesalahan('Koneksi database tidak tersedia.'); return }
-    const { data, error } = await supabase.rpc('bmn_banding', { p_baru: baca.baris as never })
+    // Perbandingan hanya butuk delapan kolom, bukan seluruh kolom SIMAN.
+    // Payload ramping supaya RPC selesai sebelum batas waktu database.
+    const ramping = baca.baris.map(b => ({
+      kunci: b.kunci, nama_barang: b.nama_barang, kondisi: b.kondisi, no_psp: b.no_psp,
+      nilai_perolehan: b.nilai_perolehan, nilai_buku: b.nilai_buku,
+      satker_code: b.satker_code, jenis_bmn: b.jenis_bmn,
+    }))
+    const { data, error } = await supabase.rpc('bmn_banding', { p_baru: ramping as never })
     if (error) setBanding(null)
     else setBanding((Array.isArray(data) ? data[0] : data) as HasilBanding)
   }
 
   const simpanDanAktifkan = async () => {
     if (!hasil) return
-    setSibuk(true); setKesalahan(''); setSukses('')
+    setSibuk(true); setKesalahan(''); setSukses(''); setProgres('')
     try {
       const { supabase } = await import('./lib/supabase')
       if (!supabase) throw new Error('Koneksi database tidak tersedia.')
       const db = supabase
+      // Berkas Master Aset bisa lebih dari 11 ribu baris. Dikirim sekaligus,
+      // satu permintaan RPC melampaui batas waktu database. Karena itu baris
+      // dipecah per 1.000: potongan pertama membuat snapshot draf, sisanya
+      // ditambahkan ke draf yang sama lewat bmn_impor_batch.
+      const UKURAN = 1000
+      const semua = hasil.baris
+      const potongan: typeof semua[] = []
+      for (let i = 0; i < semua.length; i += UKURAN) potongan.push(semua.slice(i, i + UKURAN))
       const { data, error } = await db.rpc('bmn_simpan_snapshot', {
         p_snapshot_date: tanggal,
         p_source_file: namaBerkas,
-        p_baris: hasil.baris as never,
+        p_baris: potongan[0] as never,
         p_catatan: `Diimpor melalui portal oleh Korwil`,
       })
       if (error) throw new Error(error.message)
       const baru = (Array.isArray(data) ? data[0] : data) as { id: number; total: number }
+      for (let n = 1; n < potongan.length; n++) {
+        setProgres(`Menyimpan potongan ${n + 1} dari ${potongan.length}…`)
+        const { error: eBatch } = await db.rpc('bmn_impor_batch', {
+          p_snapshot_date: tanggal,
+          p_source_file: namaBerkas,
+          p_baris: potongan[n] as never,
+        })
+        if (eBatch) throw new Error(`Potongan ${n + 1} gagal: ${eBatch.message}`)
+      }
+      setProgres('Mengaktifkan snapshot…')
       const { error: e2 } = await supabase.rpc('bmn_aktifkan_snapshot', { p_id: baru.id })
       if (e2) throw new Error(e2.message)
-      setSukses(`Snapshot ${tanggal} aktif. ${baru.total.toLocaleString('id-ID')} aset tersimpan.`)
+      setSukses(`Snapshot ${tanggal} aktif. ${semua.length.toLocaleString('id-ID')} aset tersimpan.`)
       setTahap('pilih'); setHasil(null); setBanding(null)
       await muatSnapshot()
     } catch (e) {
       setKesalahan(e instanceof Error ? e.message : 'Penyimpanan gagal.')
-    } finally { setSibuk(false) }
+    } finally {
+      setSibuk(false); setProgres('')
+    }
   }
 
   const aktifkanLama = async (id: number) => {
@@ -1806,7 +1835,7 @@ export function ImporAsetPage() {
     finally { setSibuk(false) }
   }
 
-  const mulaiUlang = () => { setTahap('pilih'); setHasil(null); setBanding(null); setKesalahan(''); setSukses(''); if (inputBerkas.current) inputBerkas.current.value = '' }
+  const mulaiUlang = () => { setTahap('pilih'); setHasil(null); setBanding(null); setKesalahan(''); setSukses(''); setProgres(''); if (inputBerkas.current) inputBerkas.current.value = '' }
 
   return (
     <div className="pa-halaman">
@@ -1829,6 +1858,7 @@ export function ImporAsetPage() {
 
       {sukses && <div className="imp-sukses" role="status">{sukses}</div>}
       {kesalahan && <div className="imp-galat" role="alert">{kesalahan}</div>}
+      {progres && <div className="imp-catatan" role="status">{progres}</div>}
 
       {tahap === 'pilih' && (
         <section className="panel admin-page info-panel">
