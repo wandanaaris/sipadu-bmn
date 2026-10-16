@@ -209,4 +209,25 @@ export const finalTasks:Task[] = [
       a("694759",0,"belum",["Form Survey CCTV terisi","Data dukung diunggah ke folder Drive (denah PDF)","Lapor via Google Form"]),
     ]
   },
+  {
+    id:"jfpp-data-dukung-2026",
+    title:"Pengumpulan Data Dukung Analisis Beban Kerja Jabatan Fungsional Penilai Pemerintah",
+    description:"Seluruh Satker mengunggah dokumen data dukung Analisis Beban Kerja Jabatan Fungsional Penilai Pemerintah ke folder Google Drive yang disediakan. Dokumen yang diperlukan: laporan penilaian dari KPKNL/DJKN, laporan penilaian dari KJPP, kertas kerja taksiran tim internal, surat persetujuan sewa, surat persetujuan penjualan termasuk perubahan nilai limit, surat persetujuan hibah, serta berita acara penelitian dan penaksiran. Periode dokumen 2023-2025. Pengumpulan paling lambat 22 Oktober 2026.",
+    method:"spreadsheet", due:"22 Oktober 2026",
+    letter:"Surat Kepala Biro BMN Nomor SEK.3-SA.01.01-3 tanggal 15 Oktober 2026",
+    uploadLink:"https://drive.google.com/drive/folders/1_wcDX4XUIey0ubEHbniCUQIXekcBeyZ2?usp=drive_link",
+    active:true, priority:"tinggi",
+    references:[
+      {label:"Folder Upload Data Dukung",url:"https://drive.google.com/drive/folders/1_wcDX4XUIey0ubEHbniCUQIXekcBeyZ2?usp=drive_link"},
+      {label:"Petunjuk Pengisian Formulir Biro BMN",url:"https://tinyurl.com/PendataanDokumenPenilaianBMN"},
+    ],
+    assignments:satkers.map(s=>({
+      satker:s.code,
+      progress:0,
+      status:'belum' as const,
+      missing:['Dokumen data dukung penilaian BMN 2023-2025 diunggah ke folder Google Drive','Konfirmasi pengunggahan disampaikan kepada Korwil BMN'],
+      updated:'Belum diperbarui',
+      revisionCount:0,
+    })),
+  },
 ]
