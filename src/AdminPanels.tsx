@@ -4,6 +4,8 @@ import type { Task } from './data'
 import type { KategoriRusak } from './rusakBeratData'
 import { rincianKelengkapan, tingkatLencanaPemanfaatan, useUptScores } from './uptScore'
 import { RegisterPenghapusan, type BarisLelang } from './RegisterPenghapusan'
+import { keteranganTahap } from './stageStates'
+import { StagedAdminSummary } from './StagedAdminSummary'
 import { bacaFileAset, type HasilBaca, type HasilBanding } from './imporAset'
 import { satkers, statusLabel, type TaskStatus } from './data'
 import {
@@ -971,12 +973,20 @@ const statusTeks: Record<string, string> = {
 
 export function susunRingkasanWA(task: Task): string {
   const baris = task.assignments
-    .map(a => ({ nama: satkers.find(x => x.code === a.satker)?.name ?? a.satker, a, status: statusForAssignment(task, a), progress: progressForAssignment(task, a) }))
+    .map(a => ({
+      nama: satkers.find(x => x.code === a.satker)?.name ?? a.satker,
+      a,
+      status: statusForAssignment(task, a),
+      progress: progressForAssignment(task, a),
+      // Untuk pekerjaan berjenjang, sebut tahap yang sedang dikerjakan supaya
+      // penerima pesan tahu apa yang masih tertunggak, bukan hanya "proses".
+      keterangan: keteranganTahap(task, a),
+    }))
   const blok = (judul: string, list: typeof baris) =>
     list.length
       ? `${judul} (${list.length})\n` + list
           .sort((x, y) => x.nama.localeCompare(y.nama, 'id'))
-          .map(x => `- ${x.nama} | ${statusTeks[x.status] ?? x.a.status} | ${x.progress}%`)
+          .map(x => `- ${x.nama} | ${x.keterangan ?? statusTeks[x.status] ?? x.a.status} | ${x.progress}%`)
           .join('\n')
       : `${judul}: tidak ada\n`
 
@@ -993,10 +1003,15 @@ export function susunRingkasanWA(task: Task): string {
 }
 
 // ── Detail pekerjaan: sudah / belum, dengan salin ──────────────────────────
-export function DetailPekerjaanPanel({ task, onTutup, onBukaPekerjaan }: {
+// Halaman penuh, bukan panel geser, supaya daftar pekerjaan tidak tertutupi.
+// Bagian verifikasi tahapan per Satker ikut di sini karena panel geser lama
+// (yang memuatnya) sudah dihapus.
+export function DetailPekerjaanPanel({ task, onTutup, onBukaPekerjaan, onToggle, onRefresh }: {
   task: Task
   onTutup: () => void
   onBukaPekerjaan: (kode: string) => void
+  onToggle: () => void
+  onRefresh: () => Promise<void>
 }) {
   const [salin, setSalin] = useState<'idle' | 'ok' | 'gagal'>('idle')
 
@@ -1052,7 +1067,7 @@ export function DetailPekerjaanPanel({ task, onTutup, onBukaPekerjaan }: {
                   <li key={b.kode}>
                     <div className="ds-kiri">
                       <strong>{b.nama}</strong>
-                      <span>{b.kurang.length ? b.kurang.slice(0, 2).join(' · ') : statusTeks[b.status] ?? b.status}</span>
+                      <span>{keteranganTahap(task, task.assignments.find(a => a.satker === b.kode)!) ?? (b.kurang.length ? b.kurang.slice(0, 2).join(' · ') : statusTeks[b.status] ?? b.status)}</span>
                     </div>
                     <div className="ds-kanan">
                       <span className={`skor ${b.status}`}>{b.progress}%</span>
@@ -1077,6 +1092,22 @@ export function DetailPekerjaanPanel({ task, onTutup, onBukaPekerjaan }: {
               </ul>}
         </div>
       </div>
+
+      <div className="detail-aksi">
+        <button className={task.active ? 'danger' : 'primary'} onClick={onToggle}>{task.active ? 'Tutup pekerjaan' : 'Buka kembali'}</button>
+        {task.link && <a className="ghost" href={task.link} target="_blank" rel="noopener noreferrer">Buka sumber</a>}
+        {task.uploadLink && <a className="ghost" href={task.uploadLink} target="_blank" rel="noopener noreferrer">Data dukung</a>}
+      </div>
+
+      {task.workflow === 'staged-destruction' && (
+        <section className="detail-tahapan">
+          <div className="detail-tahapan-head">
+            <h3>Progres tahapan per Satker</h3>
+            <span>{task.assignments.length} Satker</span>
+          </div>
+          {task.assignments.map(a => <StagedAdminSummary key={`staged-${a.satker}`} task={task} assignment={a} onRefresh={onRefresh} />)}
+        </section>
+      )}
 
       <details className="teks-wa" open={salin === 'gagal'}>
         <summary>Teks ringkasan untuk disalin manual</summary>

@@ -64,9 +64,15 @@ describe('Ringkasan WhatsApp memakai status tahap dari database', () => {
   it('status tiap Satker sesuai kolom status di database', () => {
     const bagianBelum = pesan.split('BELUM SELESAI')[1]
     expect(bagianBelum).toContain('Lapas Kelas IIA Bengkalis | Menunggu verifikasi | 50%')
-    expect(bagianBelum).toContain('Lapas Kelas IIA Bangkinang | Dalam proses | 50%')
     expect(bagianBelum).toContain('Lapas Kelas IIA Bagansiapiapi | Belum dikerjakan | 0%')
     expect(bagianBelum).toContain('Lapas Kelas IIA Pekanbaru | Belum dikerjakan | 0%')
+  })
+
+  it('pekerjaan yang setengah jalan menyebut tahap berikutnya, bukan "Dalam proses"', () => {
+    const bagianBelum = pesan.split('BELUM SELESAI')[1]
+    expect(bagianBelum).toContain('Lapas Kelas IIA Bangkinang | Lanjut Pelaporan | 50%')
+    expect(bagianBelum).toContain('LPKA Kelas II Pekanbaru | Lanjut Pelaporan | 50%')
+    expect(bagianBelum).not.toContain('Dalam proses')
   })
 
   it('judul, batas waktu, dan dasar ikut tampil', () => {

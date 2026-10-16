@@ -42,3 +42,33 @@ export function stageStatesSelaras(states: unknown, jumlahTahap: number): StageS
   while (hasil.length < jumlahTahap) hasil.push('terkunci')
   return hasil
 }
+
+/** Label tahap tanpa awalan "Tahap I · ", mis. "Tahap II · Pelaporan" -> "Pelaporan". */
+export function namaTahapSingkat(label: string): string {
+  const bersih = label.replace(/^Tahap\s+[IVXLC\d]+\s*[·:.-]\s*/i, '').trim()
+  return bersih || label.trim()
+}
+
+/**
+ * Keterangan singkat pekerjaan berjenjang yang belum selesai, dipakai pada
+ * ringkasan WhatsApp. Menyebut tahap yang sedang dikerjakan, bukan sekadar
+ * "Dalam proses", supaya penerima pesan tahu apa yang masih tertunggak.
+ *
+ * Mengembalikan null bila pekerjaan tidak berjenjang atau tidak ada tahap
+ * yang belum selesai — pemanggil memakai keterangan status biasa.
+ */
+export function keteranganTahap(task: Task, assignment: Task['assignments'][number]): string | null {
+  const stages = task.stages ?? []
+  if (!stages.length) return null
+  const states = stageStatesSelaras(assignment.stageStates, stages.length)
+  if (!states) return null
+  if (states.some(s => s === 'perbaikan')) return 'Perlu perbaikan'
+  if (states.some(s => s === 'menunggu_verifikasi')) return 'Menunggu verifikasi'
+  const berjalan = states.findIndex(s => s !== 'selesai')
+  if (berjalan < 0) return null
+  const tahap = stages[berjalan]
+  if (!tahap) return null
+  const sudah = states.filter(s => s === 'selesai').length
+  if (sudah === 0) return 'Belum dikerjakan'
+  return `Lanjut ${namaTahapSingkat(tahap.label)}`
+}

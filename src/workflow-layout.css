@@ -360,6 +360,17 @@ button.danger:disabled{opacity:.45;cursor:not-allowed}
 .teks-wa pre{margin:7px 0 0;padding:11px 13px;border-radius:8px;background:var(--muted);border:1px solid var(--border);font-size:.74rem;line-height:1.6;white-space:pre-wrap;word-break:break-word;max-height:300px;overflow-y:auto}
 @media (max-width:900px){.detail-pekerjaan{grid-template-columns:1fr}}
 
+/* -- Detail pekerjaan: aksi pekerjaan & tahapan per Satker -- */
+.detail-aksi{display:flex;flex-wrap:wrap;gap:9px;margin-top:14px;padding-top:13px;border-top:1px solid var(--border)}
+.detail-aksi button,.detail-aksi a{padding:7px 14px;border-radius:8px;font-size:.78rem;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+.detail-aksi button.primary,.detail-aksi a.primary{background:var(--accent);color:#fff;border:1px solid var(--accent)}
+.detail-aksi button.danger{background:rgba(239,68,68,.12);color:#b91c1c;border:1px solid rgba(239,68,68,.35)}
+.detail-aksi .ghost{background:var(--card);color:var(--foreground);border:1px solid var(--border)}
+.detail-tahapan{margin-top:18px;padding-top:15px;border-top:1px solid var(--border)}
+.detail-tahapan-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:10px}
+.detail-tahapan-head h3{margin:0;font-size:.88rem}
+.detail-tahapan-head>span{font-size:.7rem;color:var(--muted-foreground);white-space:nowrap}
+
 /* -- Antrean verifikasi (dirapikan) ----------------- */
 .verif-grup{display:flex;flex-direction:column;gap:16px}
 .verif-grup-blok h3{margin:0 0 8px;font-size:.85rem;display:flex;align-items:center;gap:8px}

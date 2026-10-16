@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Task } from './data'
-import { normalizeStageStates } from './stageStates'
+import { keteranganTahap, namaTahapSingkat, normalizeStageStates } from './stageStates'
 import { progressForAssignment, statusForAssignment } from './adminMetrics'
 
 // Bentuk persis yang dikembalikan get_active_portal untuk tahap workflow:
@@ -113,5 +113,62 @@ describe('Larik tahap yang menyimpan entri berlebih', () => {
     const t = siapkan(['selesai'], 3)
     expect(t.assignments[0].stageStates).toEqual(['selesai', 'terkunci', 'terkunci'])
     expect(progressForAssignment(t, t.assignments[0])).toBe(33)
+  })
+})
+
+// Keterangan singkat untuk ringkasan WhatsApp: menyebut tahap yang sedang
+// dikerjakan, bukan sekadar "Dalam proses".
+describe('Keterangan tahap yang sedang dikerjakan', () => {
+  const tugasDuaTahap = (stageStates: unknown): Task => {
+    const t = dbTask(stageStates, 2)
+    return {
+      ...t,
+      stages: [
+        { id: 's1', label: 'Tahap I · Pemusnahan Internal', description: '', requirements: [] },
+        { id: 's2', label: 'Tahap II · Pelaporan', description: '', requirements: [] },
+      ],
+      assignments: [normalizeStageStates(t.assignments[0], 2)],
+    }
+  }
+
+  it('menyebut tahap berikutnya, bukan "Dalam proses"', () => {
+    const t = tugasDuaTahap(['selesai', 'terbuka'])
+    expect(keteranganTahap(t, t.assignments[0])).toBe('Lanjut Pelaporan')
+  })
+
+  it('tetap benar walau lariknya menyimpan entri berlebih', () => {
+    const t = tugasDuaTahap(['selesai', 'terbuka', null])
+    expect(keteranganTahap(t, t.assignments[0])).toBe('Lanjut Pelaporan')
+  })
+
+  it('belum dikerjakan bila tidak ada tahap yang selesai', () => {
+    const t = tugasDuaTahap(['terbuka', 'terkunci'])
+    expect(keteranganTahap(t, t.assignments[0])).toBe('Belum dikerjakan')
+  })
+
+  it('menunggu verifikasi bila ada tahap yang diajukan', () => {
+    const t = tugasDuaTahap(['selesai', 'menunggu_verifikasi'])
+    expect(keteranganTahap(t, t.assignments[0])).toBe('Menunggu verifikasi')
+  })
+
+  it('perlu perbaikan bila Korwil mengembalikan tahap', () => {
+    const t = tugasDuaTahap(['perbaikan', 'terkunci'])
+    expect(keteranganTahap(t, t.assignments[0])).toBe('Perlu perbaikan')
+  })
+
+  it('tidak ada keterangan bila semua tahap sudah selesai', () => {
+    const t = tugasDuaTahap(['selesai', 'selesai'])
+    expect(keteranganTahap(t, t.assignments[0])).toBeNull()
+  })
+
+  it('pekerjaan tanpa tahap tidak diberi keterangan', () => {
+    const t: Task = { ...dbTask(null, 0), stages: [], assignments: [normalizeStageStates(dbTask(null, 0).assignments[0], 0)] }
+    expect(keteranganTahap(t, t.assignments[0])).toBeNull()
+  })
+
+  it('awalan "Tahap N ·" dibuang dari label', () => {
+    expect(namaTahapSingkat('Tahap II · Pelaporan')).toBe('Pelaporan')
+    expect(namaTahapSingkat('Tahap IV - Pelaksanaan Service')).toBe('Pelaksanaan Service')
+    expect(namaTahapSingkat('Pelaporan')).toBe('Pelaporan')
   })
 })
