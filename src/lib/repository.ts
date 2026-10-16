@@ -4,6 +4,7 @@ import { dukmanLocalPreviewTasks, localPreviewTaskIds, localReplacedTaskIds, mer
 import { isSupabaseConfigured, supabase } from './supabase'
 import { withLocalAkunMitraTask } from '../akunMitra'
 import { activeMitraRepository } from './activeMitraRepository'
+import { normalizeStageStates } from '../stageStates'
 
 const localOnly=async(tasks:Task[])=>{if(!import.meta.env.DEV&&import.meta.env.MODE!=='test')return tasks;try{return withLocalAkunMitraTask(tasks,await activeMitraRepository.loadAll())}catch{return withLocalAkunMitraTask(tasks,[])}}
 
@@ -14,23 +15,12 @@ const fallback = () => structuredClone(import.meta.env.DEV||import.meta.env.MODE
 // Terapkan metadata pekerjaan (uploadLink/references/link) dari finalTasks ke semua environment,
 // supaya tampilan satker selalu memakai folder Drive upload + peraturan terkini.
 // get_active_portal mengembalikan stage_states sebagai string JSON, bukan array.
-// Tanpa parsing ini, assignment.stageStates.length tidak pernah sama dengan
-// jumlah tahap sehingga semua tahap dianggap belum berjalan.
-function normalizeStageStates(assignment: Task['assignments'][number]): Task['assignments'][number] {
-  const raw = assignment.stageStates as unknown
-  if (typeof raw !== 'string') return assignment
-  try {
-    const parsed = JSON.parse(raw)
-    if (!Array.isArray(parsed)) return assignment
-    return { ...assignment, stageStates: parsed as Task['assignments'][number]['stageStates'] }
-  } catch {
-    return assignment
-  }
-}
-
+// Penyelarasan panjang larik dengan jumlah tahap ada di stageStates.ts karena
+// dipakai juga oleh halaman lain dan diuji terpisah.
 function applyFinalMeta(tasks:Task[]):Task[]{
   return tasks.map(t0=>{
-    const t={...t0,assignments:t0.assignments.map(normalizeStageStates)}
+    const jumlahTahap = (t0.stages ?? []).length
+    const t={...t0,assignments:t0.assignments.map(a => normalizeStageStates(a, jumlahTahap))}
     const o=finalTasks.find(f=>f.id===t.id)
     if(!o)return t
     return {...t,title:o.title,description:o.description,link:t.link??o.link,uploadLink:t.uploadLink??o.uploadLink,formUrl:t.formUrl??o.formUrl,references:t.references?.length?t.references:o.references}

@@ -980,15 +980,16 @@ export function susunRingkasanWA(task: Task): string {
           .join('\n')
       : `${judul}: tidak ada\n`
 
+  // Kepala pesan disusun terpisah lalu tiap bagian dipisah satu baris kosong.
+  // Sebelumnya baris kosong ikut terbuang oleh filter(Boolean) sehingga
+  // seluruh bagian pesan menempel tanpa jarak.
+  const kepala = [`*${task.title}*`, `Batas waktu: ${task.due}`]
+  if (task.letter) kepala.push(`Dasar: ${task.letter}`)
   return [
-    `*${task.title}*`,
-    `Batas waktu: ${task.due}`,
-    task.letter ? `Dasar: ${task.letter}` : '',
-    '',
+    kepala.join('\n'),
     blok('SUDAH SELESAI', baris.filter(x => x.status === 'selesai')),
-    '',
     blok('BELUM SELESAI', baris.filter(x => x.status !== 'selesai')),
-  ].filter(Boolean).join('\n')
+  ].join('\n\n')
 }
 
 // ── Detail pekerjaan: sudah / belum, dengan salin ──────────────────────────

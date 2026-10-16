@@ -43,7 +43,10 @@ export function statusForAssignment(task: Task, assignment: Task['assignments'][
   if (states.some(s => s === 'perbaikan')) return 'perbaikan'
   if (states.some(s => s === 'menunggu_verifikasi')) return 'verifikasi'
   if (states.every(s => s === 'selesai')) return 'selesai'
-  if (states.some(s => s === 'selesai' || s === 'terbuka')) return 'proses'
+  // "terbuka" berarti tahap tersedia untuk dikerjakan, bukan sedang dikerjakan.
+  // Sebelumnya keadaan itu dihitung sebagai proses, sehingga seluruh Satker
+  // yang belum mulai pun tampil "Dalam proses" walaupun statusnya "belum".
+  if (states.some(s => s === 'selesai')) return 'proses'
   return 'belum'
 }
 
