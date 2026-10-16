@@ -17,11 +17,15 @@ export type Assignment = {
     reviewNote?: string | null
   }
 export type StageChoice = { value:string; label:string }
+// Kolom tabel isian generik (mis. daftar aset pada Lapor Service BMN).
+// numeric:true membuat sel menformat angka dan membuang karakter non-angka.
+export type StageFieldColumn = { key:string; label:string; numeric?:boolean }
 export type StageField = {
   key:string
   label:string
-  type:'text'|'number'|'date'|'item-luas-table'|'item-nilai-table'|'pilihan'
+  type:'text'|'number'|'date'|'item-luas-table'|'item-nilai-table'|'item-table'|'pilihan'
   choices?: StageChoice[]
+  columns?: StageFieldColumn[]
 }
 export type WorkflowStage = { id:string; label:string; description:string; requirements:string[]; link?:string; confirmOnly?:boolean; confirmLabel?:string; fields?:StageField[] }
 export type Task = {

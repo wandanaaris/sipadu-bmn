@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useMemo, useState, type FormEvent } from 'react'
-import { Activity, Archive, ArrowLeft, BarChart3, Building2, CalendarDays, Check, CircleAlert, ClipboardCheck, Clock3, Database, ExternalLink, Eye, EyeOff, FileInput, FileSpreadsheet, FileText, Filter, KeyRound, LayoutDashboard, LockKeyhole, LogOut, Mail, Menu, Search, Settings, ShieldCheck, TrendingUp, Upload, Users, X } from 'lucide-react'
+import { Activity, Archive, ArrowLeft, BarChart3, Barcode, Building2, CalendarDays, Check, CircleAlert, ClipboardCheck, Clock3, Database, ExternalLink, Eye, EyeOff, FileInput, FileSpreadsheet, FileText, Filter, KeyRound, LayoutDashboard, LockKeyhole, LogOut, Mail, Menu, Search, Settings, ShieldCheck, TrendingUp, Upload, Users, X } from 'lucide-react'
 import { telaahRkbmn, satkers, statusLabel, type StageState, type Task, type TaskMethod, type TaskStatus, type WorkflowStage } from './data'
 import { finalTasks } from './finalTasks'
 import { countPendingVerifications, createOpenSubmission, createTask, documentPreviewUrl, loadSubmissions, loadTasks, persistAssignmentStatus, persistTaskActive, reviewStagedStage, reviewSubmission, submitLinkSubmission, submitStagedStage, transferSubmission, type SubmissionRecord } from './lib/repository'
@@ -10,6 +10,8 @@ import { sortSatkerWorkItems } from './taskSorting'
 import { StageFieldsForm, PspInfoPanel, AsetRusakPanel, readIsian, type IsianTahap } from './PemanfaatanFields'
 import { rincianKelengkapan, tingkatLencanaPemanfaatan, useUptScores, type UptScore } from './uptScore'
 import { DataCenterBmnPage, DetailPekerjaanPanel, ImporAsetPage, MonitoringSatkerPage, ProfilAsetDetail, ProfilAsetPage, TaskListPage } from './AdminPanels'
+import { LabelBmnPage } from './LabelBmnPage'
+import './label-bmn.css'
 import { BmnAssetInfographic } from './BmnAssetInfographic'
 import { loadBmnOverview, type BmnOverview } from './lib/bmnAssets'
 import './bmn-infographic.css'
@@ -23,7 +25,7 @@ import './workflow-layout.css'
 
 type View = 'admin' | 'satker'
 type FilterState = 'semua' | TaskStatus
-type AdminPage = 'summary' | 'executive' | 'monev' | 'tasks' | 'data' | 'impor' | 'akun-mitra' | 'verification' | 'archive' | 'performance' | 'settings'
+type AdminPage = 'summary' | 'executive' | 'monev' | 'tasks' | 'data' | 'label' | 'impor' | 'akun-mitra' | 'verification' | 'archive' | 'performance' | 'settings'
 
 const methodMeta: Record<TaskMethod,{label:string; Icon: typeof FileSpreadsheet}> = {
   spreadsheet:{label:'Spreadsheet eksternal',Icon:FileSpreadsheet},
@@ -131,9 +133,10 @@ function AdminView({tasks,dataSource,adminProfile,onLogout,onRefresh,filter,setF
   const [adminPage,setAdminPage]=useState<AdminPage>('summary')
   const [monevSatker,setMonevSatker]=useState<string|null>(null)
   const [showCreate,setShowCreate]=useState(false)
+  const [navBuka,setNavBuka]=useState(false)
   const [verify,setVerify]=useState(0)
   useEffect(()=>{let mounted=true;void loadSubmissions().then(items=>{if(mounted)setVerify(countPendingVerifications(items))}).catch(()=>{if(mounted)setVerify(0)});return()=>{mounted=false}},[tasks])
-  const pageTitle:Record<AdminPage,string>={summary:'Dashboard Korwil BMN',executive:'Ringkasan Pimpinan',monev:'Monitoring Satker',tasks:'Daftar Pekerjaan',data:'Data Center BMN',impor:'Impor Data Aset','akun-mitra':'Data Akun Mitra',verification:'Verifikasi Pekerjaan',archive:'Arsip Pekerjaan',performance:'Kinerja UPT',settings:'Pengaturan Portal'}
+  const pageTitle:Record<AdminPage,string>={summary:'Dashboard Korwil BMN',executive:'Ringkasan Pimpinan',monev:'Monitoring Satker',tasks:'Daftar Pekerjaan',data:'Data Center BMN',label:'Label Barcode BMN',impor:'Impor Data Aset','akun-mitra':'Data Akun Mitra',verification:'Verifikasi Pekerjaan',archive:'Arsip Pekerjaan',performance:'Kinerja UPT',settings:'Pengaturan Portal'}
   const active=tasks.filter(t=>t.active)
   const allAssignments=active.flatMap(t=>t.assignments.map(a=>({...a,task:t})))
   const stagedPendingCount=tasks.filter(t=>t.workflow==='staged-destruction'&&t.active).flatMap(t=>t.assignments.filter(a=>(a.stageStates??[]).includes('menunggu_verifikasi'))).length
@@ -141,27 +144,30 @@ function AdminView({tasks,dataSource,adminProfile,onLogout,onRefresh,filter,setF
   const avg=Math.round(allAssignments.reduce((s,a)=>s+a.progress,0)/(allAssignments.length||1))
   const filtered=allAssignments.filter(x=>(filter==='semua'||x.status===filter)&&`${x.task.title} ${satkers.find(s=>s.code===x.satker)?.name}`.toLowerCase().includes(query.toLowerCase()))
 
-  return <div className="admin-layout">
+  return <div className={`admin-layout${navBuka?' nav-buka':''}`}>
     <aside className="sidebar">
       <Brand/>
+      <button className="sidebar-tutup" aria-label="Tutup menu" onClick={()=>setNavBuka(false)}><X/></button>
       <nav>
-        <button className={adminPage==='summary'?'nav-active':''} onClick={()=>setAdminPage('summary')}><LayoutDashboard/>Ringkasan</button>
-        <button onClick={onOpenExec}><TrendingUp/>Ringkasan Pimpinan</button>
-        <button className={adminPage==='tasks'?'nav-active':''} onClick={()=>setAdminPage('tasks')}><ClipboardCheck/>Pekerjaan <span>{active.length}</span></button>
-        <button className={adminPage==='monev'?'nav-active':''} onClick={()=>{setMonevSatker(null);setAdminPage('monev')}}><Users/>Monitoring Satker</button>
-        <button className={adminPage==='data'?'nav-active':''} onClick={()=>setAdminPage('data')}><Database/>Data Center BMN</button>
-        <button className={adminPage==='impor'?'nav-active':''} onClick={()=>setAdminPage('impor')}><Upload/>Impor Data Aset</button>
-        <button className={adminPage==='akun-mitra'?'nav-active':''} onClick={()=>setAdminPage('akun-mitra')}><KeyRound/>Data Akun Mitra</button>
-        <button className={adminPage==='verification'?'nav-active':''} onClick={()=>setAdminPage('verification')}><ShieldCheck/>Verifikasi <span>{verify+stagedPendingCount}</span></button>
-        <button className={adminPage==='archive'?'nav-active':''} onClick={()=>setAdminPage('archive')}><Archive/>Arsip</button>
+        <button className={adminPage==='summary'?'nav-active':''} onClick={()=>{setAdminPage('summary');setNavBuka(false)}}><LayoutDashboard/>Ringkasan</button>
+        <button onClick={()=>{onOpenExec();setNavBuka(false)}}><TrendingUp/>Ringkasan Pimpinan</button>
+        <button className={adminPage==='tasks'?'nav-active':''} onClick={()=>{setAdminPage('tasks');setNavBuka(false)}}><ClipboardCheck/>Pekerjaan <span>{active.length}</span></button>
+        <button className={adminPage==='monev'?'nav-active':''} onClick={()=>{setMonevSatker(null);setAdminPage('monev');setNavBuka(false)}}><Users/>Monitoring Satker</button>
+        <button className={adminPage==='data'?'nav-active':''} onClick={()=>{setAdminPage('data');setNavBuka(false)}}><Database/>Data Center BMN</button>
+        <button className={adminPage==='label'?'nav-active':''} onClick={()=>{setAdminPage('label');setNavBuka(false)}}><Barcode/>Label Barcode</button>
+        <button className={adminPage==='impor'?'nav-active':''} onClick={()=>{setAdminPage('impor');setNavBuka(false)}}><Upload/>Impor Data Aset</button>
+        <button className={adminPage==='akun-mitra'?'nav-active':''} onClick={()=>{setAdminPage('akun-mitra');setNavBuka(false)}}><KeyRound/>Data Akun Mitra</button>
+        <button className={adminPage==='verification'?'nav-active':''} onClick={()=>{setAdminPage('verification');setNavBuka(false)}}><ShieldCheck/>Verifikasi <span>{verify+stagedPendingCount}</span></button>
+        <button className={adminPage==='archive'?'nav-active':''} onClick={()=>{setAdminPage('archive');setNavBuka(false)}}><Archive/>Arsip</button>
         <div className="nav-separator" />
-        <button className={adminPage==='performance'?'nav-active':''} onClick={()=>setAdminPage('performance')}><BarChart3/>Kinerja UPT</button>
-        <button className={adminPage==='settings'?'nav-active':''} onClick={()=>setAdminPage('settings')}><Settings/>Pengaturan</button>
+        <button className={adminPage==='performance'?'nav-active':''} onClick={()=>{setAdminPage('performance');setNavBuka(false)}}><BarChart3/>Kinerja UPT</button>
+        <button className={adminPage==='settings'?'nav-active':''} onClick={()=>{setAdminPage('settings');setNavBuka(false)}}><Settings/>Pengaturan</button>
       </nav>
       <div className="sidebar-foot"><div className="avatar">KB</div><div><strong>{adminProfile.displayName}</strong><span>{adminProfile.email}</span></div><button aria-label="Keluar Dashboard Korwil" onClick={()=>void onLogout()}><LogOut/></button></div>
     </aside>
+    {navBuka&&<button className="nav-backdrop" aria-label="Tutup menu (sentuh di luar)" onClick={()=>setNavBuka(false)}/>}
     <main className="main">
-      <header className="topbar"><button className="mobile-menu"><Menu/></button><div><h1>{pageTitle[adminPage]}</h1><p>20 Agustus 2026 · Sumber: {dataSource==='supabase'?'Database Supabase':'Data cadangan hasil sinkronisasi'}</p></div><div className="top-actions"><button className="ghost" onClick={()=>setView('satker')}><Building2/>Pratinjau Satker</button><button className="primary" onClick={()=>setShowCreate(true)}>+ Buat Pekerjaan</button></div></header>
+      <header className="topbar"><button className="mobile-menu" aria-label="Buka menu" aria-expanded={navBuka} onClick={()=>setNavBuka(v=>!v)}><Menu/></button><div><h1>{pageTitle[adminPage]}</h1><p>20 Agustus 2026 · Sumber: {dataSource==='supabase'?'Database Supabase':'Data cadangan hasil sinkronisasi'}</p></div><div className="top-actions"><button className="ghost" onClick={()=>setView('satker')}><Building2/>Pratinjau Satker</button><button className="primary" onClick={()=>setShowCreate(true)}>+ Buat Pekerjaan</button></div></header>
       {adminPage==='executive'&&<ExecutiveView tasks={tasks} onRefresh={onRefresh}/>}
       {adminPage==='summary'?<>
       <section className="metric-grid">
@@ -525,6 +531,7 @@ function AdminRouter({page,tasks,detail,setDetail,toggleTask,setMonev,onRefresh,
  if(page==='verification') return <><StagedVerificationSection tasks={tasks} onRefresh={onRefresh}/><SubmissionInbox onTasksChanged={onRefresh} tasks={tasks}/></>
  if(page==='performance') return <PerformanceView/>
 if(page==='data')return <DataCenterBmnPage onBukaSatker={setMonev}/>
+ if(page==='label')return <LabelBmnPage/>
  if(page==='impor')return <ImporAsetPage/>
 if(page==='archive') {const archived=tasks.filter(t=>!t.active);return <section className="panel admin-page"><div className="panel-head"><div><h2>Arsip pekerjaan</h2><p>Pekerjaan ditutup tetap tersimpan dan dapat dibuka kembali.</p></div></div>{archived.length===0?<EmptyState icon={Archive} title="Arsip masih kosong" text="Pekerjaan yang ditutup akan tersimpan di sini."/>:<div className="archive-grid">{archived.map(t=><article className="archive-card" key={t.id}><MethodIcon method={t.method}/><div><span>{t.due}</span><h3>{t.title}</h3><p>{t.letter}</p></div><button className="ghost" onClick={()=>toggleTask(t.id)}>Buka kembali</button></article>)}</div>}</section>}
  return null
@@ -677,7 +684,14 @@ function readStageStates(taskId: string, satker: string, count: number): StageSt
       const assignment = tasks.find(t => t.id === taskId)?.assignments.find(a => a.satker === satker)
       const raw = assignment?.stageStates as unknown
       const parsed = typeof raw === 'string' ? (JSON.parse(raw) as StageState[]) : (raw as StageState[] | undefined)
-      if (Array.isArray(parsed) && parsed.length === count) return parsed
+      // Selaraskan dengan jumlah tahap: entri berlebih dibuang, kekurangan
+      // ditambal "terkunci". Panjang yang tidak sama dulu membuat data
+      // server diabaikan seluruhnya.
+      if (Array.isArray(parsed) && parsed.length) {
+        const states = parsed.slice(0, count).map(s => (s ?? 'terkunci') as StageState)
+        while (states.length < count) states.push('terkunci')
+        return states
+      }
     } catch { /* Falls back to storage: local guard tetap berlaku. */ }
     return readStageStates(taskId, satker, count)
   }
@@ -712,7 +726,7 @@ function SatkerTaskDetail({item,onBack,flash,onRefresh}:{item:{task:Task;assignm
 }
 
 
-function StagedDestructionView({task,assignment,flash,onBack,onRefresh}:{task:Task;assignment:Task['assignments'][number];flash:(s:string)=>void;onBack:()=>void;onRefresh:()=>Promise<void>}){
+export function StagedDestructionView({task,assignment,flash,onBack,onRefresh}:{task:Task;assignment:Task['assignments'][number];flash:(s:string)=>void;onBack:()=>void;onRefresh:()=>Promise<void>}){
  const stages=task.stages??[]
  const usingSupabase=!!(assignment.stageStates&&assignment.stageStates.length===stages.length)
  const [previewStates,setPreviewStates]=useState<StageState[]>(()=>readStageStates(task.id,assignment.satker,stages.length))
@@ -721,6 +735,7 @@ function StagedDestructionView({task,assignment,flash,onBack,onRefresh}:{task:Ta
  const [isianTahap,setIsianTahap]=useState<IsianTahap>(()=>readIsian(task.id,assignment.satker))
  const isianStageLengkap=(stage:WorkflowStage)=>{for(const f of stage.fields??[]){if(f.type==='item-luas-table'){if(isianTahap.items.length===0)return false;if(isianTahap.items.some(x=>!x.nama.trim()||!x.luas.trim()))return false}
 else if(f.type==='item-nilai-table'){if(isianTahap.items.length===0)return false;if(isianTahap.items.some(x=>!x.nilai.trim()))return false}
+else if(f.type==='item-table'){const cols=f.columns??[];if(isianTahap.items.length===0)return false;if(isianTahap.items.some(x=>cols.some(c=>!String(x[c.key]??'').trim())))return false}
 else if(!String(isianTahap[f.key]??'').trim())return false}return true}
  const [submitting,setSubmitting]=useState(false)
  const accessTokenPromise: Promise<string|null> = (async()=>{

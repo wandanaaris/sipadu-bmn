@@ -1,0 +1,335 @@
+/* Halaman Label Barcode BMN — Korwil (satker 692507).
+   Mengikuti kosakata visual portal: palet (--blue/--green/--amber/--red +
+   varian -soft), panel, tabel generik, dan segmented control .filter-tab.
+   Sebelumnya halaman ini memakai warna Tailwind (#16a34a, #d97706) dan
+   chip sendiri sehingga tampil berbeda dari seluruh portal. */
+
+/* ── Rekap: tabel generik portal, bukan tabel versi sendiri ───────── */
+.label-rekap { margin-bottom: 1rem; }
+
+/* Judul kolom dibungkus, bukan dipotong — header terpotong separuh kata
+   membuat kolom tak bisa dikenali. */
+.label-rekap th { white-space: normal; overflow-wrap: break-word; line-height: 1.3; }
+
+/* Kolom sumber aset adalah kunci baris: tetap terbaca walau tabel
+   digulir mendatar di layar sempit. */
+.label-rekap th:first-child, .label-rekap td:first-child {
+  position: sticky; left: 0; z-index: 1;
+  min-width: 11rem; white-space: nowrap;
+  background: var(--panel);
+}
+.label-rekap th:first-child { background: #f8fafb; }
+
+/* Sel angka & pill tidak dibungkus agar tiap baris tetap satu tinggi. */
+.label-rekap td { white-space: nowrap; }
+
+/* Batas minimum tabel: di bawah ini baru digulir mendatar, bukan dipaksa
+   sampai tiap kolom gepeng dan teksnya terpotong. */
+.label-rekap .table-wrap table { min-width: 46rem; }
+
+/* ── Baris filter ────────────────────────────────────────────────── */
+.label-filter {
+  display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;
+  padding: 0.7rem 0.85rem; margin-bottom: 0.6rem;
+  border: 1px solid var(--border); border-radius: 10px; background: var(--card);
+}
+.label-search {
+  display: flex; align-items: center; gap: 0.4rem; flex: 1 1 260px;
+  border: 1px solid var(--border); border-radius: 8px; padding: 0.35rem 0.55rem;
+  color: var(--muted-foreground); background: transparent;
+}
+.label-search input { flex: 1; border: 0; background: transparent; color: var(--foreground); font-size: 0.85rem; outline: none; }
+.label-search button { border: 0; background: transparent; color: var(--muted-foreground); cursor: pointer; display: grid; place-items: center; padding: 0; }
+
+/* <select> bawaan peramban memotong teks panjang (mis. "Semua ruang baru"
+   jadi "baru") karena lebarnya ditentukan opsi terpanjang yang tersembunyi. */
+.label-filter select {
+  border: 1px solid var(--border); border-radius: 8px; padding: 0.4rem 0.55rem;
+  background: transparent; color: var(--foreground); font-size: 0.82rem;
+  flex: 0 1 auto; min-width: 11rem; max-width: 100%;
+}
+.label-filter select option { color: var(--foreground); background: var(--card); }
+
+/* Segmented control mengikuti pola .filter-tab portal: rel abu, pilihan
+   aktif menjadi kartu putih bertimbul. */
+.label-filter .chip-row { gap: 0; padding: 3px; border-radius: 8px; background: var(--muted); }
+.label-filter .chip {
+  cursor: pointer; border: 0; background: transparent; padding: 5px 12px;
+  border-radius: 6px; font-size: 0.76rem; color: var(--muted-foreground); white-space: nowrap;
+}
+.label-filter .chip:hover { color: var(--foreground); }
+.label-filter .chip-on {
+  background: var(--panel); color: var(--foreground); font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .08);
+}
+
+/* Pil stat di kepala panel TIDAK memakai .chip (itu milik segmented control),
+   tetapi pil status portal. Saat dipilih sebagai filter aktif, pil diberi
+   cincin aksen supaya tetap terbaca sebagai tombol terpilih. */
+.label-stat .status { cursor: pointer; border: 1px solid transparent; }
+.label-stat .status:hover { border-color: var(--accent); }
+.label-stat .status.stat-on { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+
+.label-hasil {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 0.78rem; color: var(--muted-foreground); margin-bottom: 0.4rem;
+}
+
+/* ── Stat di kepala panel: pakai bahasa status portal ────────────── */
+.label-stat { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+
+/* .status sudah punya bentuk pil portal (radius 12, huruf 9px kapital);
+   di sini hanya membesarkan sedikit agar terbaca di kepala panel. */
+.label-stat .status { font-size: 10px; padding: 5px 10px; gap: 6px; }
+.label-stat .status svg { width: 13px; height: 13px; }
+
+.label-warning {
+  display: flex; gap: 0.6rem; align-items: flex-start;
+  padding: 0.65rem 0.8rem; margin-bottom: 0.8rem;
+  border: 1px solid var(--amber); border-radius: 10px;
+  background: var(--amber-soft);
+  color: var(--foreground);
+}
+.label-warning svg { flex: none; margin-top: 0.1rem; color: var(--amber); }
+.label-warning strong { display: block; font-size: 0.84rem; }
+.label-warning p { margin: 0.2rem 0 0; font-size: 0.78rem; color: var(--muted-foreground); }
+.label-warning .pill { vertical-align: baseline; }
+
+.label-tabel table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+
+/* ── Badge asal aset ─────────────────────────────────────────────── */
+/* Tiap sumber dapat warna portal sendiri (biru/hijau/amber/merah/abu);
+   tes memastikan tak ada dua sumber berbagi kelas yang sama. */
+.asal-badge {
+  display: inline-flex; align-items: center; flex: none;
+  padding: 0.2rem 0.55rem; border-radius: 999px;
+  font-size: 0.68rem; font-weight: 700; letter-spacing: 0.02em;
+  white-space: nowrap; border: 1px solid transparent;
+}
+.asal-kemenkum { background: #ede9fe; color: #5b21b6; border-color: #c4b5fd; }
+.asal-rengat { background: var(--blue-soft); color: var(--blue); border-color: #a8cfe8; }
+.asal-bangkinang { background: var(--green-soft); color: var(--green); border-color: #a7d9c6; }
+.asal-bengkalis { background: var(--amber-soft); color: var(--amber); border-color: #e8c98a; }
+.asal-kanwil { background: #eef1f3; color: #4d5c6b; border-color: #d3dbe1; }
+.asal-lain { background: var(--muted); color: #fff; border-color: var(--border); }
+
+/* ── Kartu aset ──────────────────────────────────────────────────── */
+.label-kosong {
+  padding: 2rem 1rem; text-align: center; color: var(--muted-foreground);
+  border: 1px dashed var(--border); border-radius: 9px; font-size: 0.85rem;
+}
+.label-kartu-grid {
+  display: grid; gap: 0.75rem; margin-top: 0.6rem;
+  grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+}
+/* Kartu memakai bentuk panel portal: radius 9px, border --line, shadow halus. */
+.label-kartu {
+  display: flex; flex-direction: column; gap: 0.5rem;
+  padding: 0.8rem 0.9rem; border: 1px solid var(--line); border-radius: 9px;
+  background: var(--panel); box-shadow: var(--shadow);
+}
+/* Tepi kiri menandai status memakai warna status portal, bukan hijau/amber
+   Tailwind, supaya sejalan dengan pil status di seluruh portal. */
+.label-kartu.kartu-selesai { border-left: 3px solid var(--green); }
+.label-kartu.kartu-belum { border-left: 3px solid var(--amber); }
+.label-kartu.kartu-terbuka {
+  grid-column: 1 / -1;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+.kartu-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.6rem; }
+.kartu-judul { min-width: 0; }
+.kartu-judul h3 { margin: 0; font-size: 0.92rem; line-height: 1.3; }
+.kartu-judul p { margin: 0.15rem 0 0; font-size: 0.74rem; color: var(--muted-foreground); font-variant-numeric: tabular-nums; }
+
+.kartu-merk { display: flex; align-items: baseline; gap: 0.5rem; flex-wrap: wrap; font-size: 0.82rem; }
+.kartu-merk small { color: var(--muted-foreground); font-size: 0.72rem; }
+.merk-kosong { color: var(--amber); font-size: 0.78rem; font-style: italic; }
+
+.kartu-lokasi {
+  display: flex; align-items: center; gap: 0.35rem;
+  font-size: 0.78rem; color: var(--muted-foreground);
+}
+.kartu-lokasi svg { flex: none; }
+
+.kartu-tanda { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+.kartu-ket {
+  display: flex; gap: 0.35rem; align-items: flex-start;
+  margin: 0; padding: 0.4rem 0.55rem; border-radius: 8px;
+  background: var(--blue-soft);
+  font-size: 0.78rem; line-height: 1.4;
+}
+.kartu-ket svg { flex: none; margin-top: 0.15rem; color: var(--blue); }
+.kartu-petugas { margin: 0; font-size: 0.72rem; color: var(--muted-foreground); }
+
+.kartu-aksi { margin-top: auto; padding-top: 0.2rem; }
+.kartu-aksi .primary { width: 100%; justify-content: center; }
+
+.kartu-form {
+  display: grid; gap: 0.6rem; padding-top: 0.6rem;
+  border-top: 1px solid var(--border);
+  grid-template-columns: repeat(auto-fit, minmax(165px, 1fr));
+}
+.kartu-form > label { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.74rem; color: var(--muted-foreground); }
+.kartu-form input, .kartu-form textarea {
+  border: 1px solid var(--border); border-radius: 8px; padding: 0.42rem 0.55rem;
+  background: transparent; color: var(--foreground); font-size: 0.84rem; font-family: inherit;
+}
+.kartu-form textarea { resize: vertical; }
+.kartu-form .bantuan { color: var(--amber); font-size: 0.7rem; }
+.kartu-ket-form { grid-column: 1 / -1; }
+
+.kartu-cek {
+  grid-column: 1 / -1;
+  display: flex; flex-wrap: wrap; gap: 0.9rem;
+}
+.kartu-cek label {
+  flex-direction: row !important; align-items: center; gap: 0.4rem !important;
+  color: var(--foreground) !important; font-size: 0.8rem !important;
+}
+.kartu-cek input { width: 1rem; height: 1rem; accent-color: var(--accent); }
+
+.kartu-simpan { grid-column: 1 / -1; display: flex; gap: 0.5rem; }
+
+/* Pil memakai warna status portal; .pill-warn/ok tidak lagi mengacu hijau &
+   amber Tailwind agar konsisten dengan .status-* di seluruh portal. */
+.pill {
+  display: inline-flex; align-items: center; gap: 0.25rem;
+  padding: 0.12rem 0.45rem; border-radius: 999px;
+  font-size: 0.7rem; font-weight: 600; white-space: nowrap;
+}
+.pill-ok { background: var(--green-soft); color: var(--green); }
+.pill-warn { background: var(--amber-soft); color: var(--amber); }
+.pill-muted { background: #eef1f3; color: #4d5c6b; }
+/* Penanda "fisik sudah di Kanwil" — hasil ASP, bukan status pekerjaan. */
+.pill-fisik { background: var(--blue-soft); color: var(--blue); border: 1px solid #a8cfe8; }
+.muted { color: var(--muted-foreground); }
+
+/* ── Status selesai / belum: bentuk & warna pil status portal ─────── */
+.kartu-status { margin: 6px 0 0; }
+
+.status-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 11px; border-radius: 12px;
+  font-size: 12.5px; font-weight: 600;
+}
+.status-selesai { background: var(--green-soft); color: var(--green); }
+/* Catatan: .status-belum milik portal (abu #f1f2f4) sengaja TIDAK dipakai di
+   sini — di halaman label "belum" berarti pekerjaan menumpuk, jadi warnanya
+   amber seperti .status-verifikasi. Memakai .status-belum akan membuatnya abu
+   datar dan tidak berbeda dari status netral. Kelas ini dipakai bersama
+   .status (bentuk pil) sehingga tetap seragam dengan portal. */
+.label-kartu .status-belum, .label-stat .status-belum { background: var(--amber-soft); color: var(--amber); }
+
+/* ── Chip stat (foto / kondisi real) ─────────────────────────────── */
+.chip-belum { color: var(--amber); }
+.chip-selesai { color: var(--green); }
+.chip-ok { color: var(--green); }
+
+/* Baris progres mengikuti .progress-track portal. */
+.label-rekap .progress-track { width: 90px; height: 5px; background: #e8edf0; border-radius: 5px; overflow: hidden; flex: 1; }
+.label-rekap .progress-track i { display: block; height: 100%; background: var(--green); border-radius: 5px; }
+
+/* Baris keterangan tambahan di kartu (kondisi real). */
+.kartu-baris {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12.5px; color: var(--muted-foreground); margin-top: 6px;
+}
+
+/* Chip stat memakai warna status portal (amber untuk belum, hijau untuk selesai),
+   bukan #b45309 / #15803d gaya Tailwind. */
+.chip-belum { color: var(--amber); }
+.chip-selesai { color: var(--green); }
+.chip-ok { color: var(--green); }
+
+/* Chip TIDAK aktif: latar abu, teks harus putih. --muted dan
+   --muted-foreground dua-duanya #657484, jadi memakai var(--muted-foreground)
+   sebagai warna teks di atas var(--muted) menghasilkan rasio kontras 1:1 —
+   teks sewarna latar dan tak terbaca sama sekali. */
+.label-rekap .chip { background: #657484; color: #fff; }
+
+/* ── Foto bukti ─────────────────────────────────────────────── */
+.kartu-foto-form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.label-foto-judul { font-size: 12.5px; font-weight: 600; color: var(--muted-foreground); }
+
+.foto-ambil {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1.5px dashed var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--muted-foreground);
+  background: color-mix(in srgb, var(--muted) 35%, transparent);
+}
+
+.foto-ambil:hover { border-color: var(--accent); color: var(--foreground); }
+.foto-ambil input[type="file"] { display: none; }
+
+.foto-pratinjau { display: flex; gap: 10px; align-items: flex-start; }
+
+.foto-pratinjau img {
+  width: 96px;
+  height: 96px;
+  object-fit: cover;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+}
+
+.foto-info { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+
+.kartu-foto {
+  display: block;
+  margin-top: 8px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  text-decoration: none;
+  color: var(--muted-foreground);
+}
+
+.kartu-foto img { display: block; width: 100%; max-height: 190px; object-fit: cover; }
+
+.kartu-foto small {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 10px;
+  font-size: 11.5px;
+}
+
+.kartu-ket-fisik {
+  background: var(--blue-soft);
+  border: 1px solid #a8cfe8;
+  color: var(--blue);
+}
+.kartu-ket-fisik svg { color: var(--blue); }
+
+.label-drawer {
+  margin-top: 0.8rem; border: 1px solid var(--border); border-radius: 12px;
+  background: var(--card); padding: 0.9rem 1rem;
+}
+.label-drawer header { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; margin-bottom: 0.7rem; }
+.label-drawer h3 { margin: 0; font-size: 0.98rem; }
+.label-drawer header p { margin: 0.15rem 0 0; font-size: 0.76rem; color: var(--muted-foreground); }
+
+.label-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 0.7rem; }
+.label-form label { display: flex; flex-direction: column; gap: 0.28rem; font-size: 0.76rem; color: var(--muted-foreground); }
+.label-form input[type="text"], .label-form input:not([type]), .label-form input[type="date"], .label-form textarea {
+  border: 1px solid var(--border); border-radius: 8px; padding: 0.42rem 0.55rem;
+  background: transparent; color: var(--foreground); font-size: 0.84rem; font-family: inherit;
+}
+.label-form textarea { resize: vertical; }
+.label-cek { flex-direction: row !important; align-items: center; gap: 0.45rem !important; color: var(--foreground) !important; font-size: 0.82rem !important; }
+.label-cek input { width: 1rem; height: 1rem; accent-color: var(--accent); }
+.label-ket { grid-column: 1 / -1; }
+.label-drawer footer { display: flex; gap: 0.5rem; margin-top: 0.85rem; }

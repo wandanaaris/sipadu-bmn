@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import type { WorkflowStage } from './data'
 import { taskPemanfaatanBmn } from './dukmanTasks'
-import { isianLengkap, type IsianTahap, type ItemSewa } from './PemanfaatanFields'
+import { taskLaporServiceBmn } from './laporServiceData'
+import { isianLengkap, writeIsian, type IsianTahap, type ItemSewa } from './PemanfaatanFields'
 
 const stage = (id: string): WorkflowStage => taskPemanfaatanBmn.stages!.find(s => s.id === id)!
 
@@ -95,5 +96,52 @@ describe('Form isian Leveraging Pemanfaatan BMN', () => {
 
   it('fungsi isianLengkap tersedia untuk dipakai di tampilan', () => {
     expect(typeof isianLengkap).toBe('function')
+  })
+})
+
+describe('Tabel aset generik pada Lapor Service BMN', () => {
+  const taskId = taskLaporServiceBmn.id
+  const tahapLapor = () => taskLaporServiceBmn.stages![0]
+
+  const aset = (patch: Record<string, string> = {}) => ({
+    nama: 'Kendaraan Dinas Operasional',
+    kategori: 'Kendaraan',
+    keluhan: 'AC tidak dingin',
+    layanan: 'Perbaikan',
+    biaya: '1500000',
+    ...patch,
+  })
+
+  beforeEach(() => {
+    const store: Record<string, string> = {}
+    ;(globalThis as any).localStorage = {
+      getItem: (k: string) => store[k] ?? null,
+      setItem: (k: string, v: string) => { store[k] = v },
+      removeItem: (k: string) => { delete store[k] },
+      clear: () => { for (const k of Object.keys(store)) delete store[k] },
+    }
+  })
+
+  it('kolom tabel ditentukan konfigurasi tahap, bukan komponen', () => {
+    const field = tahapLapor().fields![0]
+    expect(field.type).toBe('item-table')
+    expect(field.columns!.map(c => c.key)).toEqual(['nama', 'kategori', 'keluhan', 'layanan', 'biaya'])
+    expect(field.columns!.filter(c => c.numeric).map(c => c.key)).toEqual(['biaya'])
+  })
+
+  it('isianLengkap menolak daftar aset kosong atau kolom yang bolong', () => {
+    writeIsian(taskId, '692308', { items: [] })
+    expect(isianLengkap(tahapLapor(), taskId, '692308')).toBe(false)
+    writeIsian(taskId, '692308', { items: [aset({ kategori: '' })] })
+    expect(isianLengkap(tahapLapor(), taskId, '692308')).toBe(false)
+    writeIsian(taskId, '692308', { items: [aset(), aset({ keluhan: '' })] })
+    expect(isianLengkap(tahapLapor(), taskId, '692308')).toBe(false)
+    writeIsian(taskId, '692308', { items: [aset(), aset({ nama: 'Genset Lapas' })] })
+    expect(isianLengkap(tahapLapor(), taskId, '692308')).toBe(true)
+  })
+
+  it('tabel luas bawaan tetap memakai kolom nama dan luas tanpa konfigurasi kolom', () => {
+    const itemsField = stage('cetak-dan-item').fields!.find(f => f.type === 'item-luas-table')!
+    expect(itemsField.columns).toBeUndefined()
   })
 })

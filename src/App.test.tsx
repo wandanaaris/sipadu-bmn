@@ -3,7 +3,7 @@ import '@testing-library/jest-dom/vitest'
 import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it } from 'vitest'
-import App, { AdminLogin, CreateTaskModal, OpenUploadForm } from './App'
+import App, { AdminLogin, CreateTaskModal, OpenUploadForm, StagedDestructionView } from './App'
 import type { Task } from './data'
 
 afterEach(() => cleanup())
@@ -78,4 +78,46 @@ describe('Portal Monitoring BMN MVP', () => {
     const spreadsheetLink = screen.getByRole('link', { name: /Buka spreadsheet/i })
     expect(spreadsheetLink).toHaveAttribute('href', 'https://docs.google.com/spreadsheets/d/14O64ETAtsMr_qfCdui_aP0Rr_e0gvzYL/edit?gid=1530083301#gid=1530083301')
   })
+
+  it('menu garis tiga membuka dan menutup sidebar di tampilan HP', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    const layout = document.querySelector('.admin-layout')!
+    const garisTiga = screen.getByRole('button', { name: 'Buka menu' })
+
+    // Awalnya laci tertutup — kelas nav-buka belum ada.
+    expect(layout.className).not.toContain('nav-buka')
+    expect(garisTiga).toHaveAttribute('aria-expanded', 'false')
+
+    // Tekan garis tiga → laci terbuka.
+    await user.click(garisTiga)
+    expect(layout.className).toContain('nav-buka')
+    expect(screen.getByRole('button', { name: 'Buka menu' })).toHaveAttribute('aria-expanded', 'true')
+
+    // Memilih satu menu langsung menutup laci lagi (tidak menutupi konten).
+    await user.click(screen.getByRole('button', { name: /^Pengaturan$/ }))
+    expect(layout.className).not.toContain('nav-buka')
+    expect(screen.getByRole('heading', { name: 'Pengaturan Portal', level: 1 })).toBeInTheDocument()
+  })
+
+  it('tombol tutup dan latar gelap menutup laci tanpa berpindah menu', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    const layout = document.querySelector('.admin-layout')!
+    await user.click(screen.getByRole('button', { name: 'Buka menu' }))
+    expect(layout.className).toContain('nav-buka')
+
+    await user.click(screen.getByRole('button', { name: 'Tutup menu' }))
+    expect(layout.className).not.toContain('nav-buka')
+    // Menu tidak berpindah — masih di Ringkasan.
+    expect(screen.getByRole('heading', { name: 'Dashboard Korwil BMN', level: 1 })).toBeInTheDocument()
+
+    // Menyentuh latar gelap di luar laci juga menutup, tanpa berpindah menu.
+    await user.click(screen.getByRole('button', { name: 'Buka menu' }))
+    expect(layout.className).toContain('nav-buka')
+    await user.click(screen.getByRole('button', { name: /sentuh di luar/ }))
+    expect(layout.className).not.toContain('nav-buka')
+    expect(screen.getByRole('heading', { name: 'Dashboard Korwil BMN', level: 1 })).toBeInTheDocument()
+  })
+
 })

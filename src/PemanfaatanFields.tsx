@@ -2,11 +2,13 @@ import { useMemo } from 'react'
 import { Plus, Trash2 } from 'lucide-react'
 import { belumPspSatker } from './pspData'
 import { asetSatker, kategoriLabel, type KategoriRusak } from './rusakBeratData'
-import type { WorkflowStage } from './data'
+import type { StageFieldColumn, WorkflowStage } from './data'
 
 // Data isian tahap disimpan satu paket per pekerjaan dan Satker, sehingga
 // isian Tahap II (nilai sewa) tetap menempel pada baris item dari Tahap I.
-export type ItemSewa = { nama: string; luas: string; nilai: string }
+// Kolom selain nama mengikuti konfigurasi StageField.columns (mis. daftar
+// aset pada Lapor Service BMN), ditandai lewat indeks string.
+export type ItemSewa = { nama: string; [key: string]: string }
 
 // Isian dikunci per kunci field agarapa pun (StageField.key) dapat ditambahkan
 // tanpa mengubah struktur tipe.
@@ -41,7 +43,9 @@ const rupiah = (value: number) =>
   'Rp ' + value.toLocaleString('id-ID', { maximumFractionDigits: 0 })
 
 const toNumber = (raw: string) => {
-  const cleaned = raw.replace(/[^\d]/g, '')
+  // Kolom generik bisa belum ada pada baris lama (mis. baris dibuat sebelum
+  // kolom angka ditambahkan), jadi nilai dibaca defensif.
+  const cleaned = String(raw ?? '').replace(/[^0-9]/g, '')
   return cleaned ? Number(cleaned) : 0
 }
 
@@ -76,7 +80,7 @@ export function StageFieldsForm({
 
   return (
     <div className="stage-fields">
-      {stage.fields.filter(f => f.type !== 'item-luas-table' && f.type !== 'item-nilai-table').map(field => (
+      {stage.fields.filter(f => f.type !== 'item-luas-table' && f.type !== 'item-nilai-table' && f.type !== 'item-table').map(field => (
         <label key={field.key} className="stage-field">
           <span>{field.label}</span>
           {field.type === 'pilihan' ? (
@@ -112,10 +116,11 @@ export function StageFieldsForm({
         </label>
       ))}
 
-      {stage.fields.filter(f => f.type === 'item-luas-table' || f.type === 'item-nilai-table').map(field => (
+      {stage.fields.filter(f => f.type === 'item-luas-table' || f.type === 'item-nilai-table' || f.type === 'item-table').map(field => (
         <ItemSewaTable
           key={field.key}
           withNilai={field.type === 'item-nilai-table'}
+          columns={field.type === 'item-table' ? field.columns : undefined}
           items={isian.items}
           onChange={updateItem}
           onAdd={addItem}
@@ -129,12 +134,14 @@ export function StageFieldsForm({
 function ItemSewaTable({
   items,
   withNilai,
+  columns,
   onChange,
   onAdd,
   onRemove,
 }: {
   items: ItemSewa[]
   withNilai: boolean
+  columns?: StageFieldColumn[]
   onChange: (index: number, patch: Partial<ItemSewa>) => void
   onAdd: () => void
   onRemove: (index: number) => void
@@ -146,6 +153,67 @@ function ItemSewaTable({
     }),
     [items],
   )
+
+  // Tabel generik: kolom ditentukan konfigurasi tahap (mis. daftar aset pada
+  // Lapor Service BMN). Rendering bawaan di bawah tetap untuk pemanfaatan.
+  if (columns?.length) {
+    return (
+      <div className="item-table">
+        <table>
+          <thead>
+            <tr>
+              {columns.map(c => (
+                <th key={c.key} className={c.numeric ? 'num' : undefined}>{c.label}</th>
+              ))}
+              <th className="act" aria-label="Aksi" />
+            </tr>
+          </thead>
+          <tbody>
+            {items.length === 0 && (
+              <tr>
+                <td colSpan={columns.length + 1} className="empty-row">Belum ada baris. Tekan Tambah baris.</td>
+              </tr>
+            )}
+            {items.map((item, index) => (
+              <tr key={index}>
+                {columns.map(c => (
+                  <td key={c.key} className={c.numeric ? 'num' : undefined}>
+                    <input
+                      type="text"
+                      inputMode={c.numeric ? 'numeric' : undefined}
+                      value={item[c.key] ?? ''}
+                      onChange={e => onChange(index, { [c.key]: c.numeric ? e.target.value.replace(/[^\d]/g, '') : e.target.value })}
+                    />
+                  </td>
+                ))}
+                <td className="act">
+                  <button type="button" className="icon-button" onClick={() => onRemove(index)} aria-label="Hapus baris">
+                    <Trash2 size={15} />
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+          {items.length > 0 && (
+            <tfoot>
+              <tr>
+                <th>Total</th>
+                {columns.slice(1).map(c => (
+                  <th key={c.key} className={c.numeric ? 'num' : undefined}>
+                    {c.numeric ? rupiah(items.reduce((n, i) => n + toNumber(i[c.key]), 0)) : ''}
+                  </th>
+                ))}
+                <th className="act" />
+              </tr>
+            </tfoot>
+          )}
+        </table>
+        <button type="button" className="ghost add-item" onClick={onAdd}>
+          <Plus size={15} /> Tambah baris
+        </button>
+      </div>
+    )
+  }
 
   return (
     <div className="item-table">
@@ -236,6 +304,11 @@ export function isianLengkap(stage: WorkflowStage, taskId: string, satker: strin
     if (field.type === 'item-nilai-table') {
       if (isian.items.length === 0) return false
       if (isian.items.some(i => !i.nilai.trim())) return false
+    }
+    if (field.type === 'item-table') {
+      const cols = field.columns ?? []
+      if (isian.items.length === 0) return false
+      if (isian.items.some(i => cols.some(c => !String(i[c.key] ?? '').trim()))) return false
     }
   }
   return true

@@ -212,7 +212,7 @@
 .stage-field input:focus,.item-table input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
 .item-table{border:1px solid var(--border);border-radius:10px;overflow:hidden}
 .item-table table{width:100%;border-collapse:collapse;font-size:.85rem}
-.item-table th{font-weight:600;font-size:.74rem;text-transform:uppercase;letter-spacing:.03em;color:var(--muted-foreground);text-align:left;padding:8px 10px;background:var(--muted);border-bottom:1px solid var(--border)}
+.item-table th{font-weight:600;font-size:.74rem;text-transform:uppercase;letter-spacing:.03em;color:#fff;text-align:left;padding:8px 10px;background:var(--muted);border-bottom:1px solid var(--border)}
 .item-table td{padding:6px 8px;border-bottom:1px solid var(--border);vertical-align:middle}
 .item-table tfoot th{padding:9px 10px;background:var(--muted);border-top:1px solid var(--border);font-size:.8rem;text-align:left}
 .item-table .num{text-align:right;white-space:nowrap}
@@ -232,7 +232,7 @@
 .ticket-panel-head{display:flex;align-items:center;gap:8px;padding:10px 13px;background:var(--muted);border-bottom:1px solid var(--border);font-size:.86rem}
 .ticket-panel-head svg{color:var(--muted-foreground);flex:none}
 .ticket-panel-note{margin:0;padding:9px 13px;font-size:.79rem;color:var(--muted-foreground);line-height:1.5;border-bottom:1px solid var(--border)}
-.ticket-panel-foot{display:flex;align-items:center;gap:7px;padding:10px 13px;background:var(--muted);border-top:1px solid var(--border);font-size:.8rem;color:var(--muted-foreground)}
+.ticket-panel-foot{display:flex;align-items:center;gap:7px;padding:10px 13px;background:var(--muted);border-top:1px solid var(--border);font-size:.8rem;color:#fff}
 .ticket-panel-foot svg{flex:none}
 .ticket-table{width:100%;border-collapse:collapse;font-size:.81rem}
 .ticket-table th{font-weight:600;font-size:.72rem;text-transform:uppercase;letter-spacing:.03em;color:var(--muted-foreground);text-align:left;padding:7px 11px;border-bottom:1px solid var(--border);background:color-mix(in srgb,var(--muted) 55%,transparent)}
@@ -267,7 +267,7 @@
 .reset-panel strong{font-size:.87rem}
 .reset-panel span{font-size:.77rem;color:var(--muted-foreground);line-height:1.5}
 .reset-panel-keys{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px}
-.reset-panel-keys code{font-size:.68rem;padding:2px 6px;border-radius:5px;background:var(--muted);color:var(--muted-foreground);font-family:ui-monospace,Menlo,Consolas,monospace}
+.reset-panel-keys code{font-size:.68rem;padding:2px 6px;border-radius:5px;background:var(--muted);color:#fff;font-family:ui-monospace,Menlo,Consolas,monospace}
 .reset-panel-keys em{font-size:.72rem;color:var(--muted-foreground);font-style:normal}
 button.danger{padding:7px 13px;border-radius:8px;border:1px solid var(--destructive);background:color-mix(in srgb,var(--destructive) 12%,transparent);color:var(--destructive);font-size:.8rem;font-weight:600;cursor:pointer}
 button.danger:disabled{opacity:.45;cursor:not-allowed}
@@ -281,15 +281,15 @@ button.danger:disabled{opacity:.45;cursor:not-allowed}
 .filter-cari{display:inline-flex;align-items:center;gap:6px;margin-left:auto;padding:6px 11px;border:1px solid var(--border);border-radius:8px;color:var(--muted-foreground)}
 .filter-cari input{border:0;background:transparent;outline:none;font-size:.8rem;width:190px;color:var(--foreground)}
 .chip-row{display:flex;gap:6px;flex-wrap:wrap}
-.chip{padding:3px 9px;border-radius:999px;background:var(--muted);font-size:.72rem;color:var(--muted-foreground)}
+.chip{padding:3px 9px;border-radius:999px;background:var(--muted);font-size:.72rem;color:#fff}
 .chip-ok{background:color-mix(in srgb,#16a34a 14%,transparent);color:#15803d}
 .chip-late{background:color-mix(in srgb,#d97706 14%,transparent);color:#b45309}
-.skor{display:inline-block;min-width:44px;padding:2px 8px;border-radius:999px;font-size:.74rem;font-weight:600;text-align:center;background:var(--muted);color:var(--muted-foreground)}
+.skor{display:inline-block;min-width:44px;padding:2px 8px;border-radius:999px;font-size:.74rem;font-weight:600;text-align:center;background:var(--muted);color:#fff}
 .skor.baik,.skor.selesai{background:color-mix(in srgb,#16a34a 14%,transparent);color:#15803d}
 .skor.berjalan,.skor.proses{background:color-mix(in srgb,#2563eb 14%,transparent);color:#1d4ed8}
 .skor.terlambat,.skor.perbaikan{background:color-mix(in srgb,#dc2626 14%,transparent);color:#b91c1c}
 .skor.verifikasi{background:color-mix(in srgb,#d97706 14%,transparent);color:#b45309}
-.skor.belum{background:var(--muted);color:var(--muted-foreground)}
+.skor.belum{background:var(--muted);color:#fff}
 .angka-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
 .angka{display:flex;gap:11px;align-items:flex-start;padding:12px 14px;border:1px solid var(--border);border-radius:10px;background:var(--muted)}
 .angka svg{color:var(--accent);flex:none;margin-top:2px}
@@ -299,7 +299,7 @@ button.danger:disabled{opacity:.45;cursor:not-allowed}
 .angka em{font-size:.73rem;color:var(--muted-foreground);font-style:normal}
 .tindakan-list{display:flex;flex-direction:column;gap:14px}
 .tindakan-grup h3{margin:0 0 7px;font-size:.83rem;display:flex;align-items:center;gap:7px}
-.tindakan-grup h3 span{font-size:.7rem;padding:1px 7px;border-radius:999px;background:var(--muted);color:var(--muted-foreground)}
+.tindakan-grup h3 span{font-size:.7rem;padding:1px 7px;border-radius:999px;background:var(--muted);color:#fff}
 .tindakan-grup ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:5px}
 .tindakan-grup li{display:flex;align-items:center;gap:10px;padding:8px 11px;border:1px solid var(--border);border-radius:8px}
 .tindakan-grup li svg{color:var(--muted-foreground);flex:none}
@@ -315,7 +315,7 @@ button.danger:disabled{opacity:.45;cursor:not-allowed}
 .prep-check label{display:flex;align-items:flex-start;gap:8px;font-size:.81rem;line-height:1.45;cursor:pointer}
 .prep-temuan,.prep-tindak{width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:8px;background:var(--background);color:var(--foreground);font-size:.82rem;font-family:inherit;resize:vertical}
 .prep-tanya{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:5px}
-.prep-tanya li{font-size:.78rem;padding:7px 10px;border-radius:7px;background:var(--muted);color:var(--muted-foreground)}
+.prep-tanya li{font-size:.78rem;padding:7px 10px;border-radius:7px;background:var(--muted);color:#fff}
 @media (max-width:900px){.prep-monev-body{grid-template-columns:1fr}.filter-cari{margin-left:0;width:100%}}
 
 /* -- Daftar Satker (kartu) ---------------------------- */
@@ -381,7 +381,7 @@ button.danger:disabled{opacity:.45;cursor:not-allowed}
 .verif-isi{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
 .verif-baris-atas{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
 .verif-baris-atas strong{font-size:.85rem}
-.verif-tahap{font-size:.7rem;padding:1px 8px;border-radius:999px;background:var(--muted);color:var(--muted-foreground)}
+.verif-tahap{font-size:.7rem;padding:1px 8px;border-radius:999px;background:var(--muted);color:#fff}
 .verif-isi p{margin:0;font-size:.76rem;color:var(--muted-foreground)}
 .verif-link{display:inline-flex;align-items:center;gap:4px;margin-top:3px;font-size:.73rem;color:var(--accent);text-decoration:none}
 .verif-aksi{display:flex;gap:7px;flex:none}
@@ -419,7 +419,7 @@ button.danger:disabled{opacity:.45;cursor:not-allowed}
 .info-hero-teks h2{margin:0;font-size:1.15rem;line-height:1.25}
 .info-hero-teks p{margin:2px 0 0;font-size:.78rem;color:var(--muted-foreground)}
 .info-hero-chip{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
-.info-hero-chip span{font-size:.72rem;color:var(--muted-foreground);padding:6px 11px;border-radius:999px;background:var(--muted);border:1px solid var(--border);white-space:nowrap}
+.info-hero-chip span{font-size:.72rem;color:#fff;padding:6px 11px;border-radius:999px;background:var(--muted);border:1px solid var(--border);white-space:nowrap}
 .info-hero-chip b{color:var(--foreground);font-size:.82rem}
 .info-dua{display:grid;grid-template-columns:1.25fr 1fr;gap:14px}
 @media (max-width:900px){.info-dua{grid-template-columns:1fr}}
@@ -552,7 +552,7 @@ button.danger:disabled{opacity:.45;cursor:not-allowed}
 .svr-tahap{font-size:.7rem;font-weight:600;color:var(--accent)}
 .svr-ident strong{font-size:.88rem;line-height:1.25}
 .svr-pekerjaan{font-size:.74rem;color:var(--muted-foreground)}
-.svp-chip{font-size:.68rem;padding:3px 10px;border-radius:999px;background:var(--muted);color:var(--muted-foreground);white-space:nowrap;flex:none}
+.svp-chip{font-size:.68rem;padding:3px 10px;border-radius:999px;background:var(--muted);color:#fff;white-space:nowrap;flex:none}
 .svr-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .svr-blok{border:1px solid var(--border);border-radius:10px;background:var(--muted);padding:11px 13px;min-width:0}
 .svr-blok h4{margin:0 0 8px;font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--muted-foreground)}
