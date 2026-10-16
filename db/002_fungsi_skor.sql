@@ -117,29 +117,36 @@ AS $function$
         + greatest(0, d.rb_c - coalesce(h.hapus_c,0)) )
         / nullif(d.total,0))::int) as skor_rb,
       greatest(0, 100 - round(100.0 * d.belum_psp / nullif(d.total,0))::int) as skor_psp,
-      -- Capaian Penghapusan: rata-rata rasio per kategori yang berlaku.
+      -- Capaian Penghapusan: yang sudah dihapus dibagi rusak berat yang pernah ada.
       -- Progres pemusnahan amunisi & non-amunisi TIDAK dihitung di sini
       -- karena sudah masuk Skor Kinerja Pekerjaan (penyelesaian & dorongan).
-      case when d.rb_a = 0 and d.rb_b = 0 and d.rb_c = 0 then 100
-           else round( (
-             coalesce(case when d.rb_a > 0 then 100.0 * least(d.rb_a, coalesce(h.hapus_a,0)) / d.rb_a end, 0)
-           + coalesce(case when d.rb_b > 0 then 100.0 * least(d.rb_b, coalesce(h.hapus_b,0)) / d.rb_b end, 0)
-           + coalesce(case when d.rb_c > 0 then 100.0 * least(d.rb_c, coalesce(h.hapus_c,0)) / d.rb_c end, 0)
-           ) / greatest(1, (case when d.rb_a > 0 then 1 else 0 end)
-                          + (case when d.rb_b > 0 then 1 else 0 end)
-                          + (case when d.rb_c > 0 then 1 else 0 end)) )::int
+      -- Dasar tetap: rusak berat yang pernah ada = sisa sekarang + yang sudah dihapus.
+      -- Tanpa ini, menyelesaikan penghapusan membuat barangnya hilang dari data master,
+      -- kategorinya keluar dari hitungan, dan nilai Satker justru jatuh ke 0.
+      -- Dihitung per barang, bukan rata-rata per kategori, supaya satu barang sisa
+      -- tidak memotong nilai barang yang sudah beres.
+      case when coalesce(d.rb_a,0) + coalesce(d.rb_b,0) + coalesce(d.rb_c,0)
+                + coalesce(h.hapus_a,0) + coalesce(h.hapus_b,0) + coalesce(h.hapus_c,0) = 0 then 100
+           else round(100.0
+             * (coalesce(h.hapus_a,0) + coalesce(h.hapus_b,0) + coalesce(h.hapus_c,0))
+             / (coalesce(d.rb_a,0) + coalesce(d.rb_b,0) + coalesce(d.rb_c,0)
+                + coalesce(h.hapus_a,0) + coalesce(h.hapus_b,0) + coalesce(h.hapus_c,0)))::int
       end as capaian_penghapusan,
       -- Capaian Pelepasan: basis nilai perolehan. Setiap Rp 1 miliar = 100 poin.
       least(100, round(coalesce(lg.lelang_nilai,0)::numeric / 10000000)::int) as capaian_pelepasan,
-      round(0.30 * coalesce(k.kelengkapan,0)
-          + 0.40 * (case when d.rb_a = 0 and d.rb_b = 0 and d.rb_c = 0 then 100
-                       else round( (
-                         coalesce(case when d.rb_a > 0 then 100.0 * least(d.rb_a, coalesce(h.hapus_a,0)) / d.rb_a end, 0)
-                       + coalesce(case when d.rb_b > 0 then 100.0 * least(d.rb_b, coalesce(h.hapus_b,0)) / d.rb_b end, 0)
-                       + coalesce(case when d.rb_c > 0 then 100.0 * least(d.rb_c, coalesce(h.hapus_c,0)) / d.rb_c end, 0)
-                         ) / greatest(1, (case when d.rb_a > 0 then 1 else 0 end)
-                                        + (case when d.rb_b > 0 then 1 else 0 end)
-                                        + (case when d.rb_c > 0 then 1 else 0 end)) )::int end)
+      -- Bobot: kelengkapan 55%, capaian penghapusan 15%, belum PSP 15%, pelepasan 15%.
+      -- Bobot penghapusan diturunkan karena Pelepasan Aset mengukur pekerjaan yang sama
+      -- dari sisi nilai, dan karena penghapusan bergantung pada SK Menteri serta jadwal
+      -- KPKNL yang di luar kendali Satker. Bobotnya dialihkan ke kelengkapan data,
+      -- satu-satunya komponen yang sepenuhnya dikerjakan Satker sendiri.
+      round(0.55 * coalesce(k.kelengkapan,0)
+          + 0.15 * (case when coalesce(d.rb_a,0) + coalesce(d.rb_b,0) + coalesce(d.rb_c,0)
+                          + coalesce(h.hapus_a,0) + coalesce(h.hapus_b,0) + coalesce(h.hapus_c,0) = 0
+                     then 100
+                     else round(100.0
+                       * (coalesce(h.hapus_a,0) + coalesce(h.hapus_b,0) + coalesce(h.hapus_c,0))
+                       / (coalesce(d.rb_a,0) + coalesce(d.rb_b,0) + coalesce(d.rb_c,0)
+                          + coalesce(h.hapus_a,0) + coalesce(h.hapus_b,0) + coalesce(h.hapus_c,0)))::int end)
           + 0.15 * greatest(0, 100 - round(100.0 * d.belum_psp / nullif(d.total,0))::int)
           + 0.15 * least(100, round(coalesce(lg.lelang_nilai,0)::numeric / 10000000)::int))::int as skor_kondisi
     from d left join k on k.satker_code = d.satker_code
