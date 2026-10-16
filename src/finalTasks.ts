@@ -217,10 +217,6 @@ export const finalTasks:Task[] = [
     letter:"Surat Kepala Biro BMN Nomor SEK.3-SA.01.01-3 tanggal 15 Oktober 2026",
     uploadLink:"https://drive.google.com/drive/folders/1_wcDX4XUIey0ubEHbniCUQIXekcBeyZ2?usp=drive_link",
     active:true, priority:"tinggi",
-    references:[
-      {label:"Folder Upload Data Dukung",url:"https://drive.google.com/drive/folders/1_wcDX4XUIey0ubEHbniCUQIXekcBeyZ2?usp=drive_link"},
-      {label:"Petunjuk Pengisian Formulir Biro BMN",url:"https://tinyurl.com/PendataanDokumenPenilaianBMN"},
-    ],
     assignments:satkers.map(s=>({
       satker:s.code,
       progress:0,
