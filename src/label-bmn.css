@@ -147,6 +147,12 @@
 .kartu-merk small { color: var(--muted-foreground); font-size: 0.72rem; }
 .merk-kosong { color: var(--amber); font-size: 0.78rem; font-style: italic; }
 
+/* Nilai perolehan + NUP lama (khusus Transfer Kanwil Kemenkum). */
+.kartu-nilai { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; font-size: 0.8rem; }
+.kartu-nilai-rp { color: var(--muted-foreground); font-variant-numeric: tabular-nums; }
+.kartu-nilai-rp strong { color: var(--foreground); }
+.pill-nup-lama { background: var(--blue-soft); color: var(--blue); border: 1px solid #a8cfe8; }
+
 .kartu-lokasi {
   display: flex; align-items: center; gap: 0.35rem;
   font-size: 0.78rem; color: var(--muted-foreground);

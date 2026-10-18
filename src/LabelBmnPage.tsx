@@ -27,6 +27,15 @@ import { kompresFoto, formatUkuran } from './kompresFoto'
 const SATKER = '692507'
 const NAMA_SATKER = 'Kanwil Ditjenpas Riau'
 
+/** Format nominal rupiah (disingkat untuk jutaan/miliaran). */
+function formatRupiah(n: number | null): string {
+  if (n == null || n === 0) return '—'
+  const v = Math.round(n)
+  if (v >= 1_000_000_000) return `Rp ${(v / 1_000_000_000).toLocaleString('id-ID', { maximumFractionDigits: 2 })} M`
+  if (v >= 1_000_000) return `Rp ${(v / 1_000_000).toLocaleString('id-ID', { maximumFractionDigits: 1 })} jt`
+  return `Rp ${v.toLocaleString('id-ID')}`
+}
+
 type StatusFilter = NonNullable<FilterLabel['status']>
 type Rekap = {
   total: number
@@ -327,6 +336,15 @@ export function LabelBmnPage() {
               <div className="kartu-merk">
                 {b.merk ? <span>{b.merk}</span> : <span className="merk-kosong">Merk belum ada</span>}
                 {b.kondisi && <small>Kondisi SIMAN: {b.kondisi}</small>}
+              </div>
+
+              <div className="kartu-nilai">
+                <span className="kartu-nilai-rp">Nilai: <strong>{formatRupiah(b.nilaiPerolehan)}</strong></span>
+                {b.sumber === 'Transfer Kanwil Kemenkum' && b.nupLama && (
+                  <span className="pill pill-nup-lama" title="NUP pada satker asal sebelum transfer ke Kanwil Ditjenpas; berbeda dari NUP saat ini.">
+                    <Tag size={12} /> NUP lama: {b.nupLama}
+                  </span>
+                )}
               </div>
 
               {b.kondisiReal && (

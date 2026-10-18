@@ -34,6 +34,8 @@ const baris = (sebagian: Partial<BarisLabel>): BarisLabel => ({
   statusBmn: 'Aktif',
   noPsp: '',
   tahunPerolehan: '2024-01-01',
+  nilaiPerolehan: 3_000_000,
+  nupLama: null,
   sumber: 'Transfer Kanwil Kemenkum',
   lokasiSimpan: '',
   labelTercetak: false,
@@ -168,6 +170,8 @@ describe('dariJsonb', () => {
       kodeRegister: 'E12B81F5C7FB6B7BE0531561F20ABCB6',
       kodeBarang: '3050201003', nup: '7', noPsp: 'SEK.3-PB.03.01-904',
       tahunPerolehan: '',
+      nilaiPerolehan: null,
+      nupLama: null,
       sumber: 'Eks Rupbasan Rengat',
     }))
   })
@@ -182,6 +186,30 @@ describe('dariJsonb', () => {
     expect(b.tahunPerolehan).toBe('2026-03-11')
     expect(b.kondisiReal).toBe('Rusak Ringan')
     expect(b.fotoUkuran).toBe(314572)
+  })
+
+  it('membaca nilai perolehan dan NUP lama (Transfer Kanwil Kemenkum)', () => {
+    const b = dariJsonb({
+      kodeBarang: '3050104001', nup: '10', namaBarang: 'Lemari Besi/Metal',
+      tahunPerolehan: '2018-05-01',
+      nilaiPerolehan: 3487000,
+      nupLama: '37',
+      sumber: 'Transfer Kanwil Kemenkum',
+    })
+    expect(b.nilaiPerolehan).toBe(3487000)
+    expect(b.nupLama).toBe('37')
+  })
+
+  it('NUP lama bernilai null bila kosong, dan nilai nol dibaca angka 0', () => {
+    const b = dariJsonb({
+      kodeBarang: '3050104003', nup: '3', namaBarang: 'Rak Besi',
+      tahunPerolehan: '2015-01-01',
+      nilaiPerolehan: 0,
+      nupLama: null,
+      sumber: 'Eks Rupbasan Rengat',
+    })
+    expect(b.nupLama).toBeNull()
+    expect(b.nilaiPerolehan).toBe(0)
   })
 
   it('membaca merk hasil pengisian terpisah dari merk SIMAN', () => {

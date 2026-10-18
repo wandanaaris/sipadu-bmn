@@ -33,6 +33,7 @@ const BARIS = [
     merkSimpan: '', merkTerisi: false,
     kondisi: 'Baik', kondisiReal: null, fotoUrl: null, fotoUkuran: null,
     statusBmn: 'Aktif', noPsp: '', tahunPerolehan: '2026-01-15',
+    nilaiPerolehan: 8823375, nupLama: '12',
     sumber: 'Transfer Kanwil Kemenkum', lokasiSimpan: 'Belum berlokasi',
     labelTercetak: false, sudahDitempel: false, tanggalTempel: null, petugas: null,
     sudahDiscan: false, ruangBaru: null, keterangan: null,
@@ -90,6 +91,14 @@ describe('LabelBmnPage', () => {
     // Muncul di tabel rekap DAN di baris aset — jadi diperiksa dengan getAllByText.
     expect(screen.getAllByText('Eks Rupbasan Bengkalis').length).toBeGreaterThan(0)
     expect(screen.getAllByText('Transfer Kanwil Kemenkum').length).toBeGreaterThan(0)
+  })
+
+  it('menampilkan nilai perolehan dan NUP lama pada aset transfer kemenkum', async () => {
+    render(<LabelBmnPage />)
+    await screen.findByText('3 aset')
+    // REG-C (Transfer Kanwil Kemenkum) membawa nilai 8.823.375 dan NUP lama 12.
+    expect(screen.getByText('Rp 8,8 jt')).toBeTruthy()   // strong di dalam .kartu-nilai-rp
+    expect(screen.getByText('NUP lama: 12')).toBeTruthy()
   })
 
   it('memperingatkan merk yang belum ada', async () => {

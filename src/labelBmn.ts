@@ -21,6 +21,10 @@ export type BarisLabel = {
   statusBmn: string
   noPsp: string
   tahunPerolehan: string
+  /** Nilai perolehan aset (Rp, dari SIMAN). */
+  nilaiPerolehan: number | null
+  /** NUP lama pada satker asal (khusus Transfer Kanwil Kemenkum, dari BA). */
+  nupLama: string | null
   sumber: string
   lokasiSimpan: string
   labelTercetak: boolean
@@ -157,6 +161,8 @@ export function dariJsonb(raw: unknown): BarisLabel {
     statusBmn: teks(r.statusBmn),
     noPsp: teks(r.noPsp),
     tahunPerolehan: teks(r.tahunPerolehan),
+    nilaiPerolehan: r.nilaiPerolehan === null || r.nilaiPerolehan === undefined ? null : Number(r.nilaiPerolehan),
+    nupLama: r.nupLama ? teks(r.nupLama) : null,
     sumber: teks(r.sumber),
     lokasiSimpan: teks(r.lokasiSimpan),
     labelTercetak: Boolean(r.labelTercetak),
