@@ -8,12 +8,13 @@ import { AkunMitraForm } from './AkunMitraForm'
 import { AkunMitraAdmin } from './AkunMitraAdmin'
 import { sortSatkerWorkItems } from './taskSorting'
 import { StageFieldsForm, PspInfoPanel, AsetRusakPanel, readIsian, type IsianTahap } from './PemanfaatanFields'
-import { rincianKelengkapan, tingkatLencanaPemanfaatan, useUptScores, type UptScore } from './uptScore'
+import { rincianKelengkapan, tingkatLencanaPemanfaatan, type UptScore } from './uptScore'
 import { DataCenterBmnPage, DetailPekerjaanPanel, ImporAsetPage, MonitoringSatkerPage, ProfilAsetDetail, ProfilAsetPage, TaskListPage } from './AdminPanels'
 import { LabelBmnPage } from './LabelBmnPage'
 import './label-bmn.css'
 import { BmnAssetInfographic } from './BmnAssetInfographic'
-import { loadBmnOverview, type BmnOverview } from './lib/bmnAssets'
+import { loadBmnOverview } from './lib/bmnAssets'
+import { ExecutiveView } from './ExecutivePage'
 import './bmn-infographic.css'
 
 
@@ -58,8 +59,10 @@ function App() {
   const [tasks,setTasks] = useState<Task[]>(finalTasks)
   const [dataSource,setDataSource] = useState<'supabase'|'fallback'>('fallback')
   const [adminFilter,setAdminFilter] = useState<FilterState>('semua')
-  const [query,setQuery] = useState('')
-  const [detail,setDetail] = useState<string | null>(null)
+  const [query, setQuery] = useState('')
+  const [detail, setDetail] = useState<string | null>(null)
+  const [adminPage,setAdminPage]=useState<AdminPage>('summary')
+  const [monevSatker,setMonevSatker]=useState<string|null>(null)
   const [toast,setToast] = useState('')
 
   useEffect(()=>{
@@ -104,9 +107,9 @@ function App() {
     {isProfilSatkerPath
       ? <ProfilAsetPage/>
       : execOpen
-      ? <ExecutivePublicPage tasks={tasks} onRefresh={refreshTasks} onBack={()=>setExecOpen(false)} setView={setView}/>
+      ? <ExecutivePublicPage tasks={tasks} onRefresh={refreshTasks} onBack={()=>setExecOpen(false)} setView={setView} onBukaSatker={(kode)=>{setExecOpen(false);setView('admin');setAdminPage('monev');setMonevSatker(kode)}}/>
       : view==='admin'
-      ? !authReady?<AuthLoading/>:adminProfile?<AdminView tasks={tasks} adminProfile={adminProfile} onLogout={handleLogout} onRefresh={refreshTasks} dataSource={dataSource} filter={adminFilter} setFilter={setAdminFilter} query={query} setQuery={setQuery} setView={setView} selectedSatker={selectedSatker} setSelectedSatker={setSelectedSatker} detail={detail} setDetail={setDetail} toggleTask={toggleTask} updateAssignment={updateAssignment} onOpenExec={()=>setExecOpen(true)}/>:<AdminLogin onBack={()=>setView('satker')} onSuccess={handleAdminLogin}/>
+      ? !authReady?<AuthLoading/>:adminProfile?<AdminView tasks={tasks} adminProfile={adminProfile} onLogout={handleLogout} onRefresh={refreshTasks} dataSource={dataSource} filter={adminFilter} setFilter={setAdminFilter} query={query} setQuery={setQuery} setView={setView} selectedSatker={selectedSatker} setSelectedSatker={setSelectedSatker} detail={detail} setDetail={setDetail} toggleTask={toggleTask} updateAssignment={updateAssignment} onOpenExec={()=>setExecOpen(true)} adminPage={adminPage} setAdminPage={setAdminPage} monevSatker={monevSatker} setMonevSatker={setMonevSatker}/>:<AdminLogin onBack={()=>setView('satker')} onSuccess={handleAdminLogin}/>
       : telaahOpen?<TelaahPublicPage onBack={()=>setTelaahOpen(false)} setView={setView}/>:<SatkerView tasks={tasks} selectedSatker={selectedSatker} setSelectedSatker={setSelectedSatker} setView={setView} detail={detail} setDetail={setDetail} flash={flash} onOpenTelaah={()=>setTelaahOpen(true)} onRefresh={refreshTasks}/>
     }
     {toast&&<div className="toast"><Check size={18}/>{toast}</div>}
@@ -129,9 +132,7 @@ type SharedProps={tasks:Task[];selectedSatker:string;setSelectedSatker:(v:string
 
 function Brand(){return <div className="brand"><div className="brand-logo-wrap"><img className="brand-logo" src={sipaduLogo} alt="Logo SIPADU BMN Ditjenpas Riau"/></div><div><strong>SIPADU BMN</strong><span>Ditjenpas Riau</span></div></div>}
 
-function AdminView({tasks,dataSource,adminProfile,onLogout,onRefresh,filter,setFilter,query,setQuery,setView,selectedSatker:_selectedSatker,setSelectedSatker:_setSelectedSatker,detail,setDetail,toggleTask,updateAssignment:_updateAssignment,onOpenExec}:SharedProps&{dataSource:'supabase'|'fallback';adminProfile:AdminProfile;onLogout:()=>Promise<void>;onRefresh:()=>Promise<void>;filter:FilterState;setFilter:(v:FilterState)=>void;query:string;setQuery:(v:string)=>void;toggleTask:(id:string)=>void;updateAssignment:(taskId:string,satker:string,status:TaskStatus)=>void;onOpenExec:()=>void}){
-  const [adminPage,setAdminPage]=useState<AdminPage>('summary')
-  const [monevSatker,setMonevSatker]=useState<string|null>(null)
+function AdminView({tasks,dataSource,adminProfile,onLogout,onRefresh,filter,setFilter,query,setQuery,setView,selectedSatker:_selectedSatker,setSelectedSatker:_setSelectedSatker,detail,setDetail,toggleTask,updateAssignment:_updateAssignment,onOpenExec,adminPage,setAdminPage,monevSatker,setMonevSatker}:SharedProps&{dataSource:'supabase'|'fallback';adminProfile:AdminProfile;onLogout:()=>Promise<void>;onRefresh:()=>Promise<void>;filter:FilterState;setFilter:(v:FilterState)=>void;query:string;setQuery:(v:string)=>void;toggleTask:(id:string)=>void;updateAssignment:(taskId:string,satker:string,status:TaskStatus)=>void;onOpenExec:()=>void;adminPage:AdminPage;setAdminPage:(v:AdminPage)=>void;monevSatker:string|null;setMonevSatker:(v:string|null)=>void}){
   const [showCreate,setShowCreate]=useState(false)
   const [navBuka,setNavBuka]=useState(false)
   const [verify,setVerify]=useState(0)
@@ -217,246 +218,10 @@ export function CreateTaskModal({onClose,onCreated}:{onClose:()=>void;onCreated:
  return <div className="drawer-backdrop create-backdrop"><section className="create-modal"><div className="drawer-head"><button onClick={onClose}><X/></button><span>Buat Pekerjaan Baru</span></div><form onSubmit={submit}><div className="create-grid"><label className="full">Nama pekerjaan<input required value={title} onChange={e=>setTitle(e.target.value)} placeholder="Contoh: Laporan Pengamanan Aset"/></label><label className="full">Deskripsi<textarea required value={description} onChange={e=>setDescription(e.target.value)} placeholder="Jelaskan tujuan dan data yang harus disampaikan"/></label><label>Metode<select value={method} onChange={e=>setMethod(e.target.value as TaskMethod)}><option value="upload">Unggah dokumen</option><option value="spreadsheet">Spreadsheet eksternal</option><option value="portal">Formulir portal</option></select></label><label>Tenggat<input type="date" value={dueDate} onChange={e=>setDueDate(e.target.value)}/></label><label className="full">Dasar surat<input value={sourceLetter} onChange={e=>setSourceLetter(e.target.value)}/></label>{method==='spreadsheet'&&<label className="full">Tautan spreadsheet<input type="url" required value={sourceUrl} onChange={e=>setSourceUrl(e.target.value)}/></label>}<label className="full">Requirement — satu dokumen/field per baris<textarea value={requirements} onChange={e=>setRequirements(e.target.value)}/></label></div><div className="target-head"><div><strong>Satker tujuan</strong><span>{targets.length} UPT dipilih</span></div><button type="button" className="text-button" onClick={()=>setTargets(targets.length===upt.length?[]:upt.map(s=>s.code))}>{targets.length===upt.length?'Batalkan semua':'Pilih semua'}</button></div><div className="target-grid">{upt.map(s=><label key={s.code}><input type="checkbox" checked={targets.includes(s.code)} onChange={()=>toggle(s.code)}/><span>{s.name}</span></label>)}</div>{error&&<div className="auth-message error">{error}</div>}<div className="create-actions"><button type="button" className="ghost" onClick={onClose}>Batal</button><button className="primary" disabled={loading}>{loading?'Membuat pekerjaan…':'Buat pekerjaan'}</button></div></form></section></div>
 }
 
-function ExecutiveView({tasks,onRefresh}:{tasks:Task[];onRefresh:()=>Promise<void>}){
-  const [overview,setOverview]=useState<BmnOverview|null>(null)
-  useEffect(()=>{let mounted=true;void loadBmnOverview().then(o=>{if(mounted)setOverview(o)});return()=>{mounted=false}},[])
-  const skorMap=useUptScores()
-  const skorList=[...skorMap.values()].sort((a,b)=>b.score-a.score)
-  const fmtNum=(n:number)=>Math.round(n).toLocaleString('id-ID')
-  const tanggalIndo=(iso:string)=>{const d=new Date(`${iso}T00:00:00`);return isNaN(d.getTime())?iso:d.toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})}
-  const totalRB=skorList.reduce((s,x)=>s+(x.rb_total||0),0)
-  const sisaRB=skorList.reduce((s,x)=>s+(x.rb_sisa||0),0)
-  const lelangBarang=skorList.reduce((s,x)=>s+(x.lelang_barang||0),0)
-  const lelangNilai=skorList.reduce((s,x)=>s+(x.lelang_nilai||0),0)
-  const lelangJual=skorList.reduce((s,x)=>s+(x.lelang_jual||0),0)
-  const rbDihapus=totalRB-sisaRB
-  const pctDihapus=totalRB>0?Math.min(100,Math.round((rbDihapus/totalRB)*100)):0
-  const rbPerSatker=skorList.filter(x=>x.rb_total>0).sort((a,b)=>b.rb_sisa-a.rb_sisa)
-  const lelangPerSatker=skorList.filter(x=>x.lelang_barang>0).sort((a,b)=>b.lelang_barang-a.lelang_barang)
-  const active=tasks.filter(t=>t.active)
-  const allAssignments=active.flatMap(t=>t.assignments.map(a=>({...a,task:t})))
-  const total=allAssignments.length
-  const done=allAssignments.filter(a=>['selesai','ditutup'].includes(a.status)).length
-  const notStarted=allAssignments.filter(a=>a.status==='belum').length
-  const inRevision=allAssignments.filter(a=>a.status==='perbaikan').length
-  const pendingVerify=allAssignments.filter(a=>a.status==='verifikasi'||a.status==='persetujuan').length
-  const avg=Math.round(allAssignments.reduce((s,a)=>s+a.progress,0)/(total||1))
-  const today=new Date()
-  const parseDue=(t:Task):Date|null=>{
-    if(t.dueDate)return new Date(`${t.dueDate}T23:59:59+07:00`)
-    return null
-  }
-  const withDue=active.filter(t=>parseDue(t)!==null).map(t=>({task:t,due:parseDue(t)!}))
-  const noDue=active.filter(t=>parseDue(t)===null)
-  const daysLeft=(d:Date)=>Math.ceil((d.getTime()-today.getTime())/86400000)
-  const taskStats=(t:Task)=>{
-    const doneCount=t.assignments.filter(a=>['selesai','ditutup'].includes(a.status)).length
-    const avgTask=Math.round(t.assignments.reduce((s,a)=>s+a.progress,0)/(t.assignments.length||1))
-    return{doneCount,avgTask}
-  }
-  const riskTasks=[...withDue].sort((a,b)=>a.due.getTime()-b.due.getTime()).filter(({task,due})=>{
-    const{avgTask}=taskStats(task)
-    return daysLeft(due)<14&&avgTask<100
-  })
-  const refresh=()=>{void onRefresh();void loadBmnOverview().then(setOverview)}
-  return <section className="exec-onepage">
-    <header className="exec-hero">
-      <div className="exec-hero-inner">
-        <span className="exec-kicker">SIPADU BMN · KANWIL DITJENPAS RIAU</span>
-        <h1>Progress Pekerjaan BMN <em>2026</em></h1>
-        <p className="exec-hero-sub">Ringkasan capaian pengelolaan Barang Milik Negara seluruh Unit Pelaksana Teknis Pemasyarakatan di Riau — data langsung dari portal, diperbarui otomatis.</p>
-        <div className="exec-hero-stats">
-          <div><strong>{active.length}</strong><span>Pekerjaan Aktif</span></div>
-          <div><strong>{avg}%</strong><span>Progress Keseluruhan</span></div>
-          <div><strong>{done}</strong><span>Penugasan Selesai</span></div>
-          <div><strong>{total}</strong><span>Total Penugasan</span></div>
-        </div>
-        <div className="exec-hero-actions">
-          <a className="exec-btn primary" href="#ringkasan">Lihat Ringkasan</a>
-          <a className="exec-btn" href="#pekerjaan">Daftar Pekerjaan</a>
-          <button className="exec-btn" onClick={refresh}>Muat Ulang Data</button>
-        </div>
-      </div>
-    </header>
-    <nav className="exec-nav">
-      <div className="exec-nav-inner">
-        <a href="#ringkasan">Ringkasan</a>
-        <a href="#posisi-bmn">Posisi BMN</a>
-        <a href="#penghapusan">Penghapusan</a>
-        <a href="#rupbasan">Eks-Rupbasan</a>
-        <a href="#pengamanan">Pengamanan</a>
-        <a href="#prioritas">Prioritas</a>
-        <a href="#pekerjaan">Pekerjaan</a>
-        <a href="#satker">Satker</a>
-      </div>
-    </nav>
-    <main className="exec-body">
-      <section id="ringkasan" className="exec-section">
-        <div className="exec-section-head"><span className="exec-kicker">RINGKASAN</span><h2>Capaian Saat Ini</h2></div>
-        <div className="exec-metrics">
-          <div className="exec-metric"><span>Pekerjaan Aktif</span><strong>{active.length}</strong><small>di {total} penugasan satker</small></div>
-          <div className="exec-metric good"><span>Selesai</span><strong>{done}</strong><small>dari {total} penugasan</small></div>
-          <div className="exec-metric warn"><span>Belum Dikerjakan</span><strong>{notStarted}</strong><small>perlu ditindaklanjuti satker</small></div>
-          <div className="exec-metric bad"><span>Perlu Perbaikan</span><strong>{inRevision}</strong><small>dikembalikan oleh Korwil</small></div>
-          <div className="exec-metric"><span>Menunggu Verifikasi</span><strong>{pendingVerify}</strong><small>antrean pemeriksaan Korwil</small></div>
-          <div className="exec-metric"><span>Progress Keseluruhan</span><strong>{avg}%</strong><small>rata-rata seluruh penugasan</small></div>
-        </div>
-      </section>
-
-      <section id="posisi-bmn" className="exec-section">
-        <div className="exec-section-head"><span className="exec-kicker">POSISI KESELURUHAN BMN</span><h2>Data Master Aset</h2><p className="exec-sub">{overview?`Posisi ${tanggalIndo(overview.snapshotDate)} · Sumber: ${overview.sourceFile}`:'Memuat data master aset…'}</p></div>
-        <div className="exec-table-wrap">
-          {overview?<table className="exec-data-table">
-            <thead><tr><th>No</th><th>Jenis BMN</th><th className="num">Jumlah</th><th className="num">Nilai (Rp)</th></tr></thead>
-            <tbody>
-              {[...overview.perJenis].sort((a,b)=>b.nilai-a.nilai).map((j,i)=><tr key={j.jenis}><td>{i+1}</td><td>{j.jenis}</td><td className="num">{fmtNum(j.jumlah)}</td><td className="num">{fmtNum(j.nilai)}</td></tr>)}
-            </tbody>
-            <tfoot><tr><th colSpan={2}>TOTAL</th><th className="num">{fmtNum(overview.totalAset)}</th><th className="num">{fmtNum(overview.totalNilai)}</th></tr></tfoot>
-          </table>:<p className="exec-empty">Data master aset sedang dimuat…</p>}
-        </div>
-        {overview&&<div className="exec-highlight-cards">
-          <div className="exec-highlight"><span>Total BMN</span><strong>{fmtNum(overview.totalAset)} unit</strong><small>{overview.jumlahJenis} jenis BMN · {overview.jumlahSatker} Satker</small></div>
-          <div className="exec-highlight warn"><span>Belum PSP</span><strong>{fmtNum(overview.tanpaPsp)} unit</strong><small>{((overview.tanpaPsp/(overview.totalAset||1))*100).toFixed(1).replace('.',',')}% dari total BMN</small></div>
-        </div>}
-      </section>
-
-      <section id="penghapusan" className="exec-section">
-        <div className="exec-section-head"><span className="exec-kicker">TINDAK LANJUT PENGHAPUSAN</span><h2>BMN Rusak Berat</h2><p className="exec-sub">Dihitung langsung dari data Master Aset dan register Penghapusan BMN di database</p></div>
-        <div className="exec-metrics">
-          <div className="exec-metric"><span>Total Rusak Berat</span><strong>{fmtNum(totalRB)}</strong><small>unit</small></div>
-          <div className="exec-metric good"><span>Sudah Dihapus</span><strong>{fmtNum(rbDihapus)}</strong><small>unit · {pctDihapus}%</small></div>
-          <div className="exec-metric bad"><span>Belum Dihapus</span><strong>{fmtNum(sisaRB)}</strong><small>unit tersisa</small></div>
-          <div className="exec-metric"><span>Tercatat Terjual Lelang</span><strong>{fmtNum(lelangBarang)}</strong><small>unit · nilai perolehan Rp {fmtNum(lelangNilai)}</small></div>
-        </div>
-        <div className="exec-progress-overview">
-          <div className="exec-prog-row"><span>Sudah Dihapus</span><div className="exec-prog-track"><i style={{width:`${pctDihapus}%`}}/></div><b>{pctDihapus}%</b></div>
-          <div className="exec-prog-row"><span>Belum Dihapus</span><div className="exec-prog-track belum"><i style={{width:`${100-pctDihapus}%`}}/></div><b>{100-pctDihapus}%</b></div>
-        </div>
-        {lelangPerSatker.length>0&&<><h3>Penghapusan Terjual Lelang (Register Database)</h3>
-        <div className="exec-table-wrap">
-          <table className="exec-data-table compact">
-            <thead><tr><th>Satker</th><th className="num">Barang</th><th className="num">Nilai Perolehan</th><th className="num">Hasil Jual</th><th>Dasar</th></tr></thead>
-            <tbody>
-              {lelangPerSatker.map(x=><tr key={x.satker}><td>{x.nama}</td><td className="num">{fmtNum(x.lelang_barang)} unit</td><td className="num">Rp {fmtNum(x.lelang_nilai)}</td><td className="num">Rp {fmtNum(x.lelang_jual)}</td><td>{x.lelang_sk} SK</td></tr>)}
-            </tbody>
-            <tfoot><tr><th>Total</th><th className="num">{fmtNum(lelangBarang)} unit</th><th className="num">Rp {fmtNum(lelangNilai)}</th><th className="num">Rp {fmtNum(lelangJual)}</th><th></th></tr></tfoot>
-          </table>
-        </div></>}
-        {rbPerSatker.length>0&&<><h3 style={{marginTop:24}}>Sisa Rusak Berat per Satker (Belum Dihapus)</h3>
-        <div className="exec-table-wrap">
-          <table className="exec-data-table compact">
-            <thead><tr><th>No</th><th>Satker</th><th className="num">Total Rusak Berat</th><th className="num">Sisa Belum Dihapus</th><th>Catatan</th></tr></thead>
-            <tbody>
-              {rbPerSatker.map((x,i)=><tr key={x.satker}><td>{i+1}</td><td>{x.nama}</td><td className="num">{fmtNum(x.rb_total)} unit</td><td className="num"><strong>{fmtNum(x.rb_sisa)} unit</strong></td><td>{x.rb_sisa===0?'selesai diproses':x.capaian_penghapusan>=100?'tercatat dihapus semua':'perlu pengajuan penghapusan'}</td></tr>)}
-            </tbody>
-            <tfoot><tr><th></th><th>Total Wilayah</th><th className="num"><strong>{fmtNum(totalRB)} unit</strong></th><th className="num"><strong>{fmtNum(sisaRB)} unit</strong></th><th>Data: register database</th></tr></tfoot>
-          </table>
-        </div></>}
-      </section>
-
-      <section id="rupbasan" className="exec-section">
-        <div className="exec-section-head"><span className="exec-kicker">ALIH STATUS RUPBASAN</span><h2>Aset Eks-Rupbasan Tidak Di-ASP ke Kejaksaan</h2><p className="exec-sub">Aset yang tidak di-ASP digunakan oleh Kanwil Ditjenpas Riau</p></div>
-        <div className="exec-table-wrap">
-          <table className="exec-data-table">
-            <thead><tr><th>Rupbasan</th><th className="num">Total Aset</th><th className="num">Di-ASP ke Kejaksaan</th><th className="num highlight-col">Tidak Di-ASP</th></tr></thead>
-            <tbody>
-              <tr><td>Rupbasan Bangkinang</td><td className="num">162 unit</td><td className="num">97 unit → Kejari Kampar</td><td className="num highlight-col"><strong>65 unit</strong></td></tr>
-              <tr><td>Rupbasan Rengat</td><td className="num">172 unit</td><td className="num">61 unit → Kejari Inhu</td><td className="num highlight-col"><strong>111 unit</strong></td></tr>
-              <tr><td>Rupbasan Bengkalis</td><td className="num">109 unit</td><td className="num">28 unit → Kejari Bengkalis</td><td className="num highlight-col"><strong>81 unit</strong></td></tr>
-            </tbody>
-            <tfoot><tr><th>Total</th><th className="num">443 unit</th><th className="num">186 unit</th><th className="num highlight-col"><strong>257 unit</strong></th></tr></tfoot>
-          </table>
-        </div>
-      </section>
-
-      <section id="pengamanan" className="exec-section">
-        <div className="exec-section-head"><span className="exec-kicker">PENGAMANAN ASET & PERSEDIAAN</span><h2>Situasi Terkini</h2></div>
-        <div className="exec-two-col">
-          <div className="exec-col">
-            <h3>Persediaan Usang & Rusak</h3>
-            <div className="exec-info-card">
-              <div className="exec-info-row"><span>Persediaan Usang</span><strong>Rp 1.153.624.047</strong><small>Seluruh satker sudah mengajukan permohonan persetujuan pemusnahan</small></div>
-              <div className="exec-info-row"><span>Persediaan Rusak</span><strong>Rp 27.275.680</strong><small>Proses pengajuan permohonan persetujuan penjualan</small></div>
-            </div>
-            <h3>Penggunaan Sementara</h3>
-            <div className="exec-info-card">
-              <div className="exec-info-row"><span>Bangunan Gudang Tertutup Permanen</span><small>Jl. Sialang Bungkuk, Sail, Tenayan Raya, Pekanbaru · 600 m² · Pengguna: Kejaksaan RI · Jangka 5 tahun · S-137/MK/KNL.0303/2026</small></div>
-            </div>
-            <h3>Penggunaan Bersama</h3>
-            <div className="exec-info-card">
-              <div className="exec-info-row"><span>Tanah Bangunan Kantor Pemerintahan</span><small>1.315 m² · S-149/MK/KNL.0303/2026</small></div>
-              <div className="exec-info-row"><span>Gedung Kantor Permanen</span><small>Jl. Sialang Bungkuk No. 2 · 340 m² · Eminen: Kemenimipas · Kolaborator: Kejaksaan RI · S-149/MK/KNL.0303/2026</small></div>
-            </div>
-          </div>
-          <div className="exec-col">
-            <h3>Perubahan Logo & Pengamanan</h3>
-            <div className="exec-checklist">
-              <div className="exec-check-item done"><span>✓</span><strong>Plang Pengamanan Aset (Tanah)</strong><small>Seluruh satker selesai</small></div>
-              <div className="exec-check-item done"><span>✓</span><strong>Papan Nama Rumah Negara</strong><small>Seluruh satker selesai</small></div>
-              <div className="exec-check-item done"><span>✓</span><strong>Logo Kendaraan Dinas Transpas</strong><small>Seluruh satker selesai</small></div>
-              <div className="exec-check-item done"><span>✓</span><strong>Logo Ambulance</strong><small>Seluruh satker selesai</small></div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section id="prioritas" className="exec-section">
-        <div className="exec-section-head"><span className="exec-kicker">PRIORITAS</span><h2>Tenggat Dekat &amp; Terlambat</h2></div>
-        {riskTasks.length===0&&<p className="exec-empty">Tidak ada pekerjaan dengan tenggat kurang dari 2 minggu yang belum selesai. 👍</p>}
-        {riskTasks.length>0&&<div className="exec-risk-list">{riskTasks.map(({task,due})=>{
-          const{doneCount,avgTask}=taskStats(task)
-          const dl=daysLeft(due)
-          const label=dl<0?`Lewat ${Math.abs(dl)} hari`:dl===0?'Hari ini':`${dl} hari lagi`
-          return <div className={`exec-risk-item ${dl<0?'overdue':dl<=7?'urgent':'soon'}`} key={task.id}>
-            <div className="exec-risk-title"><strong>{task.title}</strong><span>{task.assignments.length} satker · {doneCount} selesai</span></div>
-            <div className="exec-risk-due"><b>{label}</b><small>{task.due}</small></div>
-            <div className="exec-risk-bar"><i style={{width:`${avgTask}%`}}/></div>
-          </div>})}
-        </div>}
-      </section>
-      <section id="pekerjaan" className="exec-section">
-        <div className="exec-section-head"><span className="exec-kicker">PEKERJAAN</span><h2>Wajib Selesai Sebelum Akhir 2026</h2></div>
-        <div className="exec-cards">
-          {withDue.sort((a,b)=>a.due.getTime()-b.due.getTime()).map(({task})=>{
-            const{doneCount,avgTask}=taskStats(task)
-            const dl=daysLeft(parseDue(task)!)
-            return <article className={`exec-card ${dl<0&&avgTask<100?'overdue':''}`} key={task.id}>
-              <div className="exec-card-top"><strong>{task.title}</strong><span className="exec-card-due">{task.due}</span></div>
-              <div className="exec-progress"><i style={{width:`${avgTask}%`}}/><span>{avgTask}%</span></div>
-              <div className="exec-card-meta"><span>{doneCount}/{task.assignments.length} satker selesai</span>{dl>=0?<small className="exec-days">{dl} hari lagi</small>:<small className="exec-days overdue-text">lewat {Math.abs(dl)} hari</small>}</div>
-              <p className="exec-card-desc">{task.description}</p>
-            </article>})}
-          {noDue.map(task=>{
-            const{doneCount,avgTask}=taskStats(task)
-            return <article className="exec-card nodue" key={task.id}>
-              <div className="exec-card-top"><strong>{task.title}</strong><span className="exec-card-due">{task.due}</span></div>
-              <div className="exec-progress"><i style={{width:`${avgTask}%`}}/><span>{avgTask}%</span></div>
-              <div className="exec-card-meta"><span>{doneCount}/{task.assignments.length} satker selesai</span><small className="exec-days">tanpa tenggat pasti</small></div>
-              <p className="exec-card-desc">{task.description}</p>
-            </article>})}
-        </div>
-      </section>
-      <section id="satker" className="exec-section">
-        <div className="exec-section-head"><span className="exec-kicker">SATKER</span><h2>Peringkat Penyelesaian</h2></div>
-        <div className="exec-rank-list">
-          {skorList.map((x,i)=><div className="exec-rank-item" key={x.satker}>
-            <span className={`exec-rank-num ${i<3?'top':''}`}>{i+1}</span>
-            <div className="exec-rank-copy"><strong>{x.nama}</strong><span>{x.selesai}/{x.total} pekerjaan selesai · Kinerja {Math.round(x.skorKinerja)} · Kondisi {Math.round(x.skorKondisi)}</span></div>
-            <div className="exec-progress"><i style={{width:`${x.score}%`}}/><span>{Math.round(x.score)}</span></div>
-          </div>)}
-        </div>
-      </section>
-    </main>
-    <footer className="exec-footer">
-      <p>Sumber data: database Portal SIPADU BMN Kanwil Ditjenpas Riau{overview?` — Master Aset posisi ${tanggalIndo(overview.snapshotDate)}`:''}. Angka diperbarui otomatis setiap impor aset, pengisian register, atau verifikasi pekerjaan.</p>
-    </footer>
-  </section>
-}
-
-function ExecutivePublicPage({tasks,onRefresh,onBack,setView}:{tasks:Task[];onRefresh:()=>Promise<void>;onBack:()=>void;setView:(v:View)=>void}){
+function ExecutivePublicPage({tasks,onRefresh,onBack,setView,onBukaSatker}:{tasks:Task[];onRefresh:()=>Promise<void>;onBack:()=>void;setView:(v:View)=>void;onBukaSatker?:(kode:string)=>void}){
   return <div className="exec-public">
     <header className="landing-header"><Brand/><div className="landing-header-actions"><button className="ghost" onClick={onBack}><ArrowLeft/>Kembali</button><button className="ghost" onClick={()=>setView('admin')}><LockKeyhole/>Dashboard Korwil</button></div></header>
-    <ExecutiveView tasks={tasks} onRefresh={onRefresh}/>
+    <ExecutiveView tasks={tasks} onRefresh={onRefresh} onBukaSatker={onBukaSatker}/>
   </div>
 }
 

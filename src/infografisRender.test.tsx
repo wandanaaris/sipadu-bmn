@@ -58,7 +58,7 @@ const waitForWkt = (fn: () => void) => waitFor(fn, { timeout: 8000 })
 describe('Halaman Monitoring Satker (satu tampilan)', () => {
   it('menampilkan seluruh bagian dari atas ke bawah setelah Satker dipilih', async () => {
     render(<MonitoringSatkerPage tasks={[tugasPalsu()]} kodeAwal={kode} />)
-    await waitForWkt(() => expect(document.querySelectorAll('.pa-kategori').length).toBeGreaterThan(0))
+    await waitForWkt(() => expect(document.querySelectorAll('.ms2-aset').length).toBeGreaterThan(0))
 
     // Bagian 1 — hero + kartu aset (tanpa judul, mengikuti Profil Aset Satker)
     expect(screen.getByText(/Data SIMAN snapshot 30 September 2026/i)).toBeTruthy()
@@ -67,27 +67,27 @@ describe('Halaman Monitoring Satker (satu tampilan)', () => {
     expect(screen.getByText(/Komposisi status pekerjaan/i)).toBeTruthy()
     // Bagian 3 — daftar pekerjaan + tombol salin
     // Klik kartu aset -> tabel muncul di tempat (bukan pindah halaman)
-    await waitForWkt(() => expect(document.querySelectorAll('.pa-kategori').length).toBeGreaterThan(0))
-    const kartuTanah = [...document.querySelectorAll('.pa-kategori')]
+    await waitForWkt(() => expect(document.querySelectorAll('.ms2-aset').length).toBeGreaterThan(0))
+    const kartuTanah = [...document.querySelectorAll('.ms2-aset')]
       .find(k => k.textContent?.includes('Tanah')) as HTMLElement
     kartuTanah.click()
-    await waitForWkt(() => expect(document.querySelector('.pa-tabel-panel')).toBeTruthy())
+    await waitForWkt(() => expect(document.querySelector('.ms2-table-wrap')).toBeTruthy())
     expect(screen.getAllByText('Tanah Kantor').length).toBeGreaterThan(0)
 
     // Kartu aset yang perlu perhatian bisa diklik, angka diambil dari database
-    expect(document.querySelectorAll('.pt-kartu').length).toBe(4)
+    expect(document.querySelectorAll('.ms2-pt').length).toBe(4)
     await waitForWkt(() => expect(screen.getAllByText('Rusak Berat A').length).toBeGreaterThan(0))
     // Angka rusak berat diambil dari rekap database, bukan angka tetap di komponen.
     // Rumus dan sumber angkanya diuji terpisah di uptScore/adminMetrics.
-    await waitForWkt(() => expect(document.querySelectorAll('.pt-kartu')[1]?.textContent).toContain('Rusak Berat A'))
-    const kartuRusak = document.querySelectorAll('.pt-kartu')[1]?.textContent ?? ''
+    await waitForWkt(() => expect(document.querySelectorAll('.ms2-pt')[1]?.textContent).toContain('Rusak Berat A'))
+    const kartuRusak = document.querySelectorAll('.ms2-pt')[1]?.textContent ?? ''
     expect(kartuRusak).toMatch(/\d[\d.]*/)
 
     expect(screen.getAllByRole('heading', { name: /Pekerjaan belum selesai/i }).length).toBeGreaterThan(0)
     expect(screen.getAllByRole('heading', { name: /Pekerjaan selesai/i }).length).toBeGreaterThan(0)
     // Hero & kartu memakai kelas yang SAMA dengan halaman Profil Aset Satker
-    expect(document.querySelectorAll('.pa-hero').length).toBe(1)
-    expect(document.querySelectorAll('.pa-kategori').length).toBeGreaterThan(0)
+    expect(document.querySelectorAll('.ms2-hero').length).toBe(1)
+    expect(document.querySelectorAll('.ms2-aset').length).toBeGreaterThan(0)
     expect(document.querySelector('.info-hero')).toBeNull()
     expect(document.querySelector('.pg-kartu')).toBeNull()
     expect(screen.getAllByText(/Salin pesan/i).length).toBeGreaterThan(0)

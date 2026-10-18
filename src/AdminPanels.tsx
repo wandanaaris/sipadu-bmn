@@ -324,52 +324,44 @@ function DaftarSatker({ tasks, onPilih }: { tasks: Task[]; onPilih: (kode: strin
   const skorUpt = useUptScores()
   const cariAktif = cari.trim().toLowerCase()
   const hasil = baris.filter(b => `${b.namaSatker} ${b.kodeSatker}`.toLowerCase().includes(cariAktif))
-
+  const rataSkor = Math.round(hasil.reduce((s, b) => s + (skorUpt.get(b.kodeSatker)?.score ?? 0), 0) / (hasil.length || 1))
   return (
-    <section className="panel admin-page">
-      <div className="panel-head">
+    <section className="ms2">
+      <header className="ms2-head">
         <div>
           <h2>Monitoring Satker</h2>
-          <p>{cariAktif ? `${hasil.length} dari ${baris.length} Satker cocok dengan "${cari.trim()}"` : `${baris.length} Satker. Klik kartu untuk melihat infografis Satker.`}</p>
+          <p>{baris.length} Satker · rata-rata skor UPT {rataSkor} · klik kartu untuk detail</p>
         </div>
-        <label className="filter-cari">
+        <label className="ms2-cari">
           <Search size={15} />
-          <input
-            value={cari}
-            onChange={e => setCari(e.target.value)}
-            placeholder="Cari nama atau kode Satker…"
-            aria-label="Cari Satker"
-          />
-          {cari && (
-            <button type="button" className="filter-cari-x" onClick={() => setCari('')} aria-label="Bersihkan pencarian">
-              <X size={13} />
-            </button>
-          )}
+          <input value={cari} onChange={e => setCari(e.target.value)} placeholder="Cari nama atau kode Satker…" aria-label="Cari Satker" />
+          {cari && <button type="button" onClick={() => setCari('')} aria-label="Bersihkan"><X size={13} /></button>}
         </label>
-      </div>
-      <div className="ms-grid">
+      </header>
+      <div className="ms2-grid">
         {hasil.map(b => {
-          // Angka utama = Skor UPT, sumbernya sama dengan menu Kinerja UPT.
           const upt = skorUpt.get(b.kodeSatker)
           const skor = upt?.score ?? 0
-          const tone = skor >= 80 ? 'hijau' : skor >= 50 ? 'kuning' : 'merah'
+          const tone = skor >= 80 ? 'ijo' : skor >= 50 ? 'kuning' : 'merah'
           return (
-            <button className="ms-kartu" key={b.kodeSatker} onClick={() => onPilih(b.kodeSatker)}>
-              <div className="ms-ikon"><Building2 size={18} /></div>
-              <div className="ms-teks">
-                <span className="ms-kode">{b.kodeSatker}</span>
-                <strong className="ms-nama">{b.namaSatker}</strong>
-                <div className="ms-bar"><i style={{ width: `${upt?.penyelesaian ?? 0}%` }} /></div>
+            <button className="ms2-kartu" key={b.kodeSatker} onClick={() => onPilih(b.kodeSatker)}>
+              <div className="ms2-kartu-atas">
+                <div className="ms2-ident">
+                  <span className="ms2-kode">{b.kodeSatker}</span>
+                  <strong className="ms2-nama">{b.namaSatker}</strong>
+                </div>
+                <div className={`ms2-skor ${tone}`}><b>{skor}</b><span>skor UPT</span></div>
               </div>
-              <div className={`ms-skor ${tone}`}>
-                <b>{skor}</b>
-                <span>skor UPT</span>
+              <div className="ms2-bar"><i style={{ width: `${upt?.penyelesaian ?? 0}%` }} /></div>
+              <div className="ms2-meta">
+                <span>{upt?.selesai ?? 0}/{upt?.total ?? 0} tugas selesai</span>
+                <span>{upt?.belum_psp ?? 0} belum PSP</span>
               </div>
             </button>
           )
         })}
       </div>
-      {hasil.length === 0 && <p className="kosong">Satker tidak ditemukan.</p>}
+      {hasil.length === 0 && <p className="ms2-kosong">Satker tidak ditemukan.</p>}
     </section>
   )
 }
@@ -620,154 +612,119 @@ function InfografisSatker({ tasks, kodeSatker, onKembali }: { tasks: Task[]; kod
     { label: 'Verifikasi', nilai: baris?.menungguVerifikasi ?? 0, warna: '#0ea5e9' },
   ]
 
-  return (
-    <div className="pa-halaman">
-      {/* Hero & kartu aset — sama persis dengan halaman Profil Aset Satker */}
-      <section className="pa-hero">
-        <button className="pa-hero-back" onClick={onKembali}><ArrowLeft size={13} /> Kembali ke daftar Satker</button>
-        <div className="pa-hero-baris">
-          <div className="pa-hero-ikon"><Building2 size={26} /></div>
-          <div className="pa-hero-teks">
+    return (
+    <div className="ms2-detail">
+      <section className="ms2-hero">
+        <button className="ms2-back" onClick={onKembali}><ArrowLeft size={13} /> Kembali ke daftar Satker</button>
+        <div className="ms2-hero-baris">
+          <div className="ms2-hero-ikon"><Building2 size={26} /></div>
+          <div className="ms2-hero-teks">
             <h2>{nama}</h2>
             <p>Kode {kodeSatker} · Data SIMAN snapshot 30 September 2026</p>
           </div>
         </div>
-        <div className="pa-hero-stats">
-          <div className="pa-stat"><b>{totalAset.toLocaleString('id-ID')}</b><span>Total aset</span></div>
-          <div className="pa-stat"><b>{formatRupiah(totalNilaiAset)}</b><span>Total nilai perolehan</span></div>
-          <div className="pa-stat"><b>{kartuAset.reduce((n, k) => n + k.tanpa_psp, 0)}</b><span>Belum PSP</span></div>
+        <div className="ms2-hero-stats">
+          <div><b>{totalAset.toLocaleString('id-ID')}</b><span>Total aset</span></div>
+          <div><b>{formatRupiah(totalNilaiAset)}</b><span>Total nilai perolehan</span></div>
+          <div><b>{kartuAset.reduce((n, k) => n + k.tanpa_psp, 0)}</b><span>Belum PSP</span></div>
         </div>
       </section>
-      {salin !== 'idle' && (
-        <div className={`info-toast ${salin}`} role="status">
-          {salin === 'ok' ? 'Pesan tersalin — siap ditempel di WhatsApp.' : 'Gagal menyalin. Pilih teksnya secara manual.'}
-        </div>
-      )}
 
-      {/* Kartu jenis aset — kelas yang sama dengan halaman Profil Aset Satker */}
+      {salin !== 'idle' && <div className={`ms2-toast ${salin}`} role="status">{salin === 'ok' ? 'Pesan tersalin — siap ditempel di WhatsApp.' : 'Gagal menyalin. Pilih teksnya secara manual.'}</div>}
+
       {kartuAset.length === 0
-        ? <p className="pa-loading">Memuat data aset…</p>
-        : <div className="pa-kategori-grid">
-            {kartuAset.map((k, idx) => {
-              const Ikon = k.Ikon
-              const isAktif = kategoriAktif === k.jenis
-              return (
-                <button
-                  key={k.jenis}
-                  className={`pa-kategori ${kategoriAktif === k.jenis ? 'pa-kategori-aktif' : ''}`}
-                  style={{ animationDelay: `${idx * 70}ms`, ['--pa-warna' as never]: k.warna }}
-                  onClick={() => setKategoriAktif(isAktif ? null : k.jenis)}
-                >
-                  <i className="pa-kategori-bar" />
-                  <div className="pa-kategori-atas">
-                    <div className="pa-kategori-ikon"><Ikon size={20} /></div>
-                    {k.tanpa_psp > 0 && <span className="pa-badge-merah">{k.tanpa_psp} tanpa PSP</span>}
-                  </div>
-                  <strong className="pa-kategori-label">{k.label}</strong>
-                  <b className="pa-kategori-jumlah">{k.jumlah.toLocaleString('id-ID')}<span> aset</span></b>
-                  <div className="pa-kategori-rinci">
-                    <span>{k.luas > 0 ? formatLuas(k.luas) : '—'}</span>
-                    <span className="pa-kategori-nilai">{k.nilai > 0 ? formatRupiah(k.nilai) : '—'}</span>
-                  </div>
-                </button>
-              )
-            })}
-          </div>}
+        ? <p className="ms2-loading">Memuat data aset…</p>
+        : <div className="ms2-aset-grid">
+          {kartuAset.map((k, idx) => {
+            const Ikon = k.Ikon
+            return (
+              <button key={k.jenis} className={`ms2-aset ${kategoriAktif === k.jenis ? 'aktif' : ''}`} style={{ animationDelay: `${idx * 60}ms`, ['--ms-warna' as never]: k.warna }} onClick={() => setKategoriAktif(kategoriAktif === k.jenis ? null : k.jenis)}>
+                <i className="ms2-aset-bar" />
+                <div className="ms2-aset-atas">
+                  <div className="ms2-aset-ikon"><Ikon size={20} /></div>
+                  {k.tanpa_psp > 0 && <span className="ms2-badge">{k.tanpa_psp} tanpa PSP</span>}
+                </div>
+                <strong className="ms2-aset-label">{k.label}</strong>
+                <b className="ms2-aset-jumlah">{k.jumlah.toLocaleString('id-ID')}<span> aset</span></b>
+                <div className="ms2-aset-rinci">
+                  <span>{k.luas > 0 ? formatLuas(k.luas) : '—'}</span>
+                  <span className="ms2-aset-nilai">{k.nilai > 0 ? formatRupiah(k.nilai) : '—'}</span>
+                </div>
+              </button>
+            )
+          })}
+        </div>}
 
-      {/* Tabel detail aset — muncul di bawah grid saat kartu diklik */}
       {kategoriAktif && (
-        <section className="pa-tabel-panel">
-          <div className="pa-tabel-head">
-            <h3>{kategoriTerpilih?.label} <span className="pa-hitung">{barisDetail.length} aset</span></h3>
-            <button className="pa-tabel-export" onClick={() => setKategoriAktif(null)}>Tutup tabel</button>
+        <section className="ms2-panel">
+          <div className="ms2-panel-head">
+            <h3>{kategoriTerpilih?.label} <span className="ms2-hitung">{barisDetail.length} aset</span></h3>
+            <button className="ms2-ghost" onClick={() => setKategoriAktif(null)}>Tutup tabel</button>
           </div>
-          {detailLoading
-            ? <p className="pa-loading">Memuat data aset…</p>
-            : barisDetail.length === 0
-              ? <p className="pa-loading">Belum ada data untuk kategori ini.</p>
-              : <div className="pa-tabel-wrap">
-                  <table className="pa-tabel">
-                    <thead>
-                      <tr><th>No</th>{kolomDetail.map(c => <th key={c.label}>{c.label}</th>)}</tr>
-                    </thead>
-                    <tbody>
-                      {barisDetail.map((r, i) => (
-                        <tr key={`${i}-${r.nup}`}>
-                          <td className="pa-td-no">{i + 1}</td>
-                          {kolomDetail.map(c => (
-                            <td key={c.label} className={`${c.mono ? 'pa-td-kode ' : ''}${c.kanan ? 'pa-td-nilai' : ''}`}>{c.ambil(r)}</td>
-                          ))}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>}
+          {detailLoading ? <p className="ms2-loading">Memuat data aset…</p>
+            : barisDetail.length === 0 ? <p className="ms2-loading">Belum ada data untuk kategori ini.</p>
+            : <div className="ms2-table-wrap"><table className="ms2-table">
+              <thead><tr><th>No</th>{kolomDetail.map(c => <th key={c.label}>{c.label}</th>)}</tr></thead>
+              <tbody>{barisDetail.map((r, i) => <tr key={`${i}-${r.nup}`}><td className="ms2-td-no">{i + 1}</td>{kolomDetail.map(c => <td key={c.label} className={`${c.mono ? 'ms2-td-kode ' : ''}${c.kanan ? 'ms2-td-nilai' : ''}`}>{c.ambil(r)}</td>)}</tr>)}</tbody>
+            </table></div>}
         </section>
       )}
 
-      {/* 2. Kinerja Satker + komposisi status pekerjaan */}
-      <div className="info-dua">
-        <section className="panel admin-page info-panel">
-          <div className="info-panel-head">
+      <div className="ms2-dua">
+        <section className="ms2-panel">
+          <div className="ms2-panel-head">
             <h3>Kinerja Satker</h3>
-            {uptSkor && <span className="info-panel-ket">Skor UPT — sama dengan menu Kinerja UPT</span>}
+            {uptSkor && <span className="ms2-panel-ket">Skor UPT — sama dengan menu Kinerja UPT</span>}
           </div>
-          <div className="info-rings">
+          <div className="ms2-rings">
             <Cincin persen={uptSkor?.score ?? 0} label="Skor UPT" sub={`${uptSkor?.selesai ?? 0} dari ${uptSkor?.total ?? 0} tugas selesai`} dari="#123354" ke="#1769aa" />
             <Cincin persen={uptSkor?.skorKinerja ?? 0} label="Kinerja Pekerjaan" sub="bobot 60%" dari="#1769aa" ke="#38bdf8" />
             <Cincin persen={uptSkor?.skorKondisi ?? 0} label="Kondisi Aset" sub="bobot 40%" dari="#15815d" ke="#34d399" />
           </div>
-
-          <div className="ms-rincian">
-            <p className="ms-kelompok">Kinerja Pekerjaan — bobot 60%</p>
+          <div className="ms2-rincian">
+            <p className="ms2-kelompok">Kinerja Pekerjaan — bobot 60%</p>
             {([
               ['Penyelesaian', '45%', uptSkor?.penyelesaian, '#1769aa'],
               ['Ketepatan waktu', '30%', uptSkor?.ketepatan, '#123354'],
               ['Dorongan progres', '15%', uptSkor?.dorongan, '#2f8fd0'],
               ['Kualitas pengajuan', '10%', uptSkor?.kualitas, '#5aa9dd'],
             ] as const).map(([nama, bobot, nilai, warna]) => (
-              <div className="ms-varis" key={nama}>
+              <div className="ms2-varis" key={nama}>
                 <b>{nama} <em>{bobot}</em></b>
-                <span className="ms-bar"><i style={{ width: `${nilai ?? 0}%`, background: warna }} /></span>
-                <span className="ms-nilai">{nilai ?? 0}%</span>
+                <span className="ms2-bar"><i style={{ width: `${nilai ?? 0}%`, background: warna }} /></span>
+                <span className="ms2-nilai">{nilai ?? 0}%</span>
               </div>
             ))}
-
-            <p className="ms-kelompok">Kondisi Aset — bobot 40%</p>
+            <p className="ms2-kelompok">Kondisi Aset — bobot 40%</p>
             {([
-              ['Kelengkapan Data', '30%', uptSkor?.kelengkapan, '#1769aa', uptSkor ? rincianKelengkapan(uptSkor) : ''],
-              ['Capaian Penghapusan', '40%', uptSkor?.capaian_penghapusan, '#15815d', `sisa ${uptSkor?.rb_sisa ?? 0} dari ${uptSkor?.rb_total ?? 0} barang rusak berat`],
+              ['Kelengkapan Data', '55%', uptSkor?.kelengkapan, '#1769aa', uptSkor ? rincianKelengkapan(uptSkor) : ''],
+              ['Capaian Penghapusan', '15%', uptSkor?.capaian_penghapusan, '#15815d', `sisa ${uptSkor?.rb_sisa ?? 0} dari ${uptSkor?.rb_total ?? 0} barang rusak berat`],
               ['Belum PSP', '15%', uptSkor?.skor_psp ?? 0, '#a76509', `${uptSkor?.belum_psp ?? 0} dari ${uptSkor?.total_aset ?? 0} aset belum punya nomor PSP`],
               ['Pelepasan Aset', '15%', uptSkor?.capaian_pelepasan ?? 0, '#123354', uptSkor?.lelang_sk ? `${uptSkor.lelang_sk} SK · ${rupiah(uptSkor.lelang_nilai)} perolehan` : 'belum ada SK penghapusan'],
             ] as const).map(([nama, bobot, nilai, warna, ket]) => (
-              <div className="ms-varis" key={nama}>
+              <div className="ms2-varis" key={nama}>
                 <b>{nama} <em>{bobot}</em></b>
-                <span className="ms-bar"><i style={{ width: `${nilai ?? 0}%`, background: warna }} /></span>
-                <span className="ms-nilai">{nilai ?? 0}</span>
-                <i className="ms-ket">{ket}</i>
+                <span className="ms2-bar"><i style={{ width: `${nilai ?? 0}%`, background: warna }} /></span>
+                <span className="ms2-nilai">{nilai ?? 0}</span>
+                <i className="ms2-ket">{ket}</i>
               </div>
             ))}
           </div>
-
           {(uptSkor?.pemanfaatan_item ?? 0) > 0 && (
-            <p className="ms-lencana">
-              {'★'.repeat(tingkatLencanaPemanfaatan(uptSkor?.pemanfaatan_item ?? 0))}
-              <b>{uptSkor?.pemanfaatan_item} item pemanfaatan BMN</b>
-              <em>{uptSkor?.pemanfaatan_sk ?? 0} sudah ada SK Penetapan · pengakuan, tidak masuk skor</em>
-            </p>
+            <p className="ms2-lencana">{'★'.repeat(tingkatLencanaPemanfaatan(uptSkor?.pemanfaatan_item ?? 0))}<b>{uptSkor?.pemanfaatan_item} item pemanfaatan BMN</b><em>{uptSkor?.pemanfaatan_sk ?? 0} sudah ada SK Penetapan · pengakuan, tidak masuk skor</em></p>
           )}
-
-          <div className="info-keterangan">
+          <div className="ms2-ket-box">
             <div><b>Progres rata-rata</b><span>{baris?.progressRata ?? 0}%</span><i>Rata-rata progres seluruh pekerjaan aktif Satker ini</i></div>
             <div><b>Dalam perbaikan</b><span>{baris?.perluPerbaikan ?? 0}</span><i>Pekerjaan yang dikembalikan Korwil untuk diperbaiki</i></div>
             <div><b>Ketepatan waktu</b><span>{persen}%</span><i>{baris?.ketepatanWaktuTepat ?? 0} dari {baris?.total ?? 0} tugas selesai tepat sebelum batas waktu</i></div>
           </div>
         </section>
-        <section className="panel admin-page info-panel">
+
+        <section className="ms2-panel">
           <h3>Komposisi status pekerjaan</h3>
           <DonatStatus items={statusGrafik} />
-          <h3 className="mt">Aset yang perlu perhatian</h3>
-          <div className="pt-grid">
+          <h3 className="ms2-mt">Aset yang perlu perhatian</h3>
+          <div className="ms2-pt-grid">
             {([
               { id: 'psp', label: 'Belum PSP', n: aset.belumPsp, warna: '#f59e0b' },
               { id: 'rusak', label: 'Rusak Berat A', n: rusakA, warna: '#ef4444' },
@@ -776,17 +733,7 @@ function InfografisSatker({ tasks, kodeSatker, onKembali }: { tasks: Task[]; kod
             ] as const).map(t => {
               const aktif = perhatian === t.id && (t.id === 'psp' || filterRusak === 'semua' || t.label.endsWith(filterRusak))
               return (
-                <button
-                  key={t.label}
-                  className={`pt-kartu ${aktif ? 'aktif' : ''} ${t.n === 0 ? 'nol' : ''}`}
-                  style={{ ['--pt-warna' as never]: t.warna }}
-                  disabled={t.n === 0}
-                  onClick={() => {
-                    if (aktif) { setPerhatian(null); return }
-                    setPerhatian(t.id)
-                    setFilterRusak(t.id === 'psp' ? 'semua' : (t.label.slice(-1) as KategoriRusak))
-                  }}
-                >
+                <button key={t.label} className={`ms2-pt ${aktif ? 'aktif' : ''} ${t.n === 0 ? 'nol' : ''}`} style={{ ['--ms-warna' as never]: t.warna }} disabled={t.n === 0} onClick={() => { if (aktif) { setPerhatian(null); return } setPerhatian(t.id); setFilterRusak(t.id === 'psp' ? 'semua' : (t.label.slice(-1) as KategoriRusak)) }}>
                   <b>{t.n.toLocaleString('id-ID')}</b>
                   <span>{t.label}</span>
                   <i>{t.n === 0 ? 'tidak ada' : 'klik untuk lihat barang'}</i>
@@ -794,93 +741,68 @@ function InfografisSatker({ tasks, kodeSatker, onKembali }: { tasks: Task[]; kod
               )
             })}
           </div>
-
           {perhatian && (
-            <div className="pt-daftar">
-              <div className="pt-daftar-head">
+            <div className="ms2-pt-daftar">
+              <div className="ms2-pt-head">
                 <strong>{perhatian === 'psp' ? 'Daftar aset belum PSP' : `Daftar aset rusak berat${filterRusak === 'semua' ? '' : ` kategori ${filterRusak}`}`}</strong>
-                <div className="filter-tab">
+                <div className="ms2-tabs">
                   {(['semua', 'A', 'B', 'C'] as const).filter(k => k === 'semua' || perhatian === 'rusak').map(k => (
-                    <button key={k} className={filterRusak === k ? 'aktif' : ''} onClick={() => setFilterRusak(k as never)}>
-                      {k === 'semua' ? 'Semua' : `Kategori ${k}`}
-                    </button>
+                    <button key={k} className={filterRusak === k ? 'aktif' : ''} onClick={() => setFilterRusak(k as never)}>{k === 'semua' ? 'Semua' : `Kategori ${k}`}</button>
                   ))}
                   <button onClick={() => setPerhatian(null)}>Tutup</button>
                 </div>
               </div>
-              {perhatianLoading
-                ? <p className="pa-loading">Memuat…</p>
-                : barisRusak.length === 0
-                  ? <p className="pa-loading">Tidak ada aset pada kategori ini.</p>
-                  : <div className="pa-tabel-wrap">
-                      <table className="pa-tabel">
-                        <thead>
-                          <tr><th>No</th><th>Nama Barang</th><th>Jenis BMN</th>{perhatian === 'rusak' && <th>Kategori</th>}<th>Kondisi</th>{perhatian === 'rusak' && <th>Merk / Tipe</th>}<th>Nilai Perolehan</th></tr>
-                        </thead>
-                        <tbody>
-                          {barisRusak.map((r, i) => (
-                            <tr key={`${i}-${r.nup}-${r.nama_barang}`}>
-                              <td className="pa-td-no">{i + 1}</td>
-                              <td className="pa-td-nama">{r.nama_barang}</td>
-                              <td>{jenisBmnMeta[r.jenis_bmn]?.label ?? r.jenis_bmn}</td>
-                              {perhatian === 'rusak' && <td><span className={`pt-kat kat-${r.kategori}`}>{r.kategori}</span></td>}
-                              <td>{r.kondisi || '—'}</td>
-                              {perhatian === 'rusak' && <td>{[r.merk, r.tipe].filter(Boolean).join(' · ') || '—'}</td>}
-                              <td className="pa-td-nilai">{r.nilai_perolehan ? r.nilai_perolehan.toLocaleString('id-ID') : '—'}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>}
-              {barisRusak.length >= 500 && <p className="pa-keterangan">Menampilkan 500 baris pertama. Gunakan pencarian di tabel aset untuk rincian lengkap.</p>}
+              {perhatianLoading ? <p className="ms2-loading">Memuat…</p>
+                : barisRusak.length === 0 ? <p className="ms2-loading">Tidak ada aset pada kategori ini.</p>
+                : <div className="ms2-table-wrap"><table className="ms2-table">
+                  <thead><tr><th>No</th><th>Nama Barang</th><th>Jenis BMN</th>{perhatian === 'rusak' && <th>Kategori</th>}<th>Kondisi</th>{perhatian === 'rusak' && <th>Merk / Tipe</th>}<th>Nilai Perolehan</th></tr></thead>
+                  <tbody>{barisRusak.map((r, i) => (
+                    <tr key={`${i}-${r.nup}-${r.nama_barang}`}>
+                      <td className="ms2-td-no">{i + 1}</td>
+                      <td className="ms2-td-nama">{r.nama_barang}</td>
+                      <td>{jenisBmnMeta[r.jenis_bmn]?.label ?? r.jenis_bmn}</td>
+                      {perhatian === 'rusak' && <td><span className={`ms2-kat kat-${r.kategori}`}>{r.kategori}</span></td>}
+                      <td>{r.kondisi || '—'}</td>
+                      {perhatian === 'rusak' && <td>{[r.merk, r.tipe].filter(Boolean).join(' · ') || '—'}</td>}
+                      <td className="ms2-td-nilai">{r.nilai_perolehan ? r.nilai_perolehan.toLocaleString('id-ID') : '—'}</td>
+                    </tr>
+                  ))}</tbody>
+                </table></div>}
+              {barisRusak.length >= 500 && <p className="ms2-ket">Menampilkan 500 baris pertama.</p>}
             </div>
           )}
         </section>
       </div>
 
-      <section className="panel admin-page info-panel">
-        <div className="info-panel-head">
-          <h3>Pekerjaan belum selesai <span className="hitung">{belum.length}</span></h3>
-          <button className="info-salin-semua" onClick={() => void salinSemua()}>Salin pesan</button>
+      <section className="ms2-panel">
+        <div className="ms2-panel-head">
+          <h3>Pekerjaan belum selesai <span className="ms2-hitung">{belum.length}</span></h3>
+          <button className="ms2-ghost" onClick={() => void salinSemua()}>Salin pesan</button>
         </div>
-        {belum.length === 0
-          ? <p className="catatan-aman">Seluruh pekerjaan Satker ini sudah selesai.</p>
-          : <ul className="info-list">{belum.map(t => (
-              <li key={t.task.id}>
-                <div className="info-list-teks">
-                  <strong>{t.task.title}</strong>
-                  <span>{t.tahap}</span>
-                </div>
-                <div className="info-list-meter">
-                  <div className="info-list-track"><i style={{ width: `${t.progress}%` }} /></div>
-                  <b className={`skor ${t.status}`}>{t.progress}%</b>
-                  <button className="info-list-salin" onClick={() => void salinPesan(t.task, t.status, t.tahap, t.progress)}>Salin pesan</button>
-                </div>
-              </li>))}</ul>}
+        {belum.length === 0 ? <p className="ms2-aman">Seluruh pekerjaan Satker ini sudah selesai.</p>
+          : <ul className="ms2-list">{belum.map(t => (
+            <li key={t.task.id}>
+              <div className="ms2-list-teks"><strong>{t.task.title}</strong><span>{t.tahap}</span></div>
+              <div className="ms2-list-meter">
+                <div className="ms2-list-track"><i style={{ width: `${t.progress}%` }} /></div>
+                <b className={`ms2-skor ${t.status}`}>{t.progress}%</b>
+                <button className="ms2-list-salin" onClick={() => void salinPesan(t.task, t.status, t.tahap, t.progress)}>Salin pesan</button>
+              </div>
+            </li>))}</ul>}
       </section>
 
-      <section className="panel admin-page info-panel">
-        <div className="info-panel-head">
-          <h3>Pekerjaan selesai <span className="hitung">{selesai.length}</span></h3>
-          <button className="info-salin-semua" onClick={() => void salinSemua()}>Salin pesan</button>
+      <section className="ms2-panel">
+        <div className="ms2-panel-head">
+          <h3>Pekerjaan selesai <span className="ms2-hitung">{selesai.length}</span></h3>
+          <button className="ms2-ghost" onClick={() => void salinSemua()}>Salin pesan</button>
         </div>
-        {selesai.length === 0
-          ? <p className="catatan-aman">Belum ada pekerjaan yang selesai.</p>
-          : <ul className="info-list">{selesai.map(t => (
-              <li key={t.task.id}>
-                <div className="info-list-teks">
-                  <strong>{t.task.title}</strong>
-                  <span>{t.tahap}</span>
-                </div>
-                <div className="info-list-meter"><b className="skor selesai">100%</b></div>
-              </li>))}</ul>}
-
-<RegisterPenghapusan
-        kodeSatker={kodeSatker}
-        namaSatker={nama}
-        sisa={{ A: uptSkor?.sisa_a ?? 0, B: uptSkor?.sisa_b ?? 0, C: uptSkor?.sisa_c ?? 0 }}
-        lelang={lelangRows}
-      />
+        {selesai.length === 0 ? <p className="ms2-aman">Belum ada pekerjaan yang selesai.</p>
+          : <ul className="ms2-list">{selesai.map(t => (
+            <li key={t.task.id}>
+              <div className="ms2-list-teks"><strong>{t.task.title}</strong><span>{t.tahap}</span></div>
+              <div className="ms2-list-meter"><b className="ms2-skor selesai">100%</b></div>
+            </li>))}</ul>}
+        <RegisterPenghapusan kodeSatker={kodeSatker} namaSatker={nama} sisa={{ A: uptSkor?.sisa_a ?? 0, B: uptSkor?.sisa_b ?? 0, C: uptSkor?.sisa_c ?? 0 }} lelang={lelangRows} />
       </section>
     </div>
   )
