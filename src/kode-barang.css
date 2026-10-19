@@ -1,0 +1,343 @@
+/* Halaman "Cari Kode Barang" — mengikuti palet portal (warna #183a59, #d7e1ea, dll) */
+
+.kode-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #f4f7fa;
+}
+.kode-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 24px;
+  background: #fff;
+  border-bottom: 1px solid #dce4ec;
+}
+.kode-header-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #6d8fab;
+}
+.kode-main {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 28px 24px 48px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Judul */
+.kode-head { margin-bottom: 28px; }
+.kode-head .eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .06em;
+  color: #4d7ca8;
+  text-transform: uppercase;
+  display: block;
+  margin-bottom: 6px;
+}
+.kode-head h1 { margin: 0 0 8px; font-size: 28px; font-weight: 700; color: #183a59; }
+.kode-head p { margin: 0; font-size: 14px; color: #4a657e; line-height: 1.55; }
+
+/* Bilah pencarian */
+.kode-search { margin-bottom: 28px; }
+.kode-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background: #fff;
+  border: 1px solid #d7e1ea;
+  border-radius: 12px;
+  padding: 0 4px 0 16px;
+  transition: border-color .15s, box-shadow .15s;
+}
+.kode-search-bar:focus-within {
+  border-color: #4d7ca8;
+  box-shadow: 0 0 0 3px rgba(77, 124, 168, .12);
+}
+.kode-search-bar input {
+  flex: 1;
+  border: none;
+  outline: none;
+  padding: 14px 12px;
+  font-size: 15px;
+  color: #183a59;
+  background: transparent;
+  min-width: 0;
+}
+.kode-search-bar input::placeholder { color: #9bb1c5; }
+.kode-search-bar button {
+  flex-shrink: 0;
+  background: #183a59;
+  color: #fff;
+  border: none;
+  border-radius: 9px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s, transform .1s;
+}
+.kode-search-bar button:hover { background: #1f4a70; }
+.kode-search-bar button:active { transform: scale(.97); }
+.kode-search-bar button:disabled { background: #9bb1c5; cursor: not-allowed; }
+
+/* Chip contoh */
+.kode-contoh {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  font-size: 13px;
+  color: #6d8fab;
+}
+.kode-contoh span { margin-right: 4px; }
+.kode-chip {
+  background: #e5edf5;
+  border: 1px solid transparent;
+  border-radius: 20px;
+  padding: 3px 12px;
+  font-size: 12.5px;
+  color: #1d4b78;
+  cursor: pointer;
+  transition: background .12s, border-color .12s;
+  white-space: nowrap;
+}
+.kode-chip:hover { background: #d2e0ee; border-color: #7da1c1; }
+
+/* Hasil kosong */
+.kode-kosong {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: #7d9bb3;
+  padding: 28px 16px;
+  text-align: center;
+}
+.kode-kosong p { margin: 10px 0 0; font-size: 14px; max-width: 400px; }
+
+/* Jumlah hasil */
+.kode-count {
+  font-size: 13px;
+  color: #6d8fab;
+  margin-bottom: 12px;
+}
+
+/* Daftar kartu */
+.kode-list { display: flex; flex-direction: column; gap: 14px; }
+
+/* Satu kartu kandidat */
+.kode-card {
+  background: #fff;
+  border: 1px solid #dce4ec;
+  border-radius: 12px;
+  padding: 18px 20px;
+  transition: border-color .15s, box-shadow .15s;
+}
+.kode-card:hover { border-color: #b8cddf; box-shadow: 0 4px 14px rgba(16, 43, 70, .06); }
+.kode-card-pilih {
+  border-color: #1d7a4f;
+  box-shadow: 0 0 0 2px rgba(29, 122, 79, .18);
+}
+
+.kode-card-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.kode-rank {
+  font-size: 11px;
+  font-weight: 700;
+  color: #9bb1c5;
+  letter-spacing: .03em;
+}
+.kode-spacer { flex: 1; }
+.kode-copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  border: 1px solid #d7e1ea;
+  border-radius: 7px;
+  padding: 4px 12px;
+  font-size: 12.5px;
+  color: #3b6a91;
+  cursor: pointer;
+  transition: background .1s, border-color .1s;
+}
+.kode-copy:hover { background: #f0f5fa; border-color: #7da1c1; }
+
+/* Confidence badge */
+.kode-kina {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 999px;
+  letter-spacing: .02em;
+}
+.kina-sangat-relevan { background: #e1f5e8; color: #1d7a4f; }
+.kina-relevan { background: #dfebf5; color: #1d5b95; }
+.kina-perlu-ditinjau { background: #fef6db; color: #9f7200; }
+
+/* Kode besar */
+.kode-kode {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+.kode-kode10 {
+  font-size: 22px;
+  font-weight: 800;
+  color: #183a59;
+  letter-spacing: .04em;
+  font-family: ui-monospace, 'SF Mono', monospace;
+}
+.kode-kodetitik {
+  font-size: 15px;
+  font-weight: 600;
+  color: #4d7ca8;
+  font-family: ui-monospace, 'SF Mono', monospace;
+}
+
+.kode-nama {
+  font-size: 15px;
+  font-weight: 600;
+  color: #183a59;
+  margin: 0 0 8px;
+}
+
+/* Penjelasan singkat per kode */
+.kode-deskripsi {
+  margin: 0 0 10px;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: #2c546f;
+  background: #f4f8fb;
+  border-left: 3px solid #7da1c1;
+  border-radius: 6px;
+  padding: 8px 12px;
+}
+
+/* Breadcrumb jalur */
+.kode-jalur {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  margin-bottom: 10px;
+  font-size: 13px;
+  color: #6d8fab;
+}
+.kode-jalur-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: #7d9bb3;
+}
+.kode-jalur-item > svg { width: 14px; height: 14px; color: #b8cddf; }
+
+/* Metadata */
+.kode-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin-bottom: 10px;
+  font-size: 13px;
+  color: #6d8fab;
+}
+.kode-meta b { color: #4a657e; font-weight: 600; }
+
+/* Alasan */
+.kode-alasan { margin-bottom: 12px; }
+.kode-alasan-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6d8fab;
+  display: block;
+  margin-bottom: 4px;
+}
+.kode-alasan ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
+  color: #4a657e;
+}
+.kode-alasan li {
+  padding: 2px 0;
+  position: relative;
+  padding-left: 16px;
+}
+.kode-alasan li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  color: #1d7a4f;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* Tombol gunakan */
+.kode-gunakan {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #f0f5fa;
+  border: 1px solid #d7e1ea;
+  border-radius: 8px;
+  padding: 7px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1d4b78;
+  cursor: pointer;
+  transition: background .1s, border-color .1s;
+}
+.kode-gunakan:hover { background: #deeaf5; border-color: #7da1c1; }
+
+/* Bar pilihan */
+.kode-pilih-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 20px;
+  background: #e1f5e8;
+  border: 1px solid #b1dabe;
+  border-radius: 12px;
+  padding: 14px 18px;
+  color: #1d7a4f;
+}
+.kode-pilih-bar div { flex: 1; }
+.kode-pilih-bar small { display: block; font-size: 11px; opacity: .8; }
+.kode-pilih-bar strong { font-size: 15px; }
+.kode-pilih-bar span { font-size: 12px; opacity: .8; max-width: 220px; }
+
+/* Disclaimer */
+.kode-disclaimer {
+  display: flex;
+  gap: 9px;
+  margin-top: 28px;
+  padding: 14px 16px;
+  background: #edf3f8;
+  border-radius: 10px;
+  font-size: 13px;
+  color: #4a657e;
+  flex-shrink: 0;
+}
+.kode-disclaimer p { margin: 0; line-height: 1.55; }
+.kode-disclaimer svg { flex-shrink: 0; margin-top: 2px; color: #4d7ca8; }
+
+/* Responsif */
+@media (max-width: 500px) {
+  .kode-main { padding: 16px 12px 36px; }
+  .kode-head h1 { font-size: 22px; }
+  .kode-kode10 { font-size: 18px; }
+  .kode-kodetitik { font-size: 13px; }
+  .kode-card { padding: 14px 16px; }
+  .kode-contoh { gap: 4px; }
+}
