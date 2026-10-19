@@ -10,11 +10,13 @@ import {
   fisikDiKanwil,
   kunciBaris,
   merkKosong,
+  nupBergeser,
   persenSelesai,
   saringBaris,
   sudahSelesai,
   sisaPekerjaan,
   urutkanBaris,
+  urutkanPencarian,
   type BarisLabel,
   type RekapSumber,
 } from './labelBmn'
@@ -116,6 +118,39 @@ describe('urutkanBaris', () => {
       'PSP lain (Kanwil)/3050201003/2',
       'PSP lain (Kanwil)/3050201003/10',
     ])
+  })
+})
+
+describe('urutkanPencarian', () => {
+  it('mengurut dari NUP terkecil lebih dulu, lalu kode barang', () => {
+    const daftar = [
+      baris({ kodeBarang: '3050201003', nup: '222', sumber: 'Transfer Kanwil Kemenkum' }),
+      baris({ kodeBarang: '3050104003', nup: '9', sumber: 'Transfer Kanwil Kemenkum' }),
+      baris({ kodeBarang: '3050104003', nup: '3', sumber: 'Transfer Kanwil Kemenkum' }),
+      baris({ kodeBarang: '3100102001', nup: '12', sumber: 'Eks Rupbasan Rengat' }),
+    ]
+    expect(urutkanPencarian(daftar).map(b => b.nup)).toEqual(['3', '9', '12', '222'])
+  })
+
+  it('NUP non-numerik ditaruh paling akhir', () => {
+    const daftar = [
+      baris({ nup: '1A', kodeBarang: '3050201003' }),
+      baris({ nup: '5', kodeBarang: '3050201003' }),
+    ]
+    expect(urutkanPencarian(daftar).map(b => b.nup)).toEqual(['5', '1A'])
+  })
+})
+
+describe('nupBergeser', () => {
+  it('true bila NUP lama ada dan berbeda dari NUP sekarang', () => {
+    expect(nupBergeser(baris({ nup: '222', nupLama: '231' }))).toBe(true)
+  })
+  it('false bila NUP lama sama dengan NUP sekarang', () => {
+    expect(nupBergeser(baris({ nup: '11', nupLama: '11' }))).toBe(false)
+  })
+  it('false bila NUP lama kosong/null', () => {
+    expect(nupBergeser(baris({ nup: '5', nupLama: null }))).toBe(false)
+    expect(nupBergeser(baris({ nup: '5', nupLama: '  ' }))).toBe(false)
   })
 })
 

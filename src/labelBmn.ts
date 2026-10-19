@@ -23,7 +23,7 @@ export type BarisLabel = {
   tahunPerolehan: string
   /** Nilai perolehan aset (Rp, dari SIMAN). */
   nilaiPerolehan: number | null
-  /** NUP lama pada satker asal (khusus Transfer Kanwil Kemenkum, dari BA). */
+  /** NUP pada satker asal sebelum transfer (dari file Mapping TK–TM SIMAN). */
   nupLama: string | null
   sumber: string
   lokasiSimpan: string
@@ -129,6 +129,20 @@ export function urutkanBaris(daftar: BarisLabel[]): BarisLabel[] {
     if (sa !== sb) return sa - sb
     if (a.kodeBarang !== b.kodeBarang) return a.kodeBarang.localeCompare(b.kodeBarang)
     return bandingNup(a.nup, b.nup)
+  })
+}
+
+/** NUP bergeser: NUP lama (satker asal) berbeda dari NUP sekarang di Kanwil. */
+export function nupBergeser(b: BarisLabel): boolean {
+  return b.nupLama !== null && b.nupLama.trim() !== '' && b.nupLama.trim() !== b.nup.trim()
+}
+
+/** Urutkan hasil pencarian: NUP terkecil lebih dulu, lalu kode barang. */
+export function urutkanPencarian(daftar: BarisLabel[]): BarisLabel[] {
+  return [...daftar].sort((a, b) => {
+    const n = bandingNup(a.nup, b.nup)
+    if (n !== 0) return n
+    return a.kodeBarang.localeCompare(b.kodeBarang)
   })
 }
 

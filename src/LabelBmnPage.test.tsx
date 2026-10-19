@@ -13,6 +13,7 @@ const BARIS = [
     merkSimpan: '', merkTerisi: false,
     kondisi: 'Baik', kondisiReal: null, fotoUrl: null, fotoUkuran: null,
     statusBmn: 'Aktif', noPsp: 'SEK.3-PB.03.01-1008', tahunPerolehan: '2024-01-01',
+    nilaiPerolehan: 1500000, nupLama: '5',
     sumber: 'Eks Rupbasan Bengkalis', lokasiSimpan: 'Belum berlokasi',
     labelTercetak: true, sudahDitempel: false, tanggalTempel: null, petugas: null,
     sudahDiscan: false, ruangBaru: null, keterangan: 'Fisik sudah di Kanwil (hasil ASP eks Rupbasan Rengat)',
@@ -99,6 +100,13 @@ describe('LabelBmnPage', () => {
     // REG-C (Transfer Kanwil Kemenkum) membawa nilai 8.823.375 dan NUP lama 12.
     expect(screen.getByText('Rp 8,8 jt')).toBeTruthy()   // strong di dalam .kartu-nilai-rp
     expect(screen.getByText('NUP lama: 12')).toBeTruthy()
+  })
+
+  it('menampilkan NUP lama juga pada sumber non-Kemenkum (Eks Rupbasan Bengkalis)', async () => {
+    render(<LabelBmnPage />)
+    await screen.findByText('3 aset')
+    // REG-A berasal dari Eks Rupbasan Bengkalis, NUP sekarang 1, NUP lama 5.
+    expect(screen.getByText('NUP lama: 5')).toBeTruthy()
   })
 
   it('memperingatkan merk yang belum ada', async () => {
@@ -197,6 +205,19 @@ describe('LabelBmnPage', () => {
     await screen.findByText('3 aset')
     await user.type(screen.getByPlaceholderText(/Cari nama/), 'kursi')
     await waitFor(() => expect(screen.getByText('1 aset ditampilkan')).toBeTruthy())
+  })
+
+  it('saat mencari, hasil diurutkan dari NUP terkecil (bukan urutan sumber)', async () => {
+    const user = userEvent.setup()
+    render(<LabelBmnPage />)
+    await screen.findByText('3 aset')
+    // 'besi' cocok untuk ketiga kartu: NUP 7 (Transfer), NUP 1 (Bengkalis), NUP 1 (PSP).
+    // Tanpa perbaikan, urutan default menaruh sumber Transfer dulu (7, 1, 1).
+    await user.type(screen.getByPlaceholderText(/Cari nama/), 'besi')
+    await waitFor(() => expect(screen.getByText('3 aset ditampilkan')).toBeTruthy())
+    const nup = [...document.querySelectorAll('.kartu-judul p')]
+      .map(el => el.textContent?.match(/NUP (\S+)/)?.[1])
+    expect(nup).toEqual(['1', '1', '7'])
   })
 
   it('membuka panel pencatatan dan mengirim kode_register yang benar', async () => {

@@ -14,10 +14,12 @@ import {
   fisikDiKanwil,
   kunciBaris,
   merkKosong,
+  nupBergeser,
   persenSelesai,
   saringBaris,
   sudahSelesai,
   urutkanBaris,
+  urutkanPencarian,
   type BarisLabel,
   type FilterLabel,
   type RekapSumber,
@@ -120,10 +122,11 @@ export function LabelBmnPage() {
   useEffect(() => { void muatData() }, [])
 
   const ruangTersedia = useMemo(() => daftarRuang(baris), [baris])
-  const tersaring = useMemo(
-    () => saringBaris(baris, { sumber: sumber || undefined, ruang: ruang || undefined, status, cari }),
-    [baris, sumber, ruang, status, cari],
-  )
+  const tersaring = useMemo(() => {
+    const hasil = saringBaris(baris, { sumber: sumber || undefined, ruang: ruang || undefined, status, cari })
+    // Saat mencari, tampilkan dari NUP terkecil supaya aset mudah ditemukan.
+    return cari.trim() ? urutkanPencarian(hasil) : hasil
+  }, [baris, sumber, ruang, status, cari])
 
   const totalMerkKosong = rekap?.merkKosong ?? 0
   const totalFoto = rekap?.sudahFoto ?? 0
@@ -340,8 +343,8 @@ export function LabelBmnPage() {
 
               <div className="kartu-nilai">
                 <span className="kartu-nilai-rp">Nilai: <strong>{formatRupiah(b.nilaiPerolehan)}</strong></span>
-                {b.sumber === 'Transfer Kanwil Kemenkum' && b.nupLama && (
-                  <span className="pill pill-nup-lama" title="NUP pada satker asal sebelum transfer ke Kanwil Ditjenpas; berbeda dari NUP saat ini.">
+                {nupBergeser(b) && (
+                  <span className="pill pill-nup-lama" title={`NUP di satker asal sebelum transfer ke Kanwil Ditjenpas: ${b.nupLama}. NUP sekarang di SIMAN: ${b.nup}.`}>
                     <Tag size={12} /> NUP lama: {b.nupLama}
                   </span>
                 )}
