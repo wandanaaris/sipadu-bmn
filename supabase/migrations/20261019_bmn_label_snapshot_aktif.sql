@@ -1,13 +1,15 @@
--- Perbaikan halaman Label Barcode BMN.
+-- Perbaikan halaman Label Barcode BMN (Kanwil Ditjenpas Riau, satker 692507).
 --
--- 1) bmn_nup_lama — NUP lama aset transfer (dari file Mapping TK-TM SIMAN).
--- 2) bmn_label_sumber_psp — PSP batch transfer Kemenkum (SEK.3-PB.03.01-1626)
---    diperlakukan seperti PSP kosong, sebab sejak master 16-Okt-2026 nomor PSP
---    itu terisi (sebelumnya kosong), sehingga kategori "Transfer Kanwil
---    Kemenkum" hilang dari rekap.
--- 3) bmn_label_daftar & bmn_label_rekap — membaca view bmn_aktif (snapshot
---    aktif), bukan tabel bmn_assets mentah. Tanpa ini halaman menampilkan
---    gabungan SEMUA snapshot (mis. 882 aset padahal snapshot aktif 815).
+-- 1) bmn_nup_lama — NUP lama aset transfer (sumber: file Mapping TK-TM SIMAN).
+-- 2) Klasifikasi sumber aset:
+--    a. bmn_label_sumber_psp: PSP batch transfer Kemenkum (SEK.3-PB.03.01-1626)
+--       diperlakukan seperti PSP kosong (dulu kosong, sejak master 16-Okt-2026 terisi).
+--    b. bmn_label_sumber_aset: memakai KODE SATKER lebih dulu — semua aset dengan
+--       kode ...692507001KD adalah Eks Rupbasan Bengkalis walau nomor PSP-nya lain
+--       (2 aset ber-PSP 75/MK/KNL.0305/2025 sebelumnya salah masuk "PSP lain").
+-- 3) bmn_label_daftar & bmn_label_rekap membaca view bmn_aktif (snapshot aktif),
+--    bukan tabel bmn_assets mentah. Tanpa ini halaman menampilkan gabungan SEMUA
+--    snapshot (882 aset padahal snapshot aktif 815).
 
 create table if not exists public.bmn_nup_lama (
   id bigint generated always as identity primary key,
@@ -23,8 +25,29 @@ alter table public.bmn_nup_lama enable row level security;
 drop policy if exists "label nup lama terbaca" on public.bmn_nup_lama;
 create policy "label nup lama terbaca" on public.bmn_nup_lama for select using (true);
 
-create or replace function public.bmn_label_sumber_psp(
-  p_psp text, p_merk text default null, p_tahun text default null)
+create or replace function public.bmn_label_sumber_aset(p_psp text, p_merk text default null, p_tahun text default null, p_satker_raw text default null)
+returns text language sql immutable set search_path = public as $fungsi$
+  select case
+    -- Kode satker asal lebih menentukan daripada nomor PSP: seluruh aset dengan
+    -- kode ...692507001KD adalah Eks Rupbasan Bengkalis, walau PSP-nya berbeda.
+    when btrim(coalesce(p_satker_raw,'')) = '137040900692507001KD' then 'Eks Rupbasan Bengkalis'
+    when coalesce(btrim(p_psp), '') = ''
+      or btrim(p_psp) like 'SEK.3-PB.03.01-1626%' then
+      case
+        when left(coalesce(btrim(p_tahun), ''), 4) = '2026'
+             and (lower(coalesce(p_merk, '')) like '%orbitrend%'
+               or lower(coalesce(p_merk, '')) like '%futura%')
+          then 'PSP lain (Kanwil)'
+        else 'Transfer Kanwil Kemenkum'
+      end
+    when btrim(p_psp) like 'SEK.3-PB.03.01-904%' then 'Eks Rupbasan Rengat'
+    when btrim(p_psp) like 'SEK.3-PB.03.01-905%' then 'Eks Rupbasan Bangkinang'
+    when btrim(p_psp) like 'SEK.3-PB.03.01-1008%' then 'Eks Rupbasan Bengkalis'
+    else 'PSP lain (Kanwil)'
+  end
+$fungsi$;
+
+create or replace function public.bmn_label_sumber_psp(p_psp text, p_merk text default null, p_tahun text default null)
 returns text language sql immutable set search_path = public as $fungsi$
   select case
     when coalesce(btrim(p_psp), '') = ''
@@ -43,21 +66,6 @@ returns text language sql immutable set search_path = public as $fungsi$
   end
 $fungsi$;
 
-create or replace function public.bmn_label_sumber_psp(p_psp text)
-returns text language sql immutable set search_path = public as $f2$
-  select case
-    when coalesce(btrim(p_psp), '') = ''
-      or btrim(p_psp) like 'SEK.3-PB.03.01-1626%' then 'Transfer Kanwil Kemenkum'
-    when btrim(p_psp) like 'SEK.3-PB.03.01-904%' then 'Eks Rupbasan Rengat'
-    when btrim(p_psp) like 'SEK.3-PB.03.01-905%' then 'Eks Rupbasan Bangkinang'
-    when btrim(p_psp) like 'SEK.3-PB.03.01-1008%' then 'Eks Rupbasan Bengkalis'
-    else 'PSP lain (Kanwil)'
-  end
-$f2$;
-
-grant execute on function public.bmn_label_sumber_psp(text) to anon, authenticated;
-grant execute on function public.bmn_label_sumber_psp(text,text,text) to anon, authenticated;
-
 create or replace function public.bmn_label_daftar(p_satker text)
 returns jsonb
 language sql
@@ -67,7 +75,7 @@ set search_path = public
 as $fungsi$
   with berreg as (
     select distinct on (kode_register)
-      kode_register, kode_barang, nup::text as nup, nama_barang, merk, tipe,
+      kode_register, kode_barang, nup::text as nup, nama_barang, merk, tipe, kode_satker_raw,
       kondisi, status_bmn, no_psp, coalesce(nilai_perolehan, 0) as nilai_perolehan,
       coalesce(nullif(btrim(merk), ''), nullif(btrim(tipe), ''), '') as merk_pakai,
       coalesce(tanggal_perolehan, tanggal_buku_pertama, '') as tahun_pakai
@@ -103,7 +111,7 @@ as $fungsi$
     'tahunPerolehan', left(u.tahun_pakai, 10),
     'nilaiPerolehan', u.nilai_perolehan,
     'nupLama', nl.nup_lama,
-    'sumber', public.bmn_label_sumber_psp(u.no_psp, u.merk_pakai, u.tahun_pakai),
+    'sumber', public.bmn_label_sumber_aset(u.no_psp, u.merk_pakai, u.tahun_pakai, u.kode_satker_raw),
     'lokasiSimpan', coalesce(l.lokasi, ''),
     'labelTercetak', (ct.id is not null),
     'sudahDitempel', coalesce(p.sudah_ditempel, false),
@@ -132,7 +140,7 @@ set search_path = public
 as $fungsi$
   with berreg as (
     select distinct on (kode_register)
-      kode_register, kode_barang, nup::text as nup, no_psp, merk, tipe,
+      kode_register, kode_barang, nup::text as nup, no_psp, merk, tipe, kode_satker_raw,
       coalesce(nullif(btrim(merk), ''), nullif(btrim(tipe), ''), '') as merk_pakai,
       coalesce(tanggal_perolehan::text, tanggal_buku_pertama::text, '') as tahun_pakai
     from public.bmn_aktif
@@ -152,7 +160,7 @@ as $fungsi$
   ),
   gabung as (
     select
-      public.bmn_label_sumber_psp(u.no_psp, u.merk_pakai, u.tahun_pakai) as sumber,
+      public.bmn_label_sumber_aset(u.no_psp, u.merk_pakai, u.tahun_pakai, u.kode_satker_raw) as sumber,
       (ct.id is not null) as label_tercetak,
       coalesce(p.sudah_ditempel, false) and coalesce(p.sudah_discan, false) as selesai,
       (l.lokasi is not null) as berlokasi,
@@ -196,6 +204,8 @@ as $fungsi$
   )
 $fungsi$;
 
+grant execute on function public.bmn_label_sumber_aset(text,text,text,text) to anon, authenticated;
+grant execute on function public.bmn_label_sumber_psp(text,text,text) to anon, authenticated;
 revoke all on function public.bmn_label_daftar(text) from public;
 revoke all on function public.bmn_label_rekap(text) from public;
 grant execute on function public.bmn_label_daftar(text) to authenticated;
