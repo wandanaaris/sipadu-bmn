@@ -145,11 +145,43 @@ export function nupBergeser(b: BarisLabel): boolean {
 export type PenandaLabel = 'tanpa-label' | 'asp-kejaksaan' | null
 
 /**
- * Aset eks Rupbasan yang penggunaannya oleh Kejaksaan (akan di-ASP, tidak perlu
- * barcode). Isi dengan kode register aset terkait; dikosongkan sampai daftarnya
- * diterima dari Korwil.
+ * Aset eks Rupbasan Bengkalis yang penggunaannya oleh Kejaksaan (akan di-ASP,
+ * tidak perlu barcode). Sumber: kolom "Penggunaan" pada
+ * `Kanwil/ASP Rupbasan/Rupbasan Bengkalis/ANAK SATKER/Aset Rupbasan Bengkalis
+ * pembagian.xlsx` (sheet Sheet1) — 28 baris bernilai "Kejaksaan", dicocokkan ke
+ * kode_register lewat (kode_barang, NUP) + kode_satker_raw ...692507001KD.
+ * Kunci (kode_barang, NUP) saja TIDAK cukup: 28 pasangan itu cocok ke 47 aset.
  */
-export const KODE_REGISTER_KEJAKSAAN: ReadonlySet<string> = new Set<string>([])
+export const KODE_REGISTER_KEJAKSAAN: ReadonlySet<string> = new Set<string>([
+  '07E5D79D6BAC9DABE0631661F20AED77',
+  '0E42C07365497551E063BAAAD80A6A15',
+  '0E42C073654A7551E063BAAAD80A6A15',
+  '0E43C873D2F0538DE063B9AAD80A7079',
+  'E0B5C0909F8751B1E0531161F20A35C5',
+  'E0B5C0909FA751B1E0531161F20A35C5',
+  'E0B5C0909FAC51B1E0531161F20A35C5',
+  'E0B5C0909FB351B1E0531161F20A35C5',
+  'E0B5C090A9D76EFFE0531161F20A056C',
+  'E0B5C090B29951AFE0531161F20A22F1',
+  'E0B5C090B29A51AFE0531161F20A22F1',
+  'E0B5C090B29B51AFE0531161F20A22F1',
+  'E0B5C090B2A051AFE0531161F20A22F1',
+  'E0B5C090B2A351AFE0531161F20A22F1',
+  'E0B5C090B2C751AFE0531161F20A22F1',
+  'E0B5C090B2D151AFE0531161F20A22F1',
+  'E0B5C090B2D251AFE0531161F20A22F1',
+  'E0B5C090B2D451AFE0531161F20A22F1',
+  'E0B5C090B2D551AFE0531161F20A22F1',
+  'E0B5C090B2D651AFE0531161F20A22F1',
+  'E0B5C090B2E651AFE0531161F20A22F1',
+  'E0B5C090B2E751AFE0531161F20A22F1',
+  'E0B5C090B2E851AFE0531161F20A22F1',
+  'E0B5C090B2ED51AFE0531161F20A22F1',
+  'E0B5C090B2EE51AFE0531161F20A22F1',
+  'E44DB1D0DA54F0E5E0531661F20A6432',
+  'E874850E25DA5D6DE0531661F20A14CE',
+  'E874A7EE6490DC34E0531261F20A0308',
+])
 
 /** Penanda yang dipakai untuk mewarnai kartu (merah/kuning). */
 export function penandaLabel(b: BarisLabel): PenandaLabel {

@@ -13,6 +13,7 @@ import {
   nupBergeser,
   penandaLabel,
   keteranganPenanda,
+  KODE_REGISTER_KEJAKSAAN,
   persenSelesai,
   saringBaris,
   sudahSelesai,
@@ -175,6 +176,16 @@ describe('penandaLabel', () => {
     expect(penandaLabel(baris({ sumber: 'Eks Rupbasan Bengkalis' }))).toBeNull()
     expect(penandaLabel(baris({ sumber: 'Transfer Kanwil Kemenkum' }))).toBeNull()
     expect(penandaLabel(baris({ sumber: 'PSP lain (Kanwil)' }))).toBeNull()
+  })
+
+  it('aset yang penggunaannya oleh Kejaksaan ditandai ASP (tidak perlu barcode)', () => {
+    // 3010304003 NUP 2 Eks Rupbasan Bengkalis — kolom "Penggunaan" = Kejaksaan.
+    const b = baris({ kodeRegister: '07E5D79D6BAC9DABE0631661F20AED77', sumber: 'Eks Rupbasan Bengkalis' })
+    expect(penandaLabel(b)).toBe('asp-kejaksaan')
+  })
+
+  it('daftar Kejaksaan berisi 28 aset (sumber: Aset Rupbasan Bengkalis pembagian.xlsx)', () => {
+    expect(KODE_REGISTER_KEJAKSAAN.size).toBe(28)
   })
 
   it('keteranganPenanda memberi judul & alasan untuk tiap penanda', () => {
