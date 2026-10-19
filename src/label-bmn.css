@@ -132,6 +132,21 @@
    Tailwind, supaya sejalan dengan pil status di seluruh portal. */
 .label-kartu.kartu-selesai { border-left: 3px solid var(--green); }
 .label-kartu.kartu-belum { border-left: 3px solid var(--amber); }
+
+/* Penanda "tidak perlu label" — menimpa warna status agar langsung terlihat
+   saat tim berjalan di ruangan. Merah = fisik masih di Rupbasan (akan dihapus
+   / belum dipindah); kuning = akan dialihkan status penggunaannya ke Kejaksaan.
+   Ditulis SETELAH aturan status supaya menang pada spesifisitas yang sama. */
+.label-kartu.kartu-tanpa-label {
+  border-left: 5px solid var(--red);
+  background: var(--red-soft);
+}
+.label-kartu.kartu-asp-kejaksaan {
+  border-left: 5px solid #e3b505;
+  background: #fdf7dd;
+}
+.pill-tanpa-label { background: var(--red); color: #fff; }
+.pill-asp { background: #f5d33f; color: #4a3a00; }
 .label-kartu.kartu-terbuka {
   grid-column: 1 / -1;
   border-color: var(--accent);
@@ -213,7 +228,7 @@
 .muted { color: var(--muted-foreground); }
 
 /* ── Status selesai / belum: bentuk & warna pil status portal ─────── */
-.kartu-status { margin: 6px 0 0; }
+.kartu-status { margin: 6px 0 0; display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
 
 .status-badge {
   display: inline-flex; align-items: center; gap: 5px;

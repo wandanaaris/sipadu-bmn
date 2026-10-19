@@ -11,6 +11,8 @@ import {
   kunciBaris,
   merkKosong,
   nupBergeser,
+  penandaLabel,
+  keteranganPenanda,
   persenSelesai,
   saringBaris,
   sudahSelesai,
@@ -151,6 +153,34 @@ describe('nupBergeser', () => {
   it('false bila NUP lama kosong/null', () => {
     expect(nupBergeser(baris({ nup: '5', nupLama: null }))).toBe(false)
     expect(nupBergeser(baris({ nup: '5', nupLama: '  ' }))).toBe(false)
+  })
+})
+
+describe('penandaLabel', () => {
+  it('Eks Rupbasan Bangkinang ditandai tidak perlu label (fisik di Rupbasan, akan dihapus)', () => {
+    expect(penandaLabel(baris({ sumber: 'Eks Rupbasan Bangkinang', keterangan: null }))).toBe('tanpa-label')
+  })
+
+  it('Eks Rupbasan Rengat ditandai tidak perlu label bila fisiknya belum di Kanwil', () => {
+    expect(penandaLabel(baris({ sumber: 'Eks Rupbasan Rengat', keterangan: null }))).toBe('tanpa-label')
+    expect(penandaLabel(baris({ sumber: 'Eks Rupbasan Rengat', keterangan: 'catatan biasa' }))).toBe('tanpa-label')
+  })
+
+  it('Eks Rupbasan Rengat yang fisiknya SUDAH di Kanwil tetap perlu label', () => {
+    const b = baris({ sumber: 'Eks Rupbasan Rengat', keterangan: 'Fisik sudah di Kanwil (hasil ASP eks Rupbasan Rengat)' })
+    expect(penandaLabel(b)).toBeNull()
+  })
+
+  it('sumber lain tidak bertanda apa-apa', () => {
+    expect(penandaLabel(baris({ sumber: 'Eks Rupbasan Bengkalis' }))).toBeNull()
+    expect(penandaLabel(baris({ sumber: 'Transfer Kanwil Kemenkum' }))).toBeNull()
+    expect(penandaLabel(baris({ sumber: 'PSP lain (Kanwil)' }))).toBeNull()
+  })
+
+  it('keteranganPenanda memberi judul & alasan untuk tiap penanda', () => {
+    expect(keteranganPenanda('tanpa-label')?.judul).toBe('Tidak perlu label')
+    expect(keteranganPenanda('asp-kejaksaan')?.judul).toBe('ASP ke Kejaksaan')
+    expect(keteranganPenanda(null)).toBeNull()
   })
 })
 

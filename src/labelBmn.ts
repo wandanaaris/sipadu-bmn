@@ -137,6 +137,37 @@ export function nupBergeser(b: BarisLabel): boolean {
   return b.nupLama !== null && b.nupLama.trim() !== '' && b.nupLama.trim() !== b.nup.trim()
 }
 
+/**
+ * Penanda khusus aset yang TIDAK perlu dipasang label barcode.
+ * - `tanpa-label`  : fisik masih di Rupbasan (akan dihapus / belum dipindah).
+ * - `asp-kejaksaan`: akan diserahkan (Alih Status Penggunaan) ke Kejaksaan.
+ */
+export type PenandaLabel = 'tanpa-label' | 'asp-kejaksaan' | null
+
+/**
+ * Aset eks Rupbasan yang penggunaannya oleh Kejaksaan (akan di-ASP, tidak perlu
+ * barcode). Isi dengan kode register aset terkait; dikosongkan sampai daftarnya
+ * diterima dari Korwil.
+ */
+export const KODE_REGISTER_KEJAKSAAN: ReadonlySet<string> = new Set<string>([])
+
+/** Penanda yang dipakai untuk mewarnai kartu (merah/kuning). */
+export function penandaLabel(b: BarisLabel): PenandaLabel {
+  if (KODE_REGISTER_KEJAKSAAN.has(b.kodeRegister)) return 'asp-kejaksaan'
+  // Bangkinang: fisik masih di Rupbasan dan akan dihapus karena rusak berat.
+  if (b.sumber === 'Eks Rupbasan Bangkinang') return 'tanpa-label'
+  // Rengat: fisik masih di Rupbasan — kecuali yang sudah dipindahkan ke Kanwil.
+  if (b.sumber === 'Eks Rupbasan Rengat' && !fisikDiKanwil(b)) return 'tanpa-label'
+  return null
+}
+
+/** Judul + alasan penanda, untuk pil dan tooltip di kartu. */
+export function keteranganPenanda(p: PenandaLabel): { judul: string; alasan: string } | null {
+  if (p === 'tanpa-label') return { judul: 'Tidak perlu label', alasan: 'Fisik masih di Rupbasan (akan dihapus / belum dipindah ke Kanwil).' }
+  if (p === 'asp-kejaksaan') return { judul: 'ASP ke Kejaksaan', alasan: 'Penggunaan oleh Kejaksaan — akan dialihkan status penggunaannya, tidak perlu barcode.' }
+  return null
+}
+
 /** Urutkan hasil pencarian: NUP terkecil lebih dulu, lalu kode barang. */
 export function urutkanPencarian(daftar: BarisLabel[]): BarisLabel[] {
   return [...daftar].sort((a, b) => {

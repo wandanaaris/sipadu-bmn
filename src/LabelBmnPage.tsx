@@ -6,15 +6,17 @@
 // Kunci aset adalah kode_register (bukan kode barang + NUP), sehingga aset
 // yang kode barang + NUP-nya sama tetap tercatat terpisah.
 import { useEffect, useMemo, useState } from 'react'
-import { Barcode, Camera, CheckCircle2, CircleDot, ClipboardCheck, ClipboardList, MapPin, MessageSquare, RefreshCw, Save, Search, Tag, Trash2, Warehouse, X } from 'lucide-react'
+import { Ban, Barcode, Camera, CheckCircle2, CircleDot, ClipboardCheck, ClipboardList, MapPin, MessageSquare, RefreshCw, Save, Scale, Search, Tag, Trash2, Warehouse, X } from 'lucide-react'
 import {
   badgeUntuk,
   daftarRuang,
   dariJsonb,
   fisikDiKanwil,
+  keteranganPenanda,
   kunciBaris,
   merkKosong,
   nupBergeser,
+  penandaLabel,
   persenSelesai,
   saringBaris,
   sudahSelesai,
@@ -318,8 +320,12 @@ export function LabelBmnPage() {
           const terbuka = sunting === kunci
           const badge = badgeUntuk(b.sumber)
           const selesai = sudahSelesai(b)
+          const penanda = penandaLabel(b)
+          const infoPenanda = keteranganPenanda(penanda)
+          const kelasPenanda = penanda === 'tanpa-label' ? 'kartu-tanpa-label'
+            : penanda === 'asp-kejaksaan' ? 'kartu-asp-kejaksaan' : ''
           return (
-            <article key={kunci} className={`label-kartu ${terbuka ? 'kartu-terbuka' : ''} ${selesai ? 'kartu-selesai' : 'kartu-belum'}`}>
+            <article key={kunci} className={`label-kartu ${terbuka ? 'kartu-terbuka' : ''} ${selesai ? 'kartu-selesai' : 'kartu-belum'} ${kelasPenanda}`}>
               <header className="kartu-head">
                 <div className="kartu-judul">
                   <h3>{b.namaBarang}</h3>
@@ -334,6 +340,11 @@ export function LabelBmnPage() {
                 {selesai
                   ? <span className="status-badge status-selesai"><CheckCircle2 size={14} /> Selesai</span>
                   : <span className="status-badge status-belum"><CircleDot size={14} /> Belum</span>}
+                {infoPenanda && (
+                  <span className={`pill ${penanda === 'asp-kejaksaan' ? 'pill-asp' : 'pill-tanpa-label'}`} title={infoPenanda.alasan}>
+                    {penanda === 'asp-kejaksaan' ? <Scale size={12} /> : <Ban size={12} />} {infoPenanda.judul}
+                  </span>
+                )}
               </div>
 
               <div className="kartu-merk">

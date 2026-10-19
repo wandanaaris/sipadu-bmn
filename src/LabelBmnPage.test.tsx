@@ -281,6 +281,46 @@ describe('LabelBmnPage', () => {
     })
   })
 
+  it('memberi kontainer merah pada Eks Rupbasan Bangkinang (tidak perlu label)', async () => {
+    rpcMock.mockImplementationOnce(async () => ({
+      data: [{
+        kodeRegister: 'REG-BNK', kodeBarang: '3050104003', nup: '3', namaBarang: 'Rak Besi',
+        merk: 'LOKAL', merkSimpan: 'LOKAL', merkTerisi: false,
+        kondisi: 'Rusak Berat', kondisiReal: null, fotoUrl: null, fotoUkuran: null,
+        statusBmn: 'Aktif', noPsp: 'SEK.3-PB.03.01-905', tahunPerolehan: '2015-01-01',
+        nilaiPerolehan: 7691200, nupLama: null,
+        sumber: 'Eks Rupbasan Bangkinang', lokasiSimpan: 'Belum berlokasi',
+        labelTercetak: false, sudahDitempel: false, tanggalTempel: null, petugas: null,
+        sudahDiscan: false, ruangBaru: null, keterangan: null,
+      }],
+      error: null,
+    }))
+    render(<LabelBmnPage />)
+    await waitFor(() => expect(document.querySelector('.label-kartu.kartu-tanpa-label')).not.toBeNull())
+    expect(screen.getByText('Tidak perlu label')).toBeTruthy()
+  })
+
+  it('tidak menandai Eks Rupbasan Rengat yang fisiknya sudah di Kanwil', async () => {
+    rpcMock.mockImplementationOnce(async () => ({
+      data: [{
+        kodeRegister: 'REG-RGT', kodeBarang: '3050201003', nup: '4', namaBarang: 'Kursi Besi/Metal',
+        merk: 'VALE', merkSimpan: 'VALE', merkTerisi: false,
+        kondisi: 'Baik', kondisiReal: null, fotoUrl: null, fotoUkuran: null,
+        statusBmn: 'Aktif', noPsp: 'SEK.3-PB.03.01-904', tahunPerolehan: '2023-01-01',
+        nilaiPerolehan: 1200000, nupLama: null,
+        sumber: 'Eks Rupbasan Rengat', lokasiSimpan: 'Belum berlokasi',
+        labelTercetak: false, sudahDitempel: false, tanggalTempel: null, petugas: null,
+        sudahDiscan: false, ruangBaru: null,
+        keterangan: 'Fisik sudah di Kanwil (hasil ASP eks Rupbasan Rengat)',
+      }],
+      error: null,
+    }))
+    render(<LabelBmnPage />)
+    await waitFor(() => expect(document.querySelectorAll('.label-kartu').length).toBe(1))
+    expect(document.querySelector('.label-kartu.kartu-tanpa-label')).toBeNull()
+    expect(screen.queryByText('Tidak perlu label')).toBeNull()
+  })
+
   it('menampilkan galat bila RPC gagal', async () => {
     rpcMock.mockImplementationOnce(async () => ({ data: null, error: { message: 'koneksi terputus' } }))
     render(<LabelBmnPage />)
