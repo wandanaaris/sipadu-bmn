@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://sipadu-bmn.vercel.app/sitemap.xml
