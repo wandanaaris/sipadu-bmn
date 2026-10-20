@@ -22,6 +22,7 @@ import {
   type KategoriKey,
   type Tindakan,
 } from './adminMetrics'
+import { loadRusakBeratDb } from './lib/rusakBeratDb'
 
 setNamaSatker(satkers.map(s => [s.code, s.name] as [string, string]))
 
@@ -158,7 +159,24 @@ export function PapanTindakanPanel({ tasks, kodeSatker, onPilih }: {
 
 // ── 3. Ringkasan Angka BMN ───────────────────────────────────────────────────
 export function RingkasanAngkaPanel() {
-  const angka = useMemo(() => ringkasanAngka(), [])
+  const [angka, setAngka] = useState<Array<{ label: string; nilai: string; keterangan: string }>>(ringkasanAngka())
+  // Jumlah & nilai aset rusak berat dibaca langsung dari master aset di database
+  // (bukan sumber hardcoded) supaya selalu mengikuti data terbaru.
+  useEffect(() => {
+    let mounted = true
+    void loadRusakBeratDb().then(rows => {
+      if (!mounted) return
+      const rs = rows ?? []
+      const jumlah = rs.reduce((s, r) => s + r.total, 0)
+      const nilai = rs.reduce((s, r) => s + r.nilai, 0)
+      const psp = ringkasanAngka()[0]
+      setAngka([
+        psp,
+        { label: 'Aset rusak berat', nilai: jumlah.toLocaleString('id-ID'), keterangan: `${rs.length} Satker, nilai Rp ${(nilai / 1_000_000_000).toFixed(2)} M` },
+      ])
+    })
+    return () => { mounted = false }
+  }, [])
   return (
     <section className="panel admin-page">
       <div className="panel-head">

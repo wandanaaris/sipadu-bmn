@@ -5,7 +5,7 @@
 // Keputusan kode final tetap ditentukan petugas.
 import { useState } from 'react'
 import { ArrowLeft, ArrowRight, Check, Copy, Search, Sparkles, CircleAlert } from 'lucide-react'
-import { rekomendasiKode, type KandidatKode, type Hasil } from './kodeBarang'
+import { rekomendasiKode, cekDilarang, type KandidatKode, type Hasil } from './kodeBarang'
 
 const CONTOH = ['paracetamol', 'obat', 'kertas hvs', 'meja kerja', 'laptop', 'sepeda motor', 'toner printer', 'air conditioner']
 
@@ -85,8 +85,19 @@ export function KodeBarangPage({ onBack }: { onBack: () => void }) {
           <>
             <div className="kode-count">Menampilkan {hasil.kandidat.length} kode yang paling cocok — verifikasi sebelum digunakan.</div>
             <div className="kode-list">
-              {hasil.kandidat.map((k, i) => (
-                <article key={k.kode} className="kode-card">
+              {hasil.kandidat.map((k, i) => {
+                const larang = cekDilarang(k.kode)
+                return (
+                <article key={k.kode} className={`kode-card ${larang ? 'kode-card-dilarang' : ''}`}>
+                  {larang && (
+                    <div className="kode-dilarang-banner">
+                      <CircleAlert size={17} />
+                      <div>
+                        <strong>Kode ini tidak boleh dipakai — {larang.nama}.</strong>
+                        <span>{larang.pesan}</span>
+                      </div>
+                    </div>
+                  )}
                   <div className="kode-card-top">
                     <span className="kode-rank">#{i + 1}</span>
                     <span className={`kode-kina kina-${KINA[k.keyakinan]}`}>{k.keyakinan}</span>
@@ -126,8 +137,9 @@ export function KodeBarangPage({ onBack }: { onBack: () => void }) {
                       </ul>
                     </div>
                   )}
-                </article>
-              ))}
+                  </article>
+                )
+              })}
             </div>
           </>
         )}

@@ -1,6 +1,6 @@
 // Tes ranker kode barang: perilaku, bukan implementasi detail.
 import { describe, expect, it } from 'vitest'
-import { rekomendasiKode, kodeKeTitik } from './kodeBarang'
+import { rekomendasiKode, cekDilarang, kodeKeTitik } from './kodeBarang'
 
 describe('kodeKeTitik', () => {
   it('mengubah kode 10 digit ke format titik Kemenkumham', () => {
@@ -216,5 +216,19 @@ describe('rekomendasiKode', () => {
       const r = rekomendasiKode(q)
       expect(r.kandidat[0]?.keyakinan).not.toBe('Sangat relevan')
     }
+  })
+})
+
+describe('cekDilarang', () => {
+  it('menandai kode yang dilarang beserta pesannya', () => {
+    expect(cekDilarang('1010105001')?.nama).toBe('Bahan Baku')
+    expect(cekDilarang('1010201001')?.nama).toBe('Suku Cadang')
+    expect(cekDilarang('1020101001')?.nama).toBe('Barang Tak Habis Pakai')
+    expect(cekDilarang('1030101001')?.nama).toBe('Barang Bekas Dipakai')
+  })
+  it('kode di luar larangan tidak ditandai', () => {
+    expect(cekDilarang('1010314002')).toBeUndefined() // obat diperbolehkan
+    expect(cekDilarang('1010301001')).toBeUndefined() // alat tulis diperbolehkan
+    expect(cekDilarang('3050205019')).toBeUndefined() // aset mixer diperbolehkan
   })
 })

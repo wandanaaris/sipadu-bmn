@@ -53,6 +53,23 @@ export function kodeKeTitik(k10: string): string {
   return `${k10[0]}.${k10.slice(1, 3)}.${k10.slice(3, 5)}.${k10.slice(5, 7)}.${k10.slice(7, 10)}`
 }
 
+// Daftar kode/bagian klasifikasi yang DILARANG dipakai (oleh kebijakan satker/kanwil).
+// [prefiks kode, nama bagian, pesan larangan]. Cek pakai prefix agar mencakup
+// semua turunannya (mis. '10102' melarang seluruh leaf di kelompok Suku Cadang).
+const KODE_DILARANG: Array<[string, string, string]> = [
+  ['1010105', 'Bahan Baku', 'Kode Bahan Baku tidak boleh dipakai. Gunakan kode spesifik sesuai jenis barang yang dibeli (mis. bahan bangunan, bahan kimia, alat tulis, obat).'],
+  ['10102', 'Suku Cadang', 'Kode Suku Cadang tidak boleh dipakai untuk pengadaan barang persediaan biasa. Gunakan kode barang habis pakai yang sesuai.'],
+  ['102', 'Barang Tak Habis Pakai', 'Kode Barang Tak Habis Pakai tidak boleh dipakai untuk pencatatan ini. Gunakan kode yang tepat sesuai jenis barangnya.'],
+  ['103', 'Barang Bekas Dipakai', 'Kode Barang Bekas Dipakai tidak boleh dipakai untuk pengadaan baru. Gunakan kode barang habis pakai yang sesuai.'],
+]
+/** Info larangan untuk kode, bila kode termasuk bagian yang dilarang; sebaliknya undefined. */
+export function cekDilarang(kode: string): { nama: string; pesan: string; kode: string } | undefined {
+  for (const [pref, nama, pesan] of KODE_DILARANG) {
+    if (kode.startsWith(pref)) return { nama, pesan, kode: pref }
+  }
+  return undefined
+}
+
 /** Penjelasan otomatis bila kode belum punya deskripsi terkurasi.
  *  Disusun dari rantai klasifikasi menjadi kalimat Indonesia yang wajar —
  *  mis. dua "Blender" (alat dapur vs lab) terbaca beda, tanpa label mentah. */

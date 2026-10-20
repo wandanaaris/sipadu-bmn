@@ -1,7 +1,8 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Plus, Trash2 } from 'lucide-react'
 import { belumPspSatker } from './pspData'
-import { asetSatker, kategoriLabel, type KategoriRusak } from './rusakBeratData'
+import { kategoriLabel, type KategoriRusak } from './rusakBeratData'
+import { loadRusakBeratDb, type RusakBeratRekap } from './lib/rusakBeratDb'
 import type { StageFieldColumn, WorkflowStage } from './data'
 
 // Data isian tahap disimpan satu paket per pekerjaan dan Satker, sehingga
@@ -335,17 +336,27 @@ export function PspInfoPanel({ kodeSatker }: { kodeSatker: string }) {
 // Menampilkan jumlah aset rusak berat Satker pada kategori tertentu sebagai
 // data acuan di Tahap I, supaya operator tahu berapa aset yang harus diajukan.
 export function AsetRusakPanel({ kodeSatker, kategori }: { kodeSatker: string; kategori: KategoriRusak }) {
-  const aset = asetSatker(kodeSatker, kategori)
-  if (!aset.jumlah) return null
+  const [rekap, setRekap] = useState<RusakBeratRekap | null>(null)
+  useEffect(() => {
+    let mounted = true
+    void loadRusakBeratDb().then(rows => { if (mounted) setRekap(rows?.find(r => r.satker_code === kodeSatker) ?? null) })
+    return () => { mounted = false }
+  }, [kodeSatker])
+  // Jumlah dan nilai dibaca langsung dari database per kategori.
+  const key = kategori.toLowerCase() as 'a' | 'b' | 'c'
+  const nilaiKey = (`nilai_${kategori.toLowerCase()}`) as 'nilai_a' | 'nilai_b' | 'nilai_c'
+  const jumlah = rekap ? rekap[key] : 0
+  const nilai = rekap ? rekap[nilaiKey] : 0
+  if (!jumlah) return null
   return (
     <div className="psp-info">
       <div className="psp-info-angka">
-        <strong>{aset.jumlah.toLocaleString('id-ID')}</strong>
+        <strong>{jumlah.toLocaleString('id-ID')}</strong>
         <span>aset rusak berat</span>
       </div>
       <p>
         <strong>{kategoriLabel[kategori]}</strong> — total nilai perolehan{' '}
-        <strong>{formatRupiah(String(aset.nilai))}</strong> rupiah. Jumlah ini berasal dari
+        <strong>{formatRupiah(String(nilai))}</strong> rupiah. Jumlah ini berasal dari
         Master Aset SIMAN dan tidak perlu diisi ulang; catat nomor tiket pada tahap ini.
       </p>
     </div>

@@ -225,6 +225,40 @@
   padding: 8px 12px;
 }
 
+/* Banner larangan kode (merah) */
+.kode-card-dilarang {
+  border-color: #e4b3b3;
+  box-shadow: 0 0 0 2px rgba(200, 60, 60, .08);
+}
+.kode-dilarang-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin-bottom: 12px;
+  background: #fdecec;
+  border: 1px solid #e2a7a7;
+  border-left: 4px solid #c7253e;
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: #8d1b2d;
+}
+.kode-dilarang-banner svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: #c7253e;
+}
+.kode-dilarang-banner strong {
+  display: block;
+  font-size: 13.5px;
+  margin-bottom: 2px;
+}
+.kode-dilarang-banner span {
+  display: block;
+  font-size: 12.5px;
+  line-height: 1.5;
+  opacity: .9;
+}
+
 /* Breadcrumb jalur */
 .kode-jalur {
   display: flex;
