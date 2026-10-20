@@ -14,10 +14,8 @@ export type BarisLabel = {
   kondisi: string
   /** Kondisi nyata hasil pengamatan di lapangan. */
   kondisiReal: string | null
-  /** URL foto (base64 data URL, sudah dikompres ≤ 500 KB). */
-  fotoUrl: string | null
-  /** Ukuran foto terkompres dalam byte. */
-  fotoUkuran: number | null
+  /** Apakah ada foto bukti (diambil terpisah saat pengguna membukanya). */
+  adaFoto: boolean
   statusBmn: string
   noPsp: string
   tahunPerolehan: string
@@ -233,8 +231,7 @@ export function dariJsonb(raw: unknown): BarisLabel {
     merkTerisi: Boolean(r.merkTerisi),
     kondisi: teks(r.kondisi),
     kondisiReal: r.kondisiReal ? teks(r.kondisiReal) : null,
-    fotoUrl: r.fotoUrl ? teks(r.fotoUrl) : null,
-    fotoUkuran: r.fotoUkuran === null || r.fotoUkuran === undefined ? null : Number(r.fotoUkuran),
+    adaFoto: r.adaFoto === true,
     statusBmn: teks(r.statusBmn),
     noPsp: teks(r.noPsp),
     tahunPerolehan: teks(r.tahunPerolehan),

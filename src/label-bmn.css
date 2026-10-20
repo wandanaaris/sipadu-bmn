@@ -354,3 +354,13 @@
 .label-cek input { width: 1rem; height: 1rem; accent-color: var(--accent); }
 .label-ket { grid-column: 1 / -1; }
 .label-drawer footer { display: flex; gap: 0.5rem; margin-top: 0.85rem; }
+
+/* Tombol "Lihat foto" + modal pratinjau foto (foto tidak ditanam di daftar). */
+.kartu-foto-lihat { display: inline-flex; align-items: center; gap: 0.3rem; border: 1px solid var(--border); border-radius: 8px; padding: 0.32rem 0.6rem; background: transparent; color: var(--accent); font-size: 0.8rem; font-family: inherit; cursor: pointer; }
+.kartu-foto-lihat:hover { background: var(--panel); }
+.foto-modal { position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; background: rgba(15, 23, 42, 0.72); padding: 1rem; }
+.foto-modal-isi { position: relative; max-width: min(92vw, 46rem); max-height: 88vh; display: flex; flex-direction: column; gap: 0.5rem; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 0.8rem; box-shadow: 0 20px 60px rgba(0,0,0,0.35); }
+.foto-modal-isi img { max-width: 100%; max-height: 74vh; object-fit: contain; border-radius: 8px; background: #0b1220; }
+.foto-modal-isi small { color: var(--muted-foreground); text-align: center; }
+.foto-modal-tutup { align-self: flex-end; display: inline-flex; align-items: center; gap: 0.3rem; border: 1px solid var(--border); border-radius: 8px; padding: 0.32rem 0.7rem; background: transparent; color: var(--foreground); font-size: 0.82rem; font-family: inherit; cursor: pointer; }
+.foto-modal-tutup:hover { background: var(--panel); }

@@ -41,6 +41,7 @@ function formatRupiah(n: number | null): string {
 }
 
 type StatusFilter = NonNullable<FilterLabel['status']>
+type FotoLihat = { url: string; label: string }
 type Rekap = {
   total: number
   selesai: number
@@ -143,8 +144,8 @@ export function LabelBmnPage() {
     setDraf({
       merk: b.merk,
       kondisiReal: b.kondisiReal ?? '',
-      fotoUrl: b.fotoUrl ?? '',
-      fotoUkuran: b.fotoUkuran ?? 0,
+      fotoUrl: '',
+      fotoUkuran: 0,
       ruangBaru: b.ruangBaru ?? '',
       sudahDitempel: b.sudahDitempel,
       tanggalTempel: b.tanggalTempel ?? '',
@@ -157,6 +158,21 @@ export function LabelBmnPage() {
   }
 
   const tutupSunting = () => { setSunting(null); setDraf(drafKosong()) }
+
+  // Foto diambil per aset saat dibuka. RPC daftar sengaja TIDAK menanamkan foto
+  // (base64 puluhan MB) supaya muat cepat dan tidak melebihi statement_timeout.
+  const [fotoLihat, setFotoLihat] = useState<FotoLihat | null>(null)
+  const lihatFoto = async (b: BarisLabel) => {
+    try {
+      const { supabase } = await import('./lib/supabase')
+      if (!supabase) return
+      const { data, error } = await supabase.rpc('bmn_label_foto', { p_satker: SATKER, p_kode_register: b.kodeRegister })
+      if (error) { setGalat(error.message); return }
+      if (typeof data === 'string' && data) setFotoLihat({ url: data, label: `${b.namaBarang} (NUP ${b.nup})` })
+    } catch (e) {
+      setGalat(e instanceof Error ? e.message : 'Foto gagal dimuat.')
+    }
+  }
 
   const simpan = async (b: BarisLabel) => {
     setSibuk(true); setGalat(''); setPesan('')
@@ -192,6 +208,7 @@ export function LabelBmnPage() {
   }
 
   return (
+    <>
     <section className="panel admin-page">
       <div className="panel-head">
         <div>
@@ -368,11 +385,10 @@ export function LabelBmnPage() {
                 </div>
               )}
 
-              {b.fotoUrl && (
-                <a className="kartu-foto" href={b.fotoUrl} target="_blank" rel="noreferrer">
-                  <img src={b.fotoUrl} alt={`Foto ${b.namaBarang} NUP ${b.nup}`} loading="lazy" />
-                  <small><Camera size={11} /> Lihat foto{b.fotoUkuran ? ` · ${formatUkuran(b.fotoUkuran)}` : ''}</small>
-                </a>
+              {b.adaFoto && (
+                <button type="button" className="kartu-foto-lihat" onClick={() => void lihatFoto(b)}>
+                  <Camera size={12} /> Lihat foto
+                </button>
               )}
 
               <div className="kartu-lokasi">
@@ -475,6 +491,17 @@ export function LabelBmnPage() {
         })}
       </div>
     </section>
+
+    {fotoLihat && (
+      <div className="foto-modal" onClick={() => setFotoLihat(null)}>
+        <div className="foto-modal-isi" onClick={e => e.stopPropagation()}>
+          <button type="button" className="foto-modal-tutup" onClick={() => setFotoLihat(null)}><X size={16} /> Tutup</button>
+          <img src={fotoLihat.url} alt={fotoLihat.label} />
+          <small>{fotoLihat.label}</small>
+        </div>
+      </div>
+    )}
+    </>
   )
 }
 

@@ -34,8 +34,7 @@ const baris = (sebagian: Partial<BarisLabel>): BarisLabel => ({
   merkTerisi: false,
   kondisi: 'Baik',
   kondisiReal: null,
-  fotoUrl: null,
-  fotoUkuran: null,
+  adaFoto: false,
   statusBmn: 'Aktif',
   noPsp: '',
   tahunPerolehan: '2024-01-01',
@@ -257,11 +256,15 @@ describe('dariJsonb', () => {
       kodeBarang: '3050201020', nup: '4', merk: 'FUTURA',
       tahunPerolehan: '2026-03-11',
       kondisiReal: 'Rusak Ringan',
-      fotoUrl: 'data:image/jpeg;base64,AAAA', fotoUkuran: 314572,
+      adaFoto: true,
     })
     expect(b.tahunPerolehan).toBe('2026-03-11')
     expect(b.kondisiReal).toBe('Rusak Ringan')
-    expect(b.fotoUkuran).toBe(314572)
+    expect(b.adaFoto).toBe(true)
+  })
+
+  it('foto di daftar hanya berupa flag; isi foto diambil terpisah', () => {
+    expect(dariJsonb({ adaFoto: false }).adaFoto).toBe(false)
   })
 
   it('membaca nilai perolehan dan NUP lama (Transfer Kanwil Kemenkum)', () => {
