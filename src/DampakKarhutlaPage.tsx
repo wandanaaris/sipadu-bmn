@@ -207,7 +207,6 @@ export function DampakKarhutlaPage() {
                     <input
                       value={nip}
                       onChange={e => setNip(e.target.value.replace(/\D/g, '').slice(0, 18))}
-                      placeholder="18 digit NIP, contoh 197308141997031001"
                       inputMode="numeric"
                       autoComplete="off"
                     />
