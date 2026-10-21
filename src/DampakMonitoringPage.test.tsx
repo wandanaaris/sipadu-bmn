@@ -38,6 +38,8 @@ describe('DampakMonitoringPage', () => {
     render(<DampakMonitoringPage />)
     await waitFor(() => expect(screen.getByText('Bapas Kelas I Pekanbaru')).toBeInTheDocument())
     expect(screen.getByText('Lapas Kelas IIA Pekanbaru')).toBeInTheDocument()
+    // Tombol salin ringkasan WhatsApp untuk pengingat satker.
+    expect(screen.getByRole('button', { name: /Salin untuk WhatsApp/ })).toBeInTheDocument()
     // total pegawai = 75 + 145 = 220
     expect(screen.getByText('220')).toBeInTheDocument()
     // sudah mengisi = 30

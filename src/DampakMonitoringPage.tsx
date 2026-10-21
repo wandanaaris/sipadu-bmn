@@ -3,7 +3,7 @@
 // pegawai per satker dengan status, dan Korwil dapat menerima / minta perbaikan.
 import { useEffect, useMemo, useState } from 'react'
 import {
-  ArrowLeft, Building2, CheckCircle2, CircleAlert, ExternalLink,
+  ArrowLeft, Building2, CheckCircle2, CircleAlert, Copy, ExternalLink,
   Loader2, RefreshCw, Search, ShieldCheck, Users,
 } from 'lucide-react'
 import { satkers } from './data'
@@ -51,7 +51,7 @@ export function DampakMonitoringPage() {
   const [pesan, setPesan] = useState('')
 
   const muat = async () => {
-    setLoading(true); setError('')
+    setLoading(true); setError(''); setPesan('')
     try {
       if (!supabase) { setError('Koneksi database belum tersedia.'); return }
       const { data, error: e } = await supabase.rpc('get_dukungan_bencana_rekap')
@@ -61,6 +61,30 @@ export function DampakMonitoringPage() {
     finally { setLoading(false) }
   }
   useEffect(() => { void muat() }, [])
+
+  // Susun pesan ringkasan pengisian per satker untuk dibagikan/reminder WA.
+  const susunPesanWa = (): string => {
+    const header = `*Monitoring Dukungan Bencana — Kanwil Ditjenpas Riau*\nPengisian bukti pendataan pegawai terdampak bencana (Karhutla/Kekeringan), per ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}:\n\n`
+    const daftar = rekap
+      .slice()
+      .sort((a, b) => (a.nama ?? '').localeCompare(b.nama ?? ''))
+      .map(r => {
+        const pct = r.total ? Math.round((nf(r.selesai) / nf(r.total)) * 100) : 0
+        return `• ${r.nama} — ${pct}% (${nf(r.selesai)}/${nf(r.total)}${nf(r.menunggu) ? `, ${nf(r.menunggu)} menunggu verifikasi` : ''})`
+      })
+      .join('\n')
+    return header + (daftar || 'Belum ada data satker.')
+  }
+
+  const salinWa = async () => {
+    try {
+      const teks = susunPesanWa()
+      await navigator.clipboard.writeText(teks)
+      setPesan('Pesan WhatsApp disalin. Tempel (paste) di aplikasi WhatsApp untuk mengirim.')
+    } catch {
+      setError('Pesan belum dapat disalin. Salin manual dari isi halaman.')
+    }
+  }
 
   const muatDetail = async (code: string) => {
     setPilih(code); setDetail(null); setDetailLoading(true); setError(''); setCari(''); setFilter('semua'); setCatatan({})
@@ -178,9 +202,13 @@ export function DampakMonitoringPage() {
           <h2>Pendataan Pegawai Terdampak Bencana</h2>
           <p>Rekap pengisian per satker. Klik satker untuk melihat per pegawai siapa yang sudah &amp; belum.</p>
         </div>
-        <button className="icon-button" onClick={() => void muat()} title="Muat ulang"><RefreshCw size={16} /></button>
+        <div className="dampak-mon-actions">
+          <button className="primary dampak-mon-wa" onClick={() => void salinWa()}><Copy size={15} /> Salin untuk WhatsApp</button>
+          <button className="icon-button" onClick={() => void muat()} title="Muat ulang"><RefreshCw size={16} /></button>
+        </div>
       </div>
 
+      {pesan && <div className="auth-message ok"><CheckCircle2 size={14} />{pesan}</div>}
       {error && <div className="auth-message error"><CircleAlert size={14} />{error}</div>}
 
       <div className="dampak-mon-stat">

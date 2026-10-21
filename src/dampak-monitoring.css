@@ -10,6 +10,8 @@
 .dampak-mon-head p { margin: 3px 0 0; font-size: .78rem; color: var(--muted-foreground, #657484); }
 .dampak-mon-head .eyebrow { color: var(--blue, #1769aa); }
 .dampak-mon-head .icon-button { margin-left: auto; }
+.dampak-mon-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+.dampak-mon-wa { white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
 
 .dampak-mon-stat { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
 .dampak-mon-stat > div { background: var(--card, #fff); border: 1px solid var(--border, #e8ecef); border-radius: 12px; padding: 13px 15px; }
