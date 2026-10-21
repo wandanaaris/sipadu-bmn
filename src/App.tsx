@@ -14,6 +14,8 @@ import { LabelBmnPage } from './LabelBmnPage'
 import './label-bmn.css'
 import { DampakKarhutlaPage } from './DampakKarhutlaPage'
 import './dampak-karhutla.css'
+import { DampakMonitoringPage } from './DampakMonitoringPage'
+import './dampak-monitoring.css'
 import { KodeBarangPage } from './KodeBarangPage'
 import './kode-barang.css'
 import { BmnAssetInfographic } from './BmnAssetInfographic'
@@ -30,7 +32,7 @@ import './workflow-layout.css'
 
 type View = 'admin' | 'satker'
 type FilterState = 'semua' | TaskStatus
-type AdminPage = 'summary' | 'executive' | 'monev' | 'tasks' | 'data' | 'label' | 'impor' | 'akun-mitra' | 'verification' | 'archive' | 'performance' | 'settings'
+type AdminPage = 'summary' | 'executive' | 'monev' | 'tasks' | 'data' | 'label' | 'impor' | 'akun-mitra' | 'verification' | 'archive' | 'performance' | 'settings' | 'dampak'
 
 const methodMeta: Record<TaskMethod,{label:string; Icon: typeof FileSpreadsheet}> = {
   spreadsheet:{label:'Spreadsheet eksternal',Icon:FileSpreadsheet},
@@ -145,7 +147,7 @@ function AdminView({tasks,dataSource,adminProfile,onLogout,onRefresh,filter,setF
   const [navBuka,setNavBuka]=useState(false)
   const [verify,setVerify]=useState(0)
   useEffect(()=>{let mounted=true;void loadSubmissions().then(items=>{if(mounted)setVerify(countPendingVerifications(items))}).catch(()=>{if(mounted)setVerify(0)});return()=>{mounted=false}},[tasks])
-  const pageTitle:Record<AdminPage,string>={summary:'Dashboard Korwil BMN',executive:'Ringkasan Pimpinan',monev:'Monitoring Satker',tasks:'Daftar Pekerjaan',data:'Data Center BMN',label:'Label Barcode BMN',impor:'Impor Data Aset','akun-mitra':'Data Akun Mitra',verification:'Verifikasi Pekerjaan',archive:'Arsip Pekerjaan',performance:'Kinerja UPT',settings:'Pengaturan Portal'}
+  const pageTitle:Record<AdminPage,string>={summary:'Dashboard Korwil BMN',executive:'Ringkasan Pimpinan',monev:'Monitoring Satker',tasks:'Daftar Pekerjaan',data:'Data Center BMN',label:'Label Barcode BMN',impor:'Impor Data Aset','akun-mitra':'Data Akun Mitra',verification:'Verifikasi Pekerjaan',archive:'Arsip Pekerjaan',performance:'Kinerja UPT',settings:'Pengaturan Portal',dampak:'Monitoring Dukungan Bencana'}
   const active=tasks.filter(t=>t.active)
   const allAssignments=active.flatMap(t=>t.assignments.map(a=>({...a,task:t})))
   const stagedPendingCount=tasks.filter(t=>t.workflow==='staged-destruction'&&t.active).flatMap(t=>t.assignments.filter(a=>(a.stageStates??[]).includes('menunggu_verifikasi'))).length
@@ -162,6 +164,7 @@ function AdminView({tasks,dataSource,adminProfile,onLogout,onRefresh,filter,setF
         <button onClick={()=>{onOpenExec();setNavBuka(false)}}><TrendingUp/>Ringkasan Pimpinan</button>
         <button className={adminPage==='tasks'?'nav-active':''} onClick={()=>{setAdminPage('tasks');setNavBuka(false)}}><ClipboardCheck/>Pekerjaan <span>{active.length}</span></button>
         <button className={adminPage==='monev'?'nav-active':''} onClick={()=>{setMonevSatker(null);setAdminPage('monev');setNavBuka(false)}}><Users/>Monitoring Satker</button>
+        <button className={adminPage==='dampak'?'nav-active':''} onClick={()=>{setAdminPage('dampak');setNavBuka(false)}}><Users/>Dampak Bencana</button>
         <button className={adminPage==='data'?'nav-active':''} onClick={()=>{setAdminPage('data');setNavBuka(false)}}><Database/>Data Center BMN</button>
         <button className={adminPage==='label'?'nav-active':''} onClick={()=>{setAdminPage('label');setNavBuka(false)}}><Barcode/>Label Barcode</button>
         <button className={adminPage==='impor'?'nav-active':''} onClick={()=>{setAdminPage('impor');setNavBuka(false)}}><Upload/>Impor Data Aset</button>
@@ -304,6 +307,7 @@ function AdminRouter({page,tasks,detail,setDetail,toggleTask,setMonev,onRefresh,
  if(page==='verification') return <><StagedVerificationSection tasks={tasks} onRefresh={onRefresh}/><SubmissionInbox onTasksChanged={onRefresh} tasks={tasks}/></>
  if(page==='performance') return <PerformanceView/>
  if(page==='data')return <DataCenterBmnPage onBukaSatker={setMonev}/>
+if(page==='dampak')return <DampakMonitoringPage/>
  if(page==='label')return <LabelBmnPage/>
  if(page==='impor')return <ImporAsetPage/>
  if(page==='archive') {const archived=tasks.filter(t=>!t.active);return <section className="panel admin-page"><div className="panel-head"><div><h2>Arsip pekerjaan</h2><p>Pekerjaan ditutup tetap tersimpan dan dapat dibuka kembali.</p></div></div>{archived.length===0?<EmptyState icon={Archive} title="Arsip masih kosong" text="Pekerjaan yang ditutup akan tersimpan di sini."/>:<div className="archive-grid">{archived.map(t=><article className="archive-card" key={t.id}><MethodIcon method={t.method}/><div><span>{t.due}</span><h3>{t.title}</h3><p>{t.letter}</p></div><button className="ghost" onClick={()=>toggleTask(t.id)}>Buka kembali</button></article>)}</div>}</section>}
