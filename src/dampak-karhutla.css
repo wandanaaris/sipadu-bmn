@@ -1,0 +1,74 @@
+/* Halaman publik pendataan dukungan bencana Karhutla — /dampak-karhutla */
+.dampak-page { min-height: 100vh; background: var(--background, #f4f6f8); display: flex; flex-direction: column; }
+.dampak-page .landing-header { border-bottom: 1px solid var(--border, #e8ecef); background: var(--card, #fff); }
+.dampak-main { flex: 1; width: 100%; max-width: 760px; margin: 0 auto; padding: 26px 18px 40px; display: flex; flex-direction: column; gap: 16px; }
+.dampak-hero {
+  position: relative; overflow: hidden; border-radius: 18px; padding: 22px 24px; color: #fff;
+  background: linear-gradient(135deg, #0f5f91 0%, #1769aa 55%, #2e7fb8 100%);
+  box-shadow: 0 12px 32px rgba(23, 105, 170, .24); display: flex; gap: 16px; align-items: flex-start;
+  animation: pa-fade-up .45s cubic-bezier(.22,1,.36,1);
+}
+.dampak-hero::after { content: ""; position: absolute; right: -60px; top: -90px; width: 240px; height: 240px; border-radius: 50%; background: rgba(255,255,255,.09); pointer-events: none; }
+.dampak-hero-icon { flex: none; width: 54px; height: 54px; border-radius: 15px; display: grid; place-items: center; background: rgba(255,255,255,.18); border: 1px solid rgba(255,255,255,.25); }
+.dampak-hero .eyebrow { color: rgba(255,255,255,.8); }
+.dampak-hero h1 { margin: 6px 0 6px; font-size: 1.35rem; line-height: 1.25; color: #fff; }
+.dampak-hero p { margin: 0; font-size: .8rem; line-height: 1.6; color: rgba(255,255,255,.88); }
+.dampak-hero p b { color: #fff; }
+
+.dampak-card { background: var(--card, #fff); border: 1px solid var(--border, #e8ecef); border-radius: 16px; box-shadow: var(--shadow, 0 1px 2px rgba(16,31,47,.05)); padding: 18px 20px; }
+.dampak-card-head { display: flex; gap: 11px; align-items: center; margin-bottom: 14px; }
+.dampak-card-head svg { color: var(--accent, #1769aa); flex: none; }
+.dampak-card-head h2 { margin: 0; font-size: 1.02rem; }
+.dampak-card-head p { margin: 2px 0 0; font-size: .75rem; color: var(--muted-foreground, #657484); }
+
+.dampak-form { display: flex; flex-direction: column; gap: 12px; }
+.dampak-link-box { display: flex; flex-direction: column; gap: 3px; border: 1px solid #cfe3f2; background: var(--accent-soft, #eaf3fb); border-radius: 11px; padding: 13px 14px; }
+.dampak-link-box strong { font-size: .86rem; color: #0f3c5c; display: flex; align-items: center; gap: 6px; }
+.dampak-link-box > span { font-size: .72rem; color: var(--muted-foreground, #4d5c6b); }
+.dampak-link-box a { margin-top: 8px; align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; background: var(--accent, #1769aa); color: #fff; font-size: .78rem; font-weight: 600; padding: 7px 13px; border-radius: 8px; text-decoration: none; }
+.dampak-link-box a:hover { background: #0f5588; }
+.dampak-nip-field > span { display: block; font-size: 10px; font-weight: 600; color: var(--muted-foreground, #657484); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .04em; }
+.dampak-nip-input { display: flex; align-items: center; gap: 8px; border: 1px solid var(--border, #dfe5ea); border-radius: 9px; padding: 0 6px 0 11px; background: #fff; }
+.dampak-nip-input svg { color: #94a3b8; flex: none; }
+.dampak-nip-input input { flex: 1; border: 0; outline: none; font-size: .95rem; padding: 12px 4px; letter-spacing: .03em; color: var(--foreground, #152130); background: transparent; }
+.dampak-nip-input .primary { white-space: nowrap; padding: 10px 18px; border-radius: 7px; }
+
+.dampak-identitas { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 4px; }
+.dampak-identitas div { background: var(--accent-soft, #eaf3fb); border: 1px solid #cfe3f2; border-radius: 10px; padding: 11px 14px; }
+.dampak-identitas div:first-child { grid-column: 1 / -1; }
+.dampak-identitas span { display: block; font-size: .66rem; color: var(--muted-foreground, #657484); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 4px; }
+.dampak-identitas strong { font-size: .92rem; color: #0f3c5c; word-break: break-word; }
+.dampak-identitas strong svg { vertical-align: -2px; margin-right: 5px; }
+
+.dampak-upload { position: relative; display: flex; align-items: center; gap: 13px; border: 1.5px dashed #adbac4; border-radius: 12px; padding: 18px 16px; cursor: pointer; background: #fafcfd; }
+.dampak-upload.has-file { border-style: solid; border-color: #80b69e; background: #f2faf6; }
+.dampak-upload > svg { color: var(--accent, #1769aa); flex: none; }
+.dampak-upload input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.dampak-upload-main { display: flex; flex-direction: column; }
+.dampak-upload-main b { font-size: .9rem; color: #1f2c39; }
+.dampak-upload-main small { font-size: .72rem; color: var(--muted-foreground, #657484); margin-top: 2px; }
+.dampak-file-clear { position: absolute; top: 10px; right: 10px; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: #eef1f4; color: #7b8894; cursor: pointer; }
+.dampak-note { display: flex; gap: 6px; align-items: center; font-size: .72rem; color: var(--muted-foreground, #657484); margin: 8px 0 0; }
+.dampak-note svg { flex: none; }
+.dampak-compress { color: var(--green, #15815d); font-weight: 500; background: var(--green-soft, #e8f5ef); padding: 6px 10px; border-radius: 8px; }
+.dampak-kirim { margin-top: 14px; width: 100%; padding: 13px; font-size: .92rem; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.dampak-disclaimer { margin: 10px 0 0; text-align: center; font-size: .7rem; color: #9aa7b3; }
+.dampak-back { margin-top: 6px; align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; background: none; border: 0; color: var(--muted-foreground, #657484); font-size: .8rem; cursor: pointer; padding: 6px 2px; }
+.dampak-back:hover { color: var(--accent, #1769aa); }
+
+.dampak-sukses { text-align: center; padding: 44px 26px; }
+.dampak-sukses-ikon { width: 68px; height: 68px; margin: 0 auto 14px; display: grid; place-items: center; border-radius: 50%; background: var(--green-soft, #e8f5ef); color: var(--green, #15815d); }
+.dampak-sukses h2 { margin: 0 0 8px; font-size: 1.3rem; }
+.dampak-sukses p { font-size: .86rem; line-height: 1.6; color: var(--muted-foreground, #4d5c6b); max-width: 480px; margin: 0 auto 18px; }
+.dampak-sukses .ghost { margin: 0 auto; }
+
+.spin { animation: dampak-spin .9s linear infinite; }
+@keyframes dampak-spin { to { transform: rotate(360deg); } }
+
+@media (max-width: 560px) {
+  .dampak-identitas { grid-template-columns: 1fr; }
+  .dampak-identitas div:first-child { grid-column: auto; }
+  .dampak-hero { flex-direction: column; }
+  .dampak-nip-input input { font-size: .85rem; }
+  .dampak-nip-input .primary { padding: 10px 14px; }
+}

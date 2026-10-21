@@ -12,6 +12,8 @@ import { rincianKelengkapan, tingkatLencanaPemanfaatan, type UptScore } from './
 import { DataCenterBmnPage, DetailPekerjaanPanel, ImporAsetPage, MonitoringSatkerPage, ProfilAsetDetail, ProfilAsetPage, TaskListPage } from './AdminPanels'
 import { LabelBmnPage } from './LabelBmnPage'
 import './label-bmn.css'
+import { DampakKarhutlaPage } from './DampakKarhutlaPage'
+import './dampak-karhutla.css'
 import { KodeBarangPage } from './KodeBarangPage'
 import './kode-barang.css'
 import { BmnAssetInfographic } from './BmnAssetInfographic'
@@ -106,9 +108,12 @@ function App() {
   }
 
   const isProfilSatkerPath=window.location.pathname.startsWith('/profil-satker')
+  const isDampakPath=window.location.pathname.startsWith('/dampak-karhutla')
   return <div className="app-shell">
     {isProfilSatkerPath
       ? <ProfilAsetPage/>
+      : isDampakPath
+      ? <DampakKarhutlaPage/>
       : execOpen
       ? <ExecutivePublicPage tasks={tasks} onRefresh={refreshTasks} onBack={()=>setExecOpen(false)} setView={setView} onBukaSatker={(kode)=>{setExecOpen(false);setView('admin');setAdminPage('monev');setMonevSatker(kode)}}/>
       : view==='admin'
