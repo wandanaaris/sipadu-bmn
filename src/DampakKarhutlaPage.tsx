@@ -36,7 +36,7 @@ function BrandHeader() {
         <div><strong>SIPADU BMN</strong><span>Ditjenpas Riau</span></div>
       </div>
       <div className="landing-header-actions">
-        <span className="eyebrow">PENDATAAN DUKUNGAN BENCANA</span>
+        <span className="dampak-headbar-label">Pendataan Dukungan Bencana</span>
       </div>
     </header>
   )

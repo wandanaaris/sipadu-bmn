@@ -1,6 +1,6 @@
 /* Halaman publik pendataan dukungan bencana Karhutla — /dampak-karhutla */
 .dampak-page { min-height: 100vh; background: var(--background, #f4f6f8); display: flex; flex-direction: column; }
-.dampak-page .landing-header { border-bottom: 1px solid var(--border, #e8ecef); background: var(--card, #fff); }
+.dampak-headbar-label { font-size: 11px; font-weight: 700; letter-spacing: .5px; color: #fff; white-space: nowrap; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.25); padding: 5px 12px; border-radius: 999px; }
 .dampak-main { flex: 1; width: 100%; max-width: 760px; margin: 0 auto; padding: 26px 18px 40px; display: flex; flex-direction: column; gap: 16px; }
 .dampak-hero {
   position: relative; overflow: hidden; border-radius: 18px; padding: 22px 24px; color: #fff;
