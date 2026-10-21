@@ -13,7 +13,7 @@ import sipaduLogo from './assets/sipadu-bmn-logo.png'
 import { kompresFoto } from './kompresFoto'
 
 const NIP_REGEX = /^\d{18}$/
-const MAX_BYTE = 500 * 1024 // 500 KB
+const MAX_BYTE = 200 * 1024 // 200 KB
 
 function namaSatker(code: string): string {
   return satkers.find(s => s.code === code)?.name ?? code
@@ -91,17 +91,17 @@ export function DampakKarhutlaPage() {
     setKirimError('')
     setKompresiLabel('')
     if (!b) { setFile(null); return }
-    // Non-gambar (PDF): tidak bisa dikompres di browser → wajib ≤ 500 KB.
+    // Non-gambar (PDF): tidak bisa dikompres di browser → wajib ≤ 200 KB.
     if (!b.type.startsWith('image/')) {
       if (b.size > MAX_BYTE) {
         setFile(null)
-        setKirimError(`File ${b.name} berukuran ${(b.size / 1024 / 1024).toFixed(2)} MB melebihi batas 500 KB. PDF tidak dapat dikompres otomatis — gunakan file PDF di bawah 500 KB.`)
+        setKirimError(`File ${b.name} berukuran ${(b.size / 1024 / 1024).toFixed(2)} MB melebihi batas 200 KB. PDF tidak dapat dikompres otomatis — gunakan file PDF di bawah 200 KB.`)
         return
       }
       setFile(b)
       return
     }
-    // Gambar: kompres otomatis hingga di bawah 500 KB.
+    // Gambar: kompres otomatis hingga di bawah 200 KB.
     setMemprosesFile(true)
     try {
       const hasil = await kompresFoto(b, MAX_BYTE)
@@ -116,14 +116,14 @@ export function DampakKarhutlaPage() {
       if (finalFile.size > MAX_BYTE) {
         setFile(null)
         setKompresiLabel('')
-        setKirimError(`Hasil kompresi masih melebihi 500 KB. Gunakan gambar beresolusi lebih kecil.`)
+        setKirimError(`Hasil kompresi masih melebihi 200 KB. Gunakan gambar beresolusi lebih kecil.`)
         return
       }
       setFile(finalFile)
       setKompresiLabel(
         ukuranAsli > MAX_BYTE
-          ? `Dikompres otomatis dari ${(ukuranAsli / 1024).toFixed(0)} KB → ${(finalFile.size / 1024).toFixed(0)} KB (≤ 500 KB).`
-          : `Ukuran ${(finalFile.size / 1024).toFixed(0)} KB (≤ 500 KB).`
+          ? `Dikompres otomatis dari ${(ukuranAsli / 1024).toFixed(0)} KB → ${(finalFile.size / 1024).toFixed(0)} KB (≤ 200 KB).`
+          : `Ukuran ${(finalFile.size / 1024).toFixed(0)} KB (≤ 200 KB).`
       )
     } catch (e) {
       setFile(null)
@@ -238,17 +238,17 @@ export function DampakKarhutlaPage() {
               <section className="dampak-card">
                 <div className="dampak-card-head">
                   <Camera size={18} />
-                  <div><h2>Unggah bukti pengisian Google Form</h2><p>Foto/screenshot bukti sudah mengisi Google Form Biro Umum. Maksimal 500 KB — gambar di atasnya otomatis dikompres.</p></div>
+                  <div><h2>Unggah bukti pengisian Google Form</h2><p>Foto/screenshot bukti sudah mengisi Google Form Biro Umum. Maksimal 200 KB — gambar di atasnya otomatis dikompres.</p></div>
                 </div>
                 <label className={`dampak-upload ${file ? 'has-file' : ''}`}>
                   <input type="file" accept=".jpg,.jpeg,.png,.webp,.pdf" disabled={memprosesFile} onChange={e => void prosesFile(e.target.files?.[0] ?? null)} />
                   <UploadCloud size={22} />
                   <span className="dampak-upload-main">
                     {memprosesFile
-                      ? <><b>Mengompres gambar…</b><small>menyesuaikan agar ≤ 500 KB</small></>
+                      ? <><b>Mengompres gambar…</b><small>menyesuaikan agar ≤ 200 KB</small></>
                       : file
                       ? <><b>{file.name}</b><small>{(file.size / 1024).toFixed(0)} KB</small></>
-                      : <><b>Pilih file bukti</b><small>JPG, PNG, WebP, atau PDF · maks. 500 KB</small></>}
+                      : <><b>Pilih file bukti</b><small>JPG, PNG, WebP, atau PDF · maks. 200 KB</small></>}
                   </span>
                   {file && !memprosesFile && <i className="dampak-file-clear" onClick={e => { e.preventDefault(); setFile(null); setKompresiLabel('') }}><X size={14} /></i>}
                 </label>
