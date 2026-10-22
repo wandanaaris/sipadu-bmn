@@ -497,7 +497,14 @@ function SatkerLanding({setView,chooseSatker,tasks,onOpenTelaah,onOpenKode}:{set
 function SatkerTaskDetail({item,onBack,flash,onRefresh}:{item:{task:Task;assignment:Task['assignments'][number]};onBack:()=>void;flash:(s:string)=>void;onRefresh:()=>Promise<void>}){
  const {task,assignment}=item;const meta=methodMeta[task.method]
  if(task.workflow==='staged-destruction') return <StagedDestructionView task={task} assignment={assignment} flash={flash} onBack={onBack} onRefresh={onRefresh}/>
- const handleSubmitLink=async()=>{try{const nama=(window.prompt('Nama pengirim (operator satker):')||'').trim();if(!nama)return;await submitLinkSubmission({task,satkerCode:assignment.satker,senderName:nama,senderPhone:'',senderNote:'',sheetUrl:task.link??''});flash('Pekerjaan diajukan dan masuk antrean verifikasi Korwil.')}catch(err){flash(err instanceof Error?err.message:'Pengajuan belum dapat dikirim.')}}
+ const handleSubmitLink=async()=>{try{const nama=(window.prompt('Nama pengirim (operator satker):')||'').trim();if(!nama)return;
+  // Tugas spreadsheet boleh tanpa kolom `link` (mis. JFPP hanya punya uploadLink
+  // = folder Drive). Pakai link tugas, lalu uploadLink, lalu minta operator
+  // mengisi — jangan pernah mengirim sheetUrl kosong (ditolak server).
+  let sheetUrl=task.link||task.uploadLink||'';
+  if(!sheetUrl){sheetUrl=(window.prompt('Tautan folder/sheet hasil unggah:')||'').trim();if(!sheetUrl){flash('Tautan belum diisi.');return}}
+  await submitLinkSubmission({task,satkerCode:assignment.satker,senderName:nama,senderPhone:'',senderNote:'',sheetUrl});
+  flash('Pekerjaan diajukan dan masuk antrean verifikasi Korwil.')}catch(err){flash(err instanceof Error?err.message:'Pengajuan belum dapat dikirim.')}}
 
  return <div className="task-detail-page"><button className="back" onClick={onBack}><ArrowLeft/>Kembali ke daftar pekerjaan</button><div className="detail-heading"><div className={`method-icon method-${task.method}`}><meta.Icon/></div><div><span>{meta.label}</span><h1>{task.title}</h1><p>{task.description}</p></div><StatusPill status={assignment.status}/></div><div className="detail-layout"><section className="panel detail-content">{task.id==='jfpp-data-dukung-2026'&&<div className="lampiran-box">
   <div className="lampiran-judul"><FileText/><div><strong>Petunjuk Penyerahan Data Dukung</strong><span>Tujuh jenis dokumen berikut menjadi objek pengumpulan data dukung.</span></div></div>
