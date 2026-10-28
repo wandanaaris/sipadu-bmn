@@ -41,3 +41,8 @@ src/_router.txt
 storelens-prototype/
 
 
+
+# data regeneratable & file lokal
+basis_data_lelang.json
+nul
+_pitfalls_extract.md

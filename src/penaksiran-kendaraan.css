@@ -1,0 +1,271 @@
+/* ── Penaksiran Kendaraan (KMK 375/2024) — tampilan 2026 ─────────── */
+
+.penk-page{
+  --penk-latar:#f6f8fa;
+  min-height:100vh;color:var(--foreground);
+  background:linear-gradient(180deg, #eef1f5 0%, var(--background) 420px);
+  padding:24px clamp(16px,4vw,48px) 80px;
+  font-family:var(--font,inherit);
+}
+
+/* ── Header ── */
+.penk-header{display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between;margin-bottom:20px}
+.penk-brand{display:flex;gap:14px;align-items:center}
+.penk-brand svg{color:var(--accent);width:34px;height:34px;background:var(--accent-soft);border-radius:12px;padding:7px}
+.penk-brand span{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted-foreground);font-weight:600}
+.penk-brand h1{font-size:22px;margin:2px 0 0;letter-spacing:-.01em}
+.penk-header-aksi{display:flex;gap:8px;flex-wrap:wrap}
+
+/* ── Tombol ── */
+.penk-tombol{
+  display:inline-flex;align-items:center;gap:7px;cursor:pointer;
+  font:inherit;font-size:13px;font-weight:600;
+  border-radius:10px;padding:9px 14px;transition:all .16s ease;border:1px solid transparent;
+}
+.penk-tombol.ghost{background:var(--card);border-color:var(--border);color:var(--foreground);box-shadow:0 1px 2px rgba(15,23,42,.04)}
+.penk-tombol.ghost:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+.penk-tombol.primary{
+  background:linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 78%, #000));
+  color:#fff;box-shadow:0 4px 12px color-mix(in srgb, var(--accent) 32%, transparent);
+}
+.penk-tombol.primary:hover{transform:translateY(-1px);box-shadow:0 6px 16px color-mix(in srgb, var(--accent) 40%, transparent)}
+.penk-tombol:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none}
+.penk-tombol svg{flex:none}
+
+/* ── Wadah: formulir bagian 1–5 dipersempit, panel Kesimpulan tetap di kanan ── */
+.penk-grid{display:grid;grid-template-columns:minmax(0,860px) minmax(300px,330px);gap:20px;justify-content:center;align-items:start}
+@media(max-width:1024px){.penk-grid{grid-template-columns:1fr}}
+
+/* ── Basis data lelang (Power BI) ── */
+.penk-pbi{border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-bottom:18px;background:var(--card);box-shadow:var(--shadow)}
+.penk-pbi-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 16px;background:var(--penk-latar)}
+.penk-pbi-head strong{display:block;font-size:14px}
+.penk-pbi-head span{font-size:12px;color:var(--muted-foreground)}
+.penk-pbi iframe{width:100%;height:560px;border:0;display:block;background:#fff}
+
+/* ── Stepper ── */
+.penk-steps{margin-bottom:16px}
+.penk-steps-row{display:flex;flex-wrap:wrap;gap:8px}
+.penk-step{
+  flex:1 1 0;min-width:0;display:flex;align-items:center;justify-content:center;gap:7px;
+  background:var(--card);border:1px solid var(--border);border-radius:12px;padding:9px 8px;
+  cursor:pointer;text-align:center;transition:all .15s ease;box-shadow:0 1px 2px rgba(15,23,42,.04);
+}
+.penk-step:hover{border-color:var(--accent);background:var(--accent-soft)}
+.penk-step:active{transform:scale(.97)}
+.penk-step .penk-step-no{
+  display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;border-radius:999px;
+  background:var(--penk-latar);color:var(--muted-foreground);font-size:11px;font-weight:800;padding:0 6px;
+}
+.penk-step .penk-step-txt{font-size:11.5px;font-weight:600;color:var(--muted-foreground)}
+.penk-step.aktif{border-color:var(--accent);background:var(--accent);box-shadow:0 6px 16px color-mix(in srgb, var(--accent) 30%, transparent)}
+.penk-step.aktif .penk-step-no{background:rgba(255,255,255,.22);color:#fff}
+.penk-step.aktif .penk-step-txt{color:#fff}
+.penk-step.selesai{border-color:color-mix(in srgb, var(--green) 45%, var(--border));background:var(--green-soft)}
+.penk-step.selesai .penk-step-no{background:var(--green);color:#fff}
+.penk-step.selesai .penk-step-txt{color:color-mix(in srgb, var(--green) 80%, #000)}
+
+/* ── Blok formulir ── */
+.penk-blok{
+  border:1px solid var(--border);border-radius:16px;margin-bottom:16px;background:var(--card);
+  box-shadow:0 1px 3px rgba(15,23,42,.05);overflow:hidden;
+}
+.penk-blok summary{
+  cursor:pointer;padding:14px 18px;font-weight:700;font-size:14.5px;list-style:none;
+  border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;
+  background:linear-gradient(180deg, var(--card), var(--penk-latar));user-select:none;
+}
+.penk-blok summary::-webkit-details-marker{display:none}
+.penk-blok summary::after{content:'▾';margin-left:auto;color:var(--muted-foreground);font-size:12px;transition:transform .18s}
+.penk-blok[open] summary::after{transform:rotate(180deg)}
+.penk-blok-no{
+  display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:9px;
+  background:var(--accent-soft);color:var(--accent);font-size:12.5px;font-weight:800;flex:none;
+}
+.penk-blok-meta{margin-left:6px;font-size:11.5px;font-weight:500;color:var(--muted-foreground);background:var(--penk-latar);border-radius:999px;padding:3px 10px}
+
+.penk-fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px 16px;padding:16px 18px 6px}
+.penk-fields .penk-2{grid-column:span 2}
+@media(max-width:860px){.penk-fields{grid-template-columns:1fr}.penk-fields .penk-2{grid-column:auto}}
+
+.penk-field{display:flex;flex-direction:column;gap:5px;font-size:12.5px;color:var(--muted-foreground);font-weight:500}
+.penk-label{display:flex;align-items:baseline;gap:5px;line-height:1.3}
+.penk-req{color:var(--destructive);font-style:normal;font-weight:800;font-size:12px;line-height:1}
+.penk-opsi{font-style:normal;font-size:10.5px;color:var(--muted-foreground);background:var(--penk-latar);border-radius:999px;padding:1px 7px;font-weight:600}
+.penk-field small{font-size:11px;color:var(--muted-foreground)}
+.penk-field input,.penk-field select{
+  font:inherit;color:var(--foreground);padding:9px 11px;min-height:40px;
+  border:1px solid var(--border);border-radius:10px;background:var(--card);
+  transition:border-color .15s, box-shadow .15s;width:100%;box-sizing:border-box;
+}
+.penk-field input:hover,.penk-field select:hover{border-color:color-mix(in srgb, var(--accent) 40%, var(--border))}
+.penk-field input:focus,.penk-field select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent)}
+.penk-field input::placeholder{color:color-mix(in srgb, var(--muted-foreground) 65%, transparent)}
+
+/* Kategori lokasi — readonly (otomatis dari PKPN) */
+.penk-kat-baca{
+  display:flex;align-items:center;gap:8px;min-height:40px;padding:8px 12px;
+  border:1px dashed color-mix(in srgb, var(--accent) 35%, var(--border));border-radius:10px;
+  background:color-mix(in srgb, var(--accent-soft) 55%, var(--card));color:var(--muted-foreground);font-size:12px;
+}
+.penk-kat-baca b{font-size:15px;color:var(--accent)}
+.penk-kat-baca span{margin-left:auto;font-size:10.5px;text-align:right}
+.penk-kat-baca svg{color:var(--accent);flex:none}
+
+/* ── Generate panel (Bagian 3) ── */
+.penk-gen{
+  display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;
+  margin:14px 18px 12px;padding:12px 14px;border-radius:12px;
+  border:1px dashed color-mix(in srgb, var(--accent) 40%, var(--border));
+  background:linear-gradient(135deg, color-mix(in srgb, var(--accent-soft) 70%, var(--card)), var(--card));
+}
+.penk-gen-teks{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1 1 300px}
+.penk-gen-teks strong{font-size:13.5px}
+.penk-gen-teks small{font-size:11.5px;color:var(--muted-foreground);line-height:1.5}
+.penk-gen .penk-tombol.primary{padding:10px 18px;white-space:nowrap}
+.penk-gen-hasil{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 18px 12px;font-size:12.5px}
+
+/* ── Chip & badge ── */
+.penk-chip{
+  display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;
+  padding:4px 10px;border-radius:999px;background:var(--accent-soft);color:var(--accent);
+  border:1px solid color-mix(in srgb, var(--accent) 25%, transparent);white-space:nowrap;
+}
+.penk-chip.tahap{background:var(--penk-latar);color:var(--muted-foreground);border-color:var(--border);padding:3px 8px}
+.penk-badge{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:8px;font-size:11.5px;font-weight:800}
+.penk-badge.kat1{background:#dcfce7;color:#15803d}
+.penk-badge.kat2{background:var(--blue-soft);color:var(--blue)}
+.penk-badge.kat3{background:var(--amber-soft);color:var(--amber)}
+.penk-badge.kat4{background:var(--red-soft);color:var(--red)}
+.penk-tanda{color:var(--muted-foreground)}
+
+/* ── Tabel (Bagian 3 & 4) ── */
+.penk-tabel-bungkus{margin:0 18px 12px;border:1px solid var(--border);border-radius:12px;overflow-x:auto;background:#fff}
+.penk-tabel{width:100%;border-collapse:collapse;font-size:12.5px;min-width:760px}
+.penk-tabel th{
+  color:var(--muted-foreground);background:var(--penk-latar);text-align:left;
+  font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;padding:10px 10px;
+  border-bottom:1px solid var(--border);font-weight:700;white-space:nowrap;position:sticky;top:0;
+}
+.penk-tabel td{border-bottom:1px solid var(--line);padding:6px 8px;color:var(--foreground);vertical-align:middle}
+.penk-tabel tbody tr{transition:background .12s}
+.penk-tabel tbody tr:hover{background:color-mix(in srgb, var(--accent-soft) 45%, transparent)}
+.penk-tabel tbody tr:last-child td{border-bottom:0}
+.penk-tabel input{
+  width:100%;min-width:64px;padding:7px 8px;font-size:12.5px;border:1px solid transparent;border-radius:8px;
+  background:transparent;color:var(--foreground);transition:border-color .15s, background .15s;box-sizing:border-box;
+}
+.penk-tabel input:hover{border-color:var(--border);background:var(--card)}
+.penk-tabel input:focus{outline:none;border-color:var(--accent);background:var(--card);box-shadow:0 0 0 3px color-mix(in srgb, var(--accent) 16%, transparent)}
+.penk-tabel .penk-angka{text-align:right;font-variant-numeric:tabular-nums}
+.penk-no{color:var(--muted-foreground);font-weight:600;width:34px;text-align:center}
+.penk-sel-data{min-width:130px}
+.penk-sel-data small{display:block;color:var(--muted-foreground);font-size:11px}
+.penk-positif{color:var(--green);font-weight:600}
+.penk-negatif{color:var(--red);font-weight:600}
+.penk-total{text-align:right;white-space:nowrap}
+.penk-rupiah{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;font-weight:600}
+.penk-otomatis{display:inline-block;font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums}
+.penk-baris-skip{opacity:.55}
+.penk-baris-skip .penk-rupiah{font-weight:400}
+
+/* ── Ringkasan penyesuaian (footer Bagian 4) ── */
+.penk-jumlah{margin:0 18px 14px;border:1px solid var(--border);border-radius:12px;background:var(--penk-latar);padding:6px 16px}
+.penk-jumlah div{display:flex;justify-content:space-between;gap:12px;padding:7px 0;font-size:13px;border-bottom:1px dashed var(--line)}
+.penk-jumlah div:last-child{border-bottom:0}
+.penk-jumlah dt{color:var(--muted-foreground)}
+.penk-jumlah dd{margin:0;font-variant-numeric:tabular-nums;font-weight:600}
+.penk-jumlah-akhir{border-top:2px solid var(--border)!important;margin-top:2px;padding-top:10px!important}
+.penk-jumlah-akhir dt{color:var(--foreground);font-weight:700}
+.penk-jumlah-akhir dd{color:var(--accent);font-size:15px;font-weight:800}
+
+/* ── Fpm panel (Bagian 4) ── */
+.penk-fpm{margin:14px 18px 12px;padding:12px 14px;border-radius:12px;background:var(--penk-latar);border:1px solid var(--line)}
+.penk-fpm .penk-2{grid-column:auto}
+
+/* ── Kosong / empty state ── */
+.penk-kosong{
+  margin:0 18px 14px;padding:26px 16px;text-align:center;color:var(--muted-foreground);
+  border:1px dashed var(--border);border-radius:12px;background:var(--penk-latar);
+  display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12.5px;
+}
+.penk-kosong svg{color:var(--accent);margin-bottom:4px}
+.penk-kosong p{margin:0}
+
+.penk-aksi-baris{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin:0 18px 16px}
+.penk-aksi-baris .penk-hint{margin:0}
+
+/* ── Anggota panitia ── */
+.penk-baris-anggota{display:flex;gap:6px;align-items:center}
+.penk-baris-anggota input{flex:1}
+.penk-anggota-tambah{grid-column:1/-1;padding-bottom:10px}
+
+.penk-hint{margin:0 18px 12px;font-size:12px;color:var(--muted-foreground)}
+.penk-hint strong{color:var(--foreground)}
+.penk-error{color:var(--destructive);font-weight:600}
+
+.penk-hapus{border:0;background:none;cursor:pointer;color:var(--muted-foreground);padding:5px;border-radius:8px;transition:all .14s}
+.penk-hapus:hover{color:var(--destructive);background:var(--red-soft)}
+
+/* ── Panel ringkasan samping ── */
+.penk-side{position:sticky;top:16px}
+.penk-ringkas{
+  border:1px solid var(--border);border-radius:16px;padding:18px;background:var(--card);
+  display:flex;flex-direction:column;gap:12px;box-shadow:0 8px 24px rgba(15,23,42,.07);
+}
+.penk-ringkas h2{margin:0;font-size:15px}
+.penk-ringkas dl{margin:0;display:flex;flex-direction:column;gap:9px}
+.penk-ringkas dl div{display:flex;justify-content:space-between;gap:10px;font-size:13px}
+.penk-ringkas dt{color:var(--muted-foreground)}
+.penk-ringkas dd{margin:0;text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+.penk-akhir{border-top:1px solid var(--border);padding-top:10px;font-weight:700}
+.penk-akhir dd{color:var(--accent);font-size:15px}
+.penk-catatan{margin:0;font-size:11.5px;color:var(--muted-foreground)}
+.penk-simpan{align-self:flex-start;color:var(--green);font-size:12px;display:inline-flex;gap:6px;align-items:center}
+.penk-panel-aksi{display:flex;flex-direction:column;gap:8px}
+.penk-panel-aksi .penk-tombol{justify-content:center}
+.penk-unduh{white-space:nowrap}
+
+/* ── Modal ── */
+.penk-modal-overlay{position:fixed;inset:0;z-index:50;background:rgba(15,16,20,.45);display:flex;align-items:center;justify-content:center;padding:20px;animation:penk-fade .18s ease;backdrop-filter:blur(2px)}
+@keyframes penk-fade{from{opacity:0}to{opacity:1}}
+.penk-modal{background:var(--card);border-radius:16px;padding:20px;max-width:440px;width:100%;display:flex;flex-direction:column;gap:12px;box-shadow:0 24px 48px rgba(0,0,0,.2);animation:penk-slide .18s ease}
+@keyframes penk-slide{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.penk-modal-head{display:flex;justify-content:space-between;align-items:center}
+.penk-modal-body{font-size:13px;color:var(--muted-foreground);line-height:1.6;margin:0}
+.penk-modal-actions{display:flex;justify-content:flex-end;gap:8px}
+
+/* ── Dasar peraturan & ketentuan ringkas ── */
+.penk-dasar summary::after{content:'▾'}
+.penk-dasar-isi{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:16px 18px}
+@media(max-width:860px){.penk-dasar-isi{grid-template-columns:1fr}}
+.penk-dasar-lista{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:10px;font-size:12.5px;color:var(--muted-foreground)}
+.penk-dasar-lista strong{display:block;color:var(--foreground);font-size:12.5px}
+.penk-dasar-lista span{line-height:1.55}
+.penk-dasar-ketentuan{border:1px dashed color-mix(in srgb, var(--accent) 35%, var(--border));border-radius:12px;background:color-mix(in srgb, var(--accent-soft) 45%, var(--card));padding:12px 14px;display:flex;flex-direction:column;gap:7px}
+.penk-dasar-ketentuan strong{font-size:12.5px;color:var(--accent)}
+.penk-dasar-ketentuan p{margin:0;font-size:11.5px;line-height:1.6;color:var(--muted-foreground)}
+
+/* Input dinonaktifkan (tipe menunggu merek) */
+.penk-field input:disabled{background:var(--penk-latar);color:var(--muted-foreground);cursor:not-allowed;border-style:dashed}
+
+/* Baris unduh dokumen pedoman di blok Dasar Peraturan */
+.penk-dasar-unduh{
+  grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;
+  border:1px solid var(--border);border-radius:12px;padding:10px 14px;background:var(--card);
+}
+.penk-dasar-unduh strong{display:block;font-size:13px}
+.penk-dasar-unduh small{font-size:11.5px;color:var(--muted-foreground)}
+
+/* Keterangan pintar per baris pembanding */
+.penk-ket-baris{display:block;font-size:9.5px;line-height:1.35;color:var(--muted-foreground);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:2px}
+
+/* ── Kontainer kertas kerja manual (di bawah Kesimpulan penilaian) ── */
+.penk-manual{
+  margin-top:14px;border:1px solid var(--border);border-radius:16px;padding:14px 16px;
+  background:var(--card);box-shadow:0 1px 3px rgba(15,23,42,.05);display:flex;flex-direction:column;gap:8px;
+}
+.penk-manual h3{margin:0;font-size:13.5px}
+.penk-manual p{margin:0;font-size:11.5px;line-height:1.55;color:var(--muted-foreground)}
+.penk-manual-aksi{display:flex;flex-direction:column;gap:6px;margin-top:2px}
+.penk-manual-aksi .penk-tombol{justify-content:center}
