@@ -408,6 +408,15 @@ export function PenaksiranKendaraanPage({ onBack }: { onBack?: () => void }) {
             <strong>{hasilGen.baris.length} baris ditemukan:</strong>
             {hasilGen.ringkasanTahap.map(t => <span key={t.tahap} className="penk-chip">Tahap {t.tahap} · {t.jumlah} data</span>)}
           </div>}
+          {hasilGen && hasilGen.baris.length > 0 && <p className="penk-gen-jelas">
+            Baris di atas diperoleh dari pencarian bertahap KMK 375 angka 4 — <strong>Tahap 1</strong>: merek, tipe &amp; tahun pembuatan sama di wilayah kerja KPKNL; <strong>Tahap 2</strong>: wilayah berbatasan langsung; <strong>Tahap 3–4</strong>: merek sama, tipe berbeda (tahun ±5); <strong>Tahap 5–8</strong>: perluasan wilayah berikutnya; <strong>Tahap 9–10</strong>: merek berbeda dengan spesifikasi mendekati. Sesuaikan penyesuaian tipe &amp; merek pada Bagian 4.
+          </p>}
+          {hasilGen && hasilGen.baris.length > 0 && hasilGen.baris.length < 7 && <p className="penk-gen-jelas">
+            Hasil <strong>{hasilGen.baris.length} dari 7</strong> baris karena data pembanding yang tersedia di basis data memang terbatas (syarat KMK 375: kategori kendaraan sama, harga terisi, tahun lelang maksimal 3 tahun terakhir). Kertas kerja tetap sah dengan 3–7 data — baris sisanya dibiarkan kosong atau ditambahkan manual dari Basis Data Lelang DJKN.
+          </p>}
+          {hasilGen && hasilGen.baris.length === 0 && <p className="penk-gen-jelas">
+            <strong>Tidak ada data pembanding yang cocok sampai Tahap 10</strong> — kemungkinan merek/tipe terlalu langka, tahun transaksi lelangnya lebih dari 3 tahun, atau kategori kendaraan tersebut belum pernah dilelang DJKN. Tambahkan baris secara manual dari Basis Data Lelang DJKN (tombol di atas), atau gunakan kertas kerja manual di panel kanan.
+          </p>}
           {hasilGen?.catatan.map((c, i) => <p key={i} className="penk-hint penk-error">{c}</p>)}
           <TabelLelang rows={rows} objek={objek} onTeks={rF} onAngka={angkaBaris} onHapus={i => setRows(cur => cur.filter((_, idx) => idx !== i))} />
           <div className="penk-aksi-baris">
