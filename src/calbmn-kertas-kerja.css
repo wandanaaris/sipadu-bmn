@@ -1,0 +1,41 @@
+/* Kertas Kerja CalBMN — halaman publik (pola penaksiran-kendaraan.css) */
+.calbmn-page{max-width:1080px;margin:0 auto;padding:24px 16px 64px}
+.calbmn-head{display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;margin-bottom:20px}
+.calbmn-head>div:nth-child(2){flex:1;min-width:260px}
+.calbmn-head h1{margin:0 0 6px;font-size:1.5rem}
+.calbmn-head p{margin:0;color:var(--muted-foreground, #666);font-size:.9rem;max-width:640px}
+.calbmn-head-actions{display:flex;gap:8px;flex-wrap:wrap}
+
+.calbmn-identitas{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:20px}
+.calbmn-identitas label{display:flex;flex-direction:column;gap:4px;font-size:.85rem}
+.calbmn-identitas span{color:var(--muted-foreground, #666)}
+.calbmn-identitas input{padding:8px 10px;border:1px solid var(--border, #ddd);border-radius:8px;background:var(--card, #fff);color:inherit}
+
+.calbmn-matriks table{width:100%;border-collapse:collapse;font-size:.9rem}
+.calbmn-matriks th,.calbmn-matriks td{padding:8px 10px;border-bottom:1px solid var(--border, #e5e5e5);text-align:left}
+.calbmn-matriks th{background:var(--card, #f7f7f7);font-weight:600}
+.calbmn-matriks .num{text-align:right}
+.calbmn-matriks th.num{text-align:right}
+.calbmn-matriks td input{width:100%;min-width:110px;text-align:right;padding:6px 8px;border:1px solid var(--border, #ddd);border-radius:6px;background:var(--card, #fff);color:inherit}
+.calbmn-matriks tr.ok td{background:color-mix(in srgb, #22c55e 6%, transparent)}
+.calbmn-matriks tr.beda td{background:color-mix(in srgb, #ef4444 7%, transparent)}
+.calbmn-matriks tfoot td{font-weight:700;border-top:2px solid var(--border, #ccc)}
+
+.calbmn-st{display:inline-flex;align-items:center;gap:4px;font-size:.8rem;padding:2px 8px;border-radius:99px;white-space:nowrap}
+.calbmn-st.ok{color:#15803d;background:color-mix(in srgb, #22c55e 15%, transparent)}
+.calbmn-st.beda{color:#b91c1c;background:color-mix(in srgb, #ef4444 15%, transparent)}
+.calbmn-st.kosong{color:var(--muted-foreground, #888);background:color-mix(in srgb, #888 12%, transparent)}
+.status-cell{text-align:right}
+
+.calbmn-narasi{margin-top:28px}
+.calbmn-narasi h2{font-size:1.15rem;margin:0 0 4px}
+.calbmn-narasi-item{line-height:1.7;margin:10px 0;text-align:justify}
+.calbmn-narasi-total{line-height:1.7;margin-top:16px}
+.penk-hint{color:var(--muted-foreground, #666);font-size:.85rem;margin:6px 0}
+.penk-ok{color:#15803d}
+
+@media print{
+  .calbmn-head-actions,.calbmn-head .penk-tombol,.penk-hint{display:none}
+  body{background:#fff}
+  .calbmn-page{padding:0}
+}
