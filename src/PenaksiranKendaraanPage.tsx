@@ -111,28 +111,47 @@ export function PenaksiranKendaraanPage({ onBack }: { onBack?: () => void }) {
   const [db, setDb] = useState<{ rows: KandidatLelang[]; sumber: string; count: number; gagal: boolean }>({ rows: [], sumber: '', count: 0, gagal: false })
   const [hasilGen, setHasilGen] = useState<HasilGenerate | null>(null)
 
-  // Basis data lelang lokal: hanya untuk autosuggest & Generate.
+  // Basis data lelang: dev = API lokal (SQLite localhost); prod = Supabase
+  // (tabel lelang_data / RPC get_lelang_data) supaya autosuggest & Generate jalan di Vercel.
   useEffect(() => {
     let cancelled = false
+    const petakan = (r: Record<string, unknown>): KandidatLelang | null => {
+      const k: KandidatLelang = {
+        kode: String(r.kode ?? ''),
+        kategoriObjek: String(r.kategori_objek ?? ''),
+        kpknl: String(r.kpknl ?? ''),
+        tahunLelang: Number(r.tahun_lelang) || 0,
+        katLokasi: r.kat_lokasi == null ? null : Number(r.kat_lokasi),
+        sumberKat: String(r.kat_lokasi_sumber ?? ''),
+        merek: String(r.merek ?? ''),
+        tipe: String(r.tipe ?? ''),
+        tahunPembuatan: Number(r.tahun_pembuatan) || 0,
+        warna: String(r.warna ?? ''),
+        harga: Number(r.m0) || 0,
+      }
+      return k.kode && k.kpknl ? k : null
+    }
+    const simpan = (rows: KandidatLelang[], sumber: string) => {
+      if (cancelled) return
+      setDb({ rows, sumber, count: rows.length, gagal: false })
+    }
+    const dariSupabase = async () => {
+      const { supabase } = await import('./lib/supabase')
+      if (!supabase) throw new Error('Supabase tidak terkonfigurasi')
+      const { data, error } = await supabase.rpc('get_lelang_data')
+      if (error) throw new Error(error.message)
+      const kandidat = (Array.isArray(data) ? (data as unknown as Record<string, unknown>[]) : []).map(petakan).filter(Boolean) as KandidatLelang[]
+      if (!kandidat.length) throw new Error('Basis data lelang kosong')
+      simpan(kandidat, '')
+    }
     fetch('/api/local/lelang')
       .then(res => (res.ok ? res.json() : Promise.reject(new Error(String(res.status)))))
       .then((data: { rows?: unknown[]; sumber?: string; count?: number }) => {
         if (cancelled || !Array.isArray(data.rows)) return
-        const kandidat: KandidatLelang[] = (data.rows as Record<string, unknown>[]).map(r => ({
-          kode: String(r.kode ?? ''),
-          kategoriObjek: String(r.kategori_objek ?? ''),
-          kpknl: String(r.kpknl ?? ''),
-          tahunLelang: Number(r.tahun_lelang) || 0,
-          katLokasi: r.kat_lokasi == null ? null : Number(r.kat_lokasi),
-          sumberKat: String(r.kat_lokasi_sumber ?? ''),
-          merek: String(r.merek ?? ''),
-          tipe: String(r.tipe ?? ''),
-          tahunPembuatan: Number(r.tahun_pembuatan) || 0,
-          warna: String(r.warna ?? ''),
-          harga: Number(r.m0) || 0,
-        })).filter(k => k.kode && k.kpknl)
-        setDb({ rows: kandidat, sumber: String(data.sumber ?? ''), count: kandidat.length, gagal: false })
+        const kandidat = (data.rows as Record<string, unknown>[]).map(petakan).filter(Boolean) as KandidatLelang[]
+        simpan(kandidat, String(data.sumber ?? ''))
       })
+      .catch(() => dariSupabase())
       .catch(() => { if (!cancelled) setDb(d => ({ ...d, gagal: true })) })
     return () => { cancelled = true }
   }, [])
@@ -402,7 +421,7 @@ export function PenaksiranKendaraanPage({ onBack }: { onBack?: () => void }) {
               <Sparkles size={15} />Generate
             </button>
           </div>
-          {!db.rows.length && <p className="penk-hint penk-error">{db.gagal ? 'Basis data lelang lokal tidak tersedia (bukan localhost / belum di-seed).' : 'Memuat basis data lelang lokal…'}</p>}
+          {!db.rows.length && <p className="penk-hint penk-error">{db.gagal ? 'Basis data lelang tidak tersedia (API lokal mati di dev / Supabase kosong).' : 'Memuat basis data lelang…'}</p>}
           {db.rows.length > 0 && !bisaGenerate && <p className="penk-hint">Lengkapi Lokasi KPKNL, merek, tipe, tahun pembuatan, dan tahun taksiran pada Bagian 1–2 terlebih dahulu.</p>}
           {hasilGen && hasilGen.baris.length > 0 && <div className="penk-gen-hasil">
             <strong>{hasilGen.baris.length} baris ditemukan:</strong>
