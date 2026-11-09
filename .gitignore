@@ -46,3 +46,6 @@ storelens-prototype/
 basis_data_lelang.json
 nul
 _pitfalls_extract.md
+
+# State lokal Supabase CLI (jangan di-commit)
+supabase/.temp/
