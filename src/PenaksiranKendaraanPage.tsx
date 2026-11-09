@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ArrowLeft, Calculator, Database, Download, ExternalLink, FileSpreadsheet, FileText, Lock, Plus, RotateCcw, Scale, Sparkles, Trash2, X } from 'lucide-react'
+import { ArrowLeft, Calculator, Database, Download, ExternalLink, FileSpreadsheet, FileText, Lock, Plus, RotateCcw, Scale, Search, Sparkles, Trash2, X } from 'lucide-react'
 import {
   formatRp, hitungPenaksiran, klasifikasiKendaraan, faktorTahunPembuatan, faktorKondisi,
   type BarisLelang, type IdentitasPenaksiran,
 } from './penaksiranKendaraan'
 import {
-  daftarKpknl, daftarMerek, daftarTipe, generateBarisPembanding, kategoriDariJenis,
-  kategoriPerKpknl, keteranganPembanding, kunciKpknl, namaLokasi, normTeks,
+  cariKodeLelang, daftarKpknl, daftarMerek, daftarTipe, generateBarisPembanding, kategoriDariJenis,
+  kategoriPerKpknl, keteranganPembanding, kandidatKeBaris, kunciKpknl, namaLokasi, normTeks,
   type HasilGenerate, type KandidatLelang,
 } from './penaksiranLelang'
 import { downloadXlsx, DASAR_PERATURAN, KETENTUAN_RINGKAS, KMK_375_PDF_URL } from './penaksiranXlsx'
@@ -110,6 +110,12 @@ export function PenaksiranKendaraanPage({ onBack }: { onBack?: () => void }) {
   const [clearModal, setClearModal] = useState(false)
   const [db, setDb] = useState<{ rows: KandidatLelang[]; sumber: string; count: number; gagal: boolean }>({ rows: [], sumber: '', count: 0, gagal: false })
   const [hasilGen, setHasilGen] = useState<HasilGenerate | null>(null)
+  // Dua cara mengisi pembanding: generate otomatis (KMK 375 angka 4) atau
+  // input kode lelang lalu tarik detailnya dari basis data DJKN.
+  const [modeLelang, setModeLelang] = useState<'generate' | 'kode'>('generate')
+  const [kodeInput, setKodeInput] = useState('')
+  const [kandidatKode, setKandidatKode] = useState<KandidatLelang[]>([])
+  const [pesanKode, setPesanKode] = useState('')
 
   // Basis data lelang: dev = API lokal (SQLite localhost); prod = Supabase
   // (tabel lelang_data / RPC get_lelang_data) supaya autosuggest & Generate jalan di Vercel.
@@ -243,6 +249,30 @@ export function PenaksiranKendaraanPage({ onBack }: { onBack?: () => void }) {
         document.querySelector('[data-langkah="2"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
       }, 60)
     }
+  }
+
+  const tambahDariKandidat = (k: KandidatLelang) => {
+    if (rows.length >= 7) { setPesanKode('Maksimal 7 data pembanding (KMK 375 angka 3).'); return }
+    setRows(cur => (cur.length >= 7 ? cur : [...cur, kandidatKeBaris(k)]))
+    setKandidatKode([])
+    setKodeInput('')
+    setPesanKode('')
+    setHasilGen(null)
+  }
+
+  const tarikKodeLelang = () => {
+    const cari = kodeInput.trim()
+    if (!cari) { setPesanKode('Masukkan kode lelang terlebih dahulu.'); return }
+    const ketemu = cariKodeLelang(db.rows, cari)
+    if (!ketemu.length) {
+      setKandidatKode([])
+      setPesanKode(`Kode "${cari.toUpperCase()}" tidak ditemukan di basis data lelang DJKN.`)
+      return
+    }
+    // 133 kode dipakai lebih dari satu baris (NEVBJS sampai 67) — minta operator memilih.
+    if (ketemu.length === 1) { tambahDariKandidat(ketemu[0]); return }
+    setPesanKode('')
+    setKandidatKode(ketemu)
   }
 
   const unduhKertasKerja = () => {
@@ -412,15 +442,54 @@ export function PenaksiranKendaraanPage({ onBack }: { onBack?: () => void }) {
             <span className="penk-blok-no">3</span> Data hasil lelang DJKN
             <small className="penk-blok-meta">{rowsValid.length}/3–7 baris</small>
           </summary>
-          <div className="penk-gen">
-            <div className="penk-gen-teks">
-              <strong>Generate baris pembanding otomatis</strong>
-              <small>Mengikuti Tahap 1–10 KMK 375 angka 4: diutamakan <b>merek, tipe, dan tahun pembuatan yang sama</b> di wilayah kerja KPKNL yang sama, diperluas wilayah/tipe bertahap bila kurang dari 3 data.</small>
-            </div>
-            <button type="button" className="penk-tombol primary" onClick={generateBarisLelang} disabled={!bisaGenerate}>
-              <Sparkles size={15} />Generate
-            </button>
+          <div className="penk-mode" role="tablist" aria-label="Cara mengisi data pembanding">
+            <button type="button" role="tab" aria-selected={modeLelang === 'generate'}
+              className={modeLelang === 'generate' ? 'aktif' : ''}
+              onClick={() => { setModeLelang('generate'); setKandidatKode([]); setPesanKode('') }}>Generate otomatis</button>
+            <button type="button" role="tab" aria-selected={modeLelang === 'kode'}
+              className={modeLelang === 'kode' ? 'aktif' : ''}
+              onClick={() => { setModeLelang('kode'); setPesanKode('') }}>Input kode lelang</button>
           </div>
+          {modeLelang === 'generate' ? (
+            <div className="penk-gen">
+              <div className="penk-gen-teks">
+                <strong>Generate baris pembanding otomatis</strong>
+                <small>Mengikuti Tahap 1–10 KMK 375 angka 4: diutamakan <b>merek, tipe, dan tahun pembuatan yang sama</b> di wilayah kerja KPKNL yang sama, diperluas wilayah/tipe bertahap bila kurang dari 3 data.</small>
+              </div>
+              <button type="button" className="penk-tombol primary" onClick={generateBarisLelang} disabled={!bisaGenerate}>
+                <Sparkles size={15} />Generate
+              </button>
+            </div>
+          ) : (
+            <div className="penk-gen">
+              <div className="penk-gen-teks">
+                <strong>Input kode lelang</strong>
+                <small>Ketik kode lelang DJKN (6–9 karakter, mis. <b>BCTT0N</b>) lalu tekan Tarik detail — merek, tipe, tahun, lokasi, kategori, dan harga terisi otomatis dari basis data.</small>
+              </div>
+              <div className="penk-kode-cari">
+                <input value={kodeInput} onChange={e => setKodeInput(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); tarikKodeLelang() } }}
+                  placeholder="KODE LELANG" aria-label="Kode lelang" spellCheck={false} autoComplete="off" />
+                <button type="button" className="penk-tombol primary" onClick={tarikKodeLelang}
+                  disabled={!db.rows.length || rows.length >= 7}><Search size={15} />Tarik detail</button>
+              </div>
+            </div>
+          )}
+          {pesanKode && <p className="penk-hint penk-error penk-kode-pesan">{pesanKode}</p>}
+          {kandidatKode.length > 1 && (
+            <div className="penk-kode-hasil">
+              <p className="penk-hint">Kode ini dipakai <b>{kandidatKode.length}</b> baris di basis data. Pilih baris yang sesuai:</p>
+              <ul>
+                {kandidatKode.map((k, i) => (
+                  <li key={`${k.kode}-${i}`}>
+                    <button type="button" className="penk-tombol ghost" onClick={() => tambahDariKandidat(k)}>
+                      <span><b>{k.merek} {k.tipe}</b> · {k.tahunPembuatan} · {namaLokasi(k.kpknl)} · {k.tahunLelang} · {formatRp(k.harga)}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
           {!db.rows.length && <p className="penk-hint penk-error">{db.gagal ? 'Basis data lelang tidak tersedia (API lokal mati di dev / Supabase kosong).' : 'Memuat basis data lelang…'}</p>}
           {db.rows.length > 0 && !bisaGenerate && <p className="penk-hint">Lengkapi Lokasi KPKNL, merek, tipe, tahun pembuatan, dan tahun taksiran pada Bagian 1–2 terlebih dahulu.</p>}
           {hasilGen && hasilGen.baris.length > 0 && <div className="penk-gen-hasil">

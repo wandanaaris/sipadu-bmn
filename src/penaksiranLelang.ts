@@ -389,17 +389,9 @@ export function generateBarisPembanding(
   return selesaikan(terpilih, catatan)
 }
 
-function selesaikan(terpilih: { k: KandidatLelang; tahap: number }[], catatan: string[]): HasilGenerate {
-  const ringkasanTahap: { tahap: number; jumlah: number }[] = []
-  for (const t of terpilih) {
-    const entri = ringkasanTahap.find(r => r.tahap === t.tahap)
-    if (entri) entri.jumlah++
-    else ringkasanTahap.push({ tahap: t.tahap, jumlah: 1 })
-  }
-  if (terpilih.length < MIN_BARIS) {
-    catatan.push(`Hanya ${terpilih.length} data ditemukan sampai Tahap 10 — minimal ${MIN_BARIS} data. Tambahkan pembanding secara manual.`)
-  }
-  const baris = terpilih.map(({ k, tahap }) => ({
+/** Satu kandidat lelang → satu baris pembanding kertas kerja. */
+export function kandidatKeBaris(k: KandidatLelang, tahap?: number): BarisLelang {
+  return {
     merek: k.merek,
     kodeLelang: k.kode,
     tipe: k.tipe,
@@ -412,7 +404,32 @@ function selesaikan(terpilih: { k: KandidatLelang; tahap: number }[], catatan: s
     penyesuaianMerek: 0,
     hargaBaru: 0,
     tahap,
-  }))
+  }
+}
+
+/**
+ * Cari baris basis data lelang menurut kode lelang (6–9 karakter).
+ * Kode di data DJKN TIDAK unik — 133 kode dipakai lebih dari satu baris (`NEVBJS`
+ * sampai 67 baris) — jadi hasilnya selalu daftar; pemanggil wajib menawarkan pilihan
+ * bila lebih dari satu agar pembanding yang masuk kertas kerja tidak salah.
+ */
+export function cariKodeLelang(kandidat: KandidatLelang[], kode: string): KandidatLelang[] {
+  const cari = normTeks(kode)
+  if (!cari) return []
+  return kandidat.filter(k => normTeks(k.kode) === cari)
+}
+
+function selesaikan(terpilih: { k: KandidatLelang; tahap: number }[], catatan: string[]): HasilGenerate {
+  const ringkasanTahap: { tahap: number; jumlah: number }[] = []
+  for (const t of terpilih) {
+    const entri = ringkasanTahap.find(r => r.tahap === t.tahap)
+    if (entri) entri.jumlah++
+    else ringkasanTahap.push({ tahap: t.tahap, jumlah: 1 })
+  }
+  if (terpilih.length < MIN_BARIS) {
+    catatan.push(`Hanya ${terpilih.length} data ditemukan sampai Tahap 10 — minimal ${MIN_BARIS} data. Tambahkan pembanding secara manual.`)
+  }
+  const baris = terpilih.map(({ k, tahap }) => kandidatKeBaris(k, tahap))
   return { baris, ringkasanTahap, catatan }
 }
 

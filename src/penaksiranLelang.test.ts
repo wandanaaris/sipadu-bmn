@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
-  daftarKpknl, daftarTipe, generateBarisPembanding, kategoriDariJenis, kategoriPerKpknl,
-  kunciKpknl, namaLokasi, normTeks, tipeSama, wilayahPencarian,
+  cariKodeLelang, daftarKpknl, daftarTipe, generateBarisPembanding, kategoriDariJenis, kategoriPerKpknl,
+  kandidatKeBaris, kunciKpknl, namaLokasi, normTeks, tipeSama, wilayahPencarian,
   type KandidatLelang,
 } from './penaksiranLelang'
 
@@ -64,6 +64,36 @@ describe('daftarTipe — saran tipe per merek', () => {
 
   it('kosong bila merek belum dipilih', () => {
     expect(daftarTipe([k({})], '')).toEqual([])
+  })
+})
+
+describe('cariKodeLelang & kandidatKeBaris', () => {
+  it('mencari baris menurut kode lelang (abaikan spasi dan huruf besar-kecil)', () => {
+    const rows = [k({ kode: 'BCTT0N' }), k({ kode: 'CK47MN', merek: 'Toyota' })]
+    expect(cariKodeLelang(rows, ' bctt0n ')).toHaveLength(1)
+    expect(cariKodeLelang(rows, 'bctt0n')[0].kode).toBe('BCTT0N')
+  })
+
+  it('mengembalikan semua baris bila satu kode dipakai beberapa kali', () => {
+    const rows = [k({ kode: 'NEVBJS', tipe: 'A' }), k({ kode: 'NEVBJS', tipe: 'B' })]
+    expect(cariKodeLelang(rows, 'NEVBJS')).toHaveLength(2)
+  })
+
+  it('kosong bila kode tidak ada atau kosong', () => {
+    expect(cariKodeLelang([k({})], 'ZZZZZZ')).toEqual([])
+    expect(cariKodeLelang([k({})], '   ')).toEqual([])
+  })
+
+  it('memetakan kandidat ke baris kertas kerja lengkap', () => {
+    const b = kandidatKeBaris(k({
+      kode: 'BCTT0N', merek: 'Toyota', tipe: 'Corolla Altis',
+      harga: 50_000_000, tahunLelang: 2023, tahunPembuatan: 2004,
+    }), 2)
+    expect(b).toMatchObject({
+      kodeLelang: 'BCTT0N', merek: 'Toyota', tipe: 'Corolla Altis',
+      hargaLelang: 50_000_000, tahunLelang: 2023, tahunPembuatanLelang: 2004,
+      lokasiLelang: 'Pekanbaru', kategoriLokasiLelang: 1, tahap: 2,
+    })
   })
 })
 
