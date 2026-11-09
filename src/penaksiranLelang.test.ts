@@ -44,6 +44,16 @@ describe('daftarTipe — saran tipe per merek', () => {
     expect(tipe).toContain('GL II')
   })
 
+  it('menggabungkan varian yang hanya beda huruf besar/kecil dan spasi', () => {
+    const rows = [
+      k({ kode: '1', tipe: 'GL Max' }),
+      k({ kode: '2', tipe: 'GL Max' }),
+      k({ kode: '3', tipe: 'GL MAX' }),
+      k({ kode: '4', tipe: 'GL  160 D' }),
+    ]
+    expect(daftarTipe(rows, 'Honda')).toEqual(['GL 160 D', 'GL Max'])
+  })
+
   it('hanya mengembalikan tipe milik merek terpilih', () => {
     const rows = [
       k({ kode: '1', merek: 'Honda', tipe: 'GLP III' }),

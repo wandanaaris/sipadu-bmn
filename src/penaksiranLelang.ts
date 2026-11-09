@@ -478,6 +478,29 @@ export function daftarTipe(kandidat: KandidatLelang[], merek?: string): string[]
   // sehingga pengguna hanya melihat "GL II".
   if (!merek?.trim()) return []
   const sumber = kandidat.filter(k => normTeks(k.merek) === normTeks(merek))
-  return Array.from(new Set(sumber.map(k => k.tipe.trim()).filter(Boolean)))
-    .sort((a, b) => a.localeCompare(b, 'id'))
+  // Rapikan spasi ganda dan gabungkan varian yang hanya berbeda huruf besar/kecil,
+  // spasi, atau tanda baca — mis. "GL Max" vs "GL MAX", "GL  160 D" vs "GL 160 D".
+  // Yang ditampilkan: varian paling sering muncul di data DJKN (lebih mudah dikenali).
+  const kelompok = new Map<string, Map<string, number>>()
+  for (const k of sumber) {
+    const rapi = String(k.tipe ?? '').replace(/\s+/g, ' ').trim()
+    const kunci = normTeks(rapi)
+    if (!kunci) continue
+    const isi = kelompok.get(kunci) ?? new Map<string, number>()
+    isi.set(rapi, (isi.get(rapi) ?? 0) + 1)
+    kelompok.set(kunci, isi)
+  }
+  const hasil: string[] = []
+  for (const isi of kelompok.values()) {
+    let terbaik = ''
+    let skor = -1
+    for (const [teks, jumlah] of isi) {
+      // Utamakan yang paling sering muncul; bila seri, utamakan teks ASCII (bukan
+      // huruf kembar Kiril), lalu urutan abjad agar hasilnya tetap deterministik.
+      const nilai = jumlah * 10 + (/^[\x20-\x7E]+$/.test(teks) ? 1 : 0)
+      if (nilai > skor || (nilai === skor && teks < terbaik)) { skor = nilai; terbaik = teks }
+    }
+    if (terbaik) hasil.push(terbaik)
+  }
+  return hasil.sort((a, b) => a.localeCompare(b, 'id'))
 }
