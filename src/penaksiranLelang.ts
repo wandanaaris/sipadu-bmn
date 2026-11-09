@@ -472,6 +472,12 @@ export function daftarMerek(kandidat: KandidatLelang[]): string[] {
 }
 
 export function daftarTipe(kandidat: KandidatLelang[], merek?: string): string[] {
-  const sumber = merek ? kandidat.filter(k => normTeks(k.merek) === normTeks(merek)) : kandidat
-  return Array.from(new Set(sumber.map(k => k.tipe.trim()).filter(Boolean))).sort((a, b) => a.localeCompare(b, 'id')).slice(0, 500)
+  // Tipe hanya bermakna setelah merek dipilih (input tipe dinonaktifkan bila merek kosong).
+  // Daftar TIDAK boleh dipotong: merek besar punya ribuan tipe unik (Honda 1.948,
+  // Toyota 1.659), dan pemotongan alfabetis membuang tipe berawalan "GLP" (GL Pro)
+  // sehingga pengguna hanya melihat "GL II".
+  if (!merek?.trim()) return []
+  const sumber = kandidat.filter(k => normTeks(k.merek) === normTeks(merek))
+  return Array.from(new Set(sumber.map(k => k.tipe.trim()).filter(Boolean)))
+    .sort((a, b) => a.localeCompare(b, 'id'))
 }

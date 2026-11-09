@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  daftarKpknl, generateBarisPembanding, kategoriDariJenis, kategoriPerKpknl,
+  daftarKpknl, daftarTipe, generateBarisPembanding, kategoriDariJenis, kategoriPerKpknl,
   kunciKpknl, namaLokasi, normTeks, tipeSama, wilayahPencarian,
   type KandidatLelang,
 } from './penaksiranLelang'
@@ -29,6 +29,33 @@ const objek = {
   tahunPembuatan: 2001,
   tahunTaksiran: 2024,
 }
+
+describe('daftarTipe — saran tipe per merek', () => {
+  it('tidak memotong daftar merek besar sehingga tipe GLP tetap tersedia', () => {
+    // Honda punya ~1.948 tipe unik. Dulu daftar dipotong 500 setelah urut alfabetis,
+    // sehingga tipe berawalan "GLP" (GL Pro) hilang dan pengguna hanya melihat "GL II".
+    const rows: KandidatLelang[] = []
+    for (let i = 0; i < 900; i++) rows.push(k({ kode: `A${i}`, tipe: `Tipe ${i}` }))
+    rows.push(k({ kode: 'GLP', tipe: 'GLP III' }))
+    rows.push(k({ kode: 'GL2', tipe: 'GL II' }))
+    const tipe = daftarTipe(rows, 'Honda')
+    expect(tipe.length).toBe(902)
+    expect(tipe).toContain('GLP III')
+    expect(tipe).toContain('GL II')
+  })
+
+  it('hanya mengembalikan tipe milik merek terpilih', () => {
+    const rows = [
+      k({ kode: '1', merek: 'Honda', tipe: 'GLP III' }),
+      k({ kode: '2', merek: 'Toyota', tipe: 'Avanza' }),
+    ]
+    expect(daftarTipe(rows, 'honda')).toEqual(['GLP III'])
+  })
+
+  it('kosong bila merek belum dipilih', () => {
+    expect(daftarTipe([k({})], '')).toEqual([])
+  })
+})
 
 describe('wilayah pencarian KMK 375 angka 3.d', () => {
   it('Pekanbaru urutan pertama: Riau + provinsi berbatasan (Sumut, Sumbar, Jambi, Kepri)', () => {
